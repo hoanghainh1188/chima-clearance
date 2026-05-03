@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(grep -c '^```gherkin' specs/001-b2-clearance/spec.md)",
+      "Bash(.specify/scripts/bash/check-prerequisites.sh *)",
+      "Bash(awk '/^### Session 2026-05-03/{flag=1;next} /^---$/{if\\(flag\\){flag=0}} flag' specs/001-b2-clearance/spec.md)",
+      "Bash(bash *)",
+      "Bash(SPECIFY_FEATURE=001-b2-clearance bash *)"
+    ]
+  }
+}

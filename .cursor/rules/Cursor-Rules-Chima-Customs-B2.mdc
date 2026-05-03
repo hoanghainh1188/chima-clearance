@@ -1,0 +1,75 @@
+---
+alwaysApply: true
+---
+
+# Cursor Rules — Chima Customs B2
+
+## Bắt buộc đọc trước khi sửa code
+
+Trước bất kỳ thay đổi non-trivial nào, đọc theo thứ tự:
+1. specs/README.md — entry point.
+2. specs/01-overview.md — § 6 (locked tech stack — IMMUTABLE) và § 2 (constraints).
+3. specs/02-architecture.md — § 4 (ERD), § 6 (API surface), § 7 (state machines).
+4. specs/03-functional-spec.md — Gherkin acceptance criteria của feature đang sửa.
+5. specs/04-implementation-plan.md — § 1 (DoD), § 3.4 (dependency rules).
+6. specs/05-ui-wireframes.md — nếu sửa UI, BẮT BUỘC bám sát layout § 6, design tokens § 2-3.
+
+## Source of Truth ưu tiên
+
+1. memory/constitution.md (do Spec Kit sinh) — cao nhất.
+2. specs/001-*/spec.md, plan.md, tasks.md (do Spec Kit sinh).
+3. specs/01..05*.md (viết tay) — backup khi 1-2 chưa sinh.
+
+Nếu mâu thuẫn giữa Spec Kit artifacts và spec viết tay, theo Spec Kit artifacts (vì đã được /speckit.analyze cross-check).
+
+## Tech stack IMMUTABLE — KHÔNG đề xuất thay thế
+
+- .NET MAUI 8 (Windows target only Phase 1, WindowsPackageType=None)
+- ASP.NET Core 8 Minimal API hosted as Windows Service
+- SQLite WAL + Litestream
+- JWT RS256 + BCrypt
+- SignalR over LAN
+- Quartz.NET, EF Core 8, ClosedXML, FluentValidation, Serilog, Refit, Polly v8
+
+KHÔNG suggest đổi sang WPF/Avalonia/Blazor/PostgreSQL/SQL Server/MassTransit/Dapper/MediatR alternatives. Bất kỳ deviation cần ADR theo specs/04-implementation-plan.md § 9.
+
+## Quy ước code
+
+- Nullable reference types ENABLED.
+- TreatWarningsAsErrors=true.
+- Async by default, cấm .Result/.Wait().
+- One public type per file.
+- record cho DTO/VO; class cho Entity.
+- Vietnamese strings PHẢI vào Resources/Strings/AppResources.vi.resx — KHÔNG hard-code tiếng Việt trong code.
+- Conventional Commits: feat(F-XX): ..., fix(F-XX): ..., chore: ..., docs: ...
+- Branch naming: feat/F-XX-short-name.
+
+## UI rules (khi sửa B2.Desktop)
+
+- Layout, tab order, keyboard shortcut PHẢI bám sát specs/05-ui-wireframes.md § 6.
+- Design tokens StaticResource trong Resources/Styles/Colors.xaml và Typography.xaml.
+- Mọi list view có 4 states: Loading (skeleton) / Empty (icon + action) / Error (red banner + retry + correlationId) / Offline (yellow banner).
+- Status indicators dùng icon + color + text label đồng thời.
+- Toast & Modal là service tái sử dụng trong B2.Desktop/Services/.
+
+## Khi tạo PR
+
+- Title: feat(F-XX): <short description>
+- Description reference feature ID đang implement.
+- Checklist Definition of Done (specs/04-implementation-plan.md § 1) trong PR body.
+- Squash merge.
+
+## Khi gặp lệnh sinh code lớn
+
+Ưu tiên Claude Code CLI cho:
+- /speckit.* slash commands.
+- Implement backend (Domain/Application/Infrastructure/Server.Api).
+- Sinh tests từ Gherkin.
+- Sửa migration EF Core.
+- Viết ADR mới.
+
+Cursor làm tốt hơn cho:
+- XAML pages + ViewModels.
+- Resource dictionaries.
+- Refactor đa file (rename, extract method).
+- Inline review + format code.
