@@ -8,9 +8,8 @@ public partial class ChangePasswordPage : ContentPage
     {
         InitializeComponent();
         BindingContext = model;
-        CurrentPasswordEntry.TabIndex = 1;
-        NewPasswordEntry.TabIndex = 2;
-        ConfirmPasswordEntry.TabIndex = 3;
-        ChangePasswordSubmitButton.TabIndex = 4;
+        // Tab order: Current → New → Confirm → Submit. .NET MAUI 8.0.100 does not
+        // expose TabIndex on Entry/Button, so we rely on the natural visual-tree
+        // order which already matches the required sequence.
     }
 }

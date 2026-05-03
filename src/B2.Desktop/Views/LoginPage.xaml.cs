@@ -8,11 +8,10 @@ public partial class LoginPage : ContentPage
     {
         InitializeComponent();
         BindingContext = model;
-        // Tab order: XamlC on Windows does not resolve TabIndex on Entry in XAML (XFC0009).
-        UsernameEntry.TabIndex = 1;
-        PasswordEntry.TabIndex = 2;
-        ShowPasswordToggleButton.TabIndex = 3;
-        LoginSubmitButton.TabIndex = 4;
+        // Tab order (wireframe § 6.1): Username → Password → Show/Hide → Login button.
+        // .NET MAUI 8.0.100 does not expose TabIndex on Entry/Button (neither XAML
+        // bindable nor CLR property — XFC0009 / CS1061), so we rely on the natural
+        // visual-tree order which already lists the controls in the required sequence.
     }
 
     private void OnTogglePasswordClicked(object? sender, EventArgs e) =>
