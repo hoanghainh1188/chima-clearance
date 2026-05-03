@@ -31,7 +31,7 @@ public static class SerilogStartup
             .WriteTo.File(
                 rollingPath,
                 rollingInterval: RollingInterval.Day,
-                retainedFileCountLimit: 14,
+                retainedFileCountLimit: 30,
                 formatProvider: invariant)
             .WriteTo.Sink(memorySink);
     }

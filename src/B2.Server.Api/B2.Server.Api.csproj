@@ -24,4 +24,8 @@
     <ProjectReference Include="..\B2.Shared.Contracts\B2.Shared.Contracts.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <InternalsVisibleTo Include="B2.Server.Api.Tests" />
+  </ItemGroup>
+
 </Project>

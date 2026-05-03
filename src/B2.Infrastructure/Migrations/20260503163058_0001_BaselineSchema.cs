@@ -82,6 +82,7 @@ public partial class BaselineSchema0001 : Migration
                 RequestHash = table.Column<string>(type: "TEXT", maxLength: 64, nullable: false),
                 ResponseStatus = table.Column<int>(type: "INTEGER", nullable: false),
                 ResponseBody = table.Column<string>(type: "TEXT", nullable: false),
+                ResponseBodyHash = table.Column<string>(type: "TEXT", maxLength: 64, nullable: false, defaultValue: ""),
                 ResponseContentType = table.Column<string>(type: "TEXT", maxLength: 128, nullable: false),
                 CreatedAt = table.Column<DateTimeOffset>(type: "TEXT", nullable: false)
             },

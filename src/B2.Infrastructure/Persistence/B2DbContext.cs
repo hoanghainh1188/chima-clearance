@@ -131,6 +131,7 @@ public sealed class B2DbContext : DbContext, IUnitOfWork
             e.Property(x => x.Key).HasMaxLength(128);
             e.Property(x => x.RequestHash).HasMaxLength(64).IsRequired();
             e.Property(x => x.ResponseBody).IsRequired();
+            e.Property(x => x.ResponseBodyHash).HasMaxLength(64).IsRequired();
             e.Property(x => x.ResponseContentType).HasMaxLength(128).IsRequired();
             e.HasIndex(x => x.CreatedAt);
         });

@@ -19,16 +19,14 @@
       <Label Text="{x:Static s:AppResources.Login_UsernameLabel}" />
       <Entry x:Name="UsernameEntry"
              Text="{Binding Username}"
-             TabIndex="1"
              SemanticProperties.Hint="{x:Static s:AppResources.Login_UsernameLabel}" />
       <Label Text="{x:Static s:AppResources.Login_PasswordLabel}" />
       <Entry x:Name="PasswordEntry"
              Text="{Binding Password}"
              IsPassword="True"
-             TabIndex="2"
              SemanticProperties.Hint="{x:Static s:AppResources.Login_PasswordLabel}" />
-      <Button Text="{x:Static s:AppResources.Login_ShowPasswordToggle}"
-              TabIndex="3"
+      <Button x:Name="ShowPasswordToggleButton"
+              Text="{x:Static s:AppResources.Login_ShowPasswordToggle}"
               Clicked="OnTogglePasswordClicked"
               SemanticProperties.Hint="{x:Static s:AppResources.Login_ShowPasswordToggle}" />
       <Label AutomationProperties.IsLiveSetting="Polite"
@@ -36,9 +34,9 @@
              TextColor="{StaticResource ColorError}"
              SemanticProperties.Description="{Binding ErrorMessage}"
              IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
-      <Button Text="{x:Static s:AppResources.Login_Submit}"
+      <Button x:Name="LoginSubmitButton"
+              Text="{x:Static s:AppResources.Login_Submit}"
               Command="{Binding LoginCommand}"
-              TabIndex="4"
               BackgroundColor="{StaticResource ColorPrimary}"
               TextColor="White"
               SemanticProperties.Hint="{x:Static s:AppResources.Login_Submit}" />

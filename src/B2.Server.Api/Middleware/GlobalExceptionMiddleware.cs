@@ -64,6 +64,10 @@ public sealed class GlobalExceptionMiddleware(RequestDelegate next, ILogger<Glob
 
     private static async Task WriteUnhandledAsync(HttpContext context, Exception ex)
     {
+        // Detail intentionally omits ex.Message — the full exception is logged server-side
+        // by InvokeAsync. Surfacing ex.Message risks leaking SQL fragments, file paths,
+        // or other internal state to clients.
+        _ = ex;
         context.Response.StatusCode = 500;
         context.Response.ContentType = "application/problem+json";
         var correlationId = context.Items[CorrelationIdMiddleware.ItemKey]?.ToString() ?? "";
@@ -72,7 +76,8 @@ public sealed class GlobalExceptionMiddleware(RequestDelegate next, ILogger<Glob
             type = "https://b2/errors/unhandled",
             title = "Server error",
             status = 500,
-            detail = ex.Message,
+            detail = "An unexpected error occurred. Reference the correlationId for support.",
+            code = "INTERNAL_ERROR",
             correlationId,
         }));
     }

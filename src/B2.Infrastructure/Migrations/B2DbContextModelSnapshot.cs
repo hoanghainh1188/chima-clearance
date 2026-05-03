@@ -366,6 +366,11 @@ namespace B2.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("TEXT");
 
+                    b.Property<string>("ResponseBodyHash")
+                        .IsRequired()
+                        .HasMaxLength(64)
+                        .HasColumnType("TEXT");
+
                     b.Property<string>("ResponseContentType")
                         .IsRequired()
                         .HasMaxLength(128)

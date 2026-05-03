@@ -1,3 +1,4 @@
+using B2.Application.Abstractions;
 using B2.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -19,7 +20,8 @@ public sealed class IdempotencyKeyEvictionJob : IJob
     {
         using var scope = _scopeFactory.CreateScope();
         var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
-        var cutoff = DateTimeOffset.UtcNow.AddHours(-24);
+        var clock = scope.ServiceProvider.GetRequiredService<IClock>();
+        var cutoff = clock.UtcNow.AddHours(-24);
         await db.IdempotencyKeys.Where(k => k.CreatedAt < cutoff).ExecuteDeleteAsync(context.CancellationToken);
     }
 }

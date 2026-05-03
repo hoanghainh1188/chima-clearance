@@ -8,5 +8,9 @@ public partial class ChangePasswordPage : ContentPage
     {
         InitializeComponent();
         BindingContext = model;
+        CurrentPasswordEntry.TabIndex = 1;
+        NewPasswordEntry.TabIndex = 2;
+        ConfirmPasswordEntry.TabIndex = 3;
+        ChangePasswordSubmitButton.TabIndex = 4;
     }
 }

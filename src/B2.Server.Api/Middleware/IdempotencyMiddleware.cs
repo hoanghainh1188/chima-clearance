@@ -78,6 +78,7 @@ public sealed class IdempotencyMiddleware(RequestDelegate next)
                     RequestHash = requestHash,
                     ResponseStatus = context.Response.StatusCode,
                     ResponseBody = responseText,
+                    ResponseBodyHash = TokenHash.Sha256Hex(responseText),
                     ResponseContentType = context.Response.ContentType ?? "application/json; charset=utf-8",
                     CreatedAt = DateTimeOffset.UtcNow,
                 });
