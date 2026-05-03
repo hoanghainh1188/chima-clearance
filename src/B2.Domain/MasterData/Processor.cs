@@ -1,4 +1,4 @@
-﻿namespace B2.Domain.MasterData;
+namespace B2.Domain.MasterData;
 
 public sealed class Processor
 {

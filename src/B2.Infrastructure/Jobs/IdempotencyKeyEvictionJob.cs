@@ -1,4 +1,4 @@
-﻿using B2.Infrastructure.Persistence;
+using B2.Infrastructure.Persistence;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Quartz;

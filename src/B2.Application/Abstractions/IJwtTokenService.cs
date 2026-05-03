@@ -1,4 +1,4 @@
-﻿using B2.Domain.Users;
+using B2.Domain.Users;
 
 namespace B2.Application.Abstractions;
 

@@ -1,4 +1,4 @@
-﻿namespace B2.Desktop;
+namespace B2.Desktop;
 
 public partial class App : Application
 {

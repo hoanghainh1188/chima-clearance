@@ -1,4 +1,4 @@
-﻿using Serilog.Core;
+using Serilog.Core;
 using Serilog.Events;
 
 namespace B2.Server.Service.Serilog;

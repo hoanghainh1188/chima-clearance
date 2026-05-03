@@ -1,4 +1,4 @@
-﻿using B2.Server.Api;
+using B2.Server.Api;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.Configuration;

@@ -1,4 +1,4 @@
-﻿namespace B2.Shared.Contracts.Declarations;
+namespace B2.Shared.Contracts.Declarations;
 
 public sealed record DeclarationCreateRequest(
     string DeclarationNumber,

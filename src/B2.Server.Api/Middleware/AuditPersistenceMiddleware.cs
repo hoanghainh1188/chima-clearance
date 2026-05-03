@@ -1,4 +1,4 @@
-﻿using B2.Application.Abstractions;
+using B2.Application.Abstractions;
 using B2.Domain.Audit;
 using B2.Infrastructure.Persistence;
 using B2.Server.Api.Audit;

@@ -1,4 +1,4 @@
-﻿// Auto-generated style (matches AppResources.resx / AppResources.vi.resx — wireframe § 6.1, § 6.8).
+// Auto-generated style (matches AppResources.resx / AppResources.vi.resx — wireframe § 6.1, § 6.8).
 using System.Diagnostics.CodeAnalysis;
 
 namespace B2.Desktop.Resources.Strings;

@@ -1,4 +1,4 @@
-﻿using System.Text.RegularExpressions;
+using System.Text.RegularExpressions;
 using B2.Shared.Contracts.Declarations;
 using FluentValidation;
 

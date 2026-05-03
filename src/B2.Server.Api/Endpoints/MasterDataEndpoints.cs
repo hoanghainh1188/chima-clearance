@@ -1,4 +1,4 @@
-﻿using B2.Application.MasterData;
+using B2.Application.MasterData;
 using B2.Server.Api.Auth;
 using B2.Shared.Contracts.MasterData;
 using FluentValidation;

@@ -1,4 +1,4 @@
-﻿using B2.Domain.Audit;
+using B2.Domain.Audit;
 using B2.Domain.DailyHeaders;
 using B2.Domain.Declarations;
 using B2.Domain.MasterData;

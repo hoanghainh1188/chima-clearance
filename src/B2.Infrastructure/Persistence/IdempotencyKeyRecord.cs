@@ -1,4 +1,4 @@
-﻿namespace B2.Infrastructure.Persistence;
+namespace B2.Infrastructure.Persistence;
 
 public sealed class IdempotencyKeyRecord
 {

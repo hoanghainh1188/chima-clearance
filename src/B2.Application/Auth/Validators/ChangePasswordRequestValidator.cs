@@ -1,4 +1,4 @@
-﻿using B2.Application.Common;
+using B2.Application.Common;
 using B2.Shared.Contracts.Auth;
 using FluentValidation;
 

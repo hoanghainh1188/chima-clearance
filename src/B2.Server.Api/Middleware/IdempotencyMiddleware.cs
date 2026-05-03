@@ -1,4 +1,4 @@
-﻿using System.Text;
+using System.Text;
 using B2.Infrastructure.Persistence;
 using B2.Infrastructure.Security;
 using Microsoft.EntityFrameworkCore;

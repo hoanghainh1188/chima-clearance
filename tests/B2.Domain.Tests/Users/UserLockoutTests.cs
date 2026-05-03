@@ -1,4 +1,4 @@
-﻿using B2.Domain;
+using B2.Domain;
 using B2.Domain.Users;
 using FluentAssertions;
 

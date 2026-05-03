@@ -1,4 +1,4 @@
-﻿namespace B2.Domain.Users;
+namespace B2.Domain.Users;
 
 public enum Role
 {

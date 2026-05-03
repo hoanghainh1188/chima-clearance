@@ -1,4 +1,4 @@
-﻿namespace B2.Server.Api.Tests.Support;
+namespace B2.Server.Api.Tests.Support;
 
 public static class SeedIds
 {

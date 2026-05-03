@@ -1,4 +1,4 @@
-﻿namespace B2.Application.Common;
+namespace B2.Application.Common;
 
 public static class PasswordRules
 {

@@ -1,4 +1,4 @@
-﻿using B2.Application.Abstractions;
+using B2.Application.Abstractions;
 using B2.Application.Common;
 using B2.Domain;
 using B2.Domain.Users;

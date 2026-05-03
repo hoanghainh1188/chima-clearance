@@ -1,4 +1,4 @@
-﻿using B2.Domain.Audit;
+using B2.Domain.Audit;
 
 namespace B2.Application.Abstractions;
 

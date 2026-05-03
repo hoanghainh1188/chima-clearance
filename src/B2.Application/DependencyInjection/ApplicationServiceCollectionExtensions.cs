@@ -1,4 +1,4 @@
-﻿using B2.Application.Auth;
+using B2.Application.Auth;
 using B2.Application.Declarations;
 using B2.Application.MasterData;
 using B2.Application.Users;

@@ -1,4 +1,4 @@
-﻿namespace B2.Domain;
+namespace B2.Domain;
 
 /// <summary>
 /// Domain-level error mapped to HTTP via ProblemDetails (stable <see cref="Code"/>).

@@ -1,4 +1,4 @@
-﻿namespace B2.Domain.DailyHeaders;
+namespace B2.Domain.DailyHeaders;
 
 public sealed class DailyHeader
 {

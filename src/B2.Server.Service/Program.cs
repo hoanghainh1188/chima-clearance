@@ -1,4 +1,4 @@
-﻿using B2.Server.Api.Hosting;
+using B2.Server.Api.Hosting;
 using B2.Server.Service.Serilog;
 using Serilog;
 

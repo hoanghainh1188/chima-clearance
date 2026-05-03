@@ -1,4 +1,4 @@
-﻿using B2.Shared.Contracts.Users;
+using B2.Shared.Contracts.Users;
 using B2.Desktop.Resources.Strings;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;

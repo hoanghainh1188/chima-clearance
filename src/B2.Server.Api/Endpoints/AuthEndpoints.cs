@@ -1,4 +1,4 @@
-﻿using B2.Application.Abstractions;
+using B2.Application.Abstractions;
 using B2.Application.Auth;
 using B2.Server.Api.Auth;
 using B2.Shared.Contracts.Auth;

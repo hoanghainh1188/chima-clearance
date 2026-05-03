@@ -1,4 +1,4 @@
-﻿using B2.Application.Abstractions;
+using B2.Application.Abstractions;
 using B2.Infrastructure.Auth;
 using B2.Infrastructure.Clock;
 using B2.Infrastructure.Jobs;

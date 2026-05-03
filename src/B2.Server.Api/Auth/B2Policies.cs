@@ -1,4 +1,4 @@
-﻿namespace B2.Server.Api.Auth;
+namespace B2.Server.Api.Auth;
 
 public static class B2Policies
 {

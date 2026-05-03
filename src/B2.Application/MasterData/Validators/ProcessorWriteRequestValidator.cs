@@ -1,4 +1,4 @@
-﻿using B2.Shared.Contracts.MasterData;
+using B2.Shared.Contracts.MasterData;
 using FluentValidation;
 
 namespace B2.Application.MasterData.Validators;

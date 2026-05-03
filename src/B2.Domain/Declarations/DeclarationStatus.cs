@@ -1,4 +1,4 @@
-﻿namespace B2.Domain.Declarations;
+namespace B2.Domain.Declarations;
 
 public enum DeclarationStatus
 {

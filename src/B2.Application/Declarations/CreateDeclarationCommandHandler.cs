@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using B2.Application.Abstractions;
 using B2.Application.Common;
 using B2.Domain;

@@ -1,4 +1,4 @@
-﻿namespace B2.Shared.Contracts.Users;
+namespace B2.Shared.Contracts.Users;
 
 public sealed record UserCreateRequest(
     string Username,

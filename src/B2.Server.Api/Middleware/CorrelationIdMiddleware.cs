@@ -1,4 +1,4 @@
-﻿using Serilog.Context;
+using Serilog.Context;
 
 namespace B2.Server.Api.Middleware;
 

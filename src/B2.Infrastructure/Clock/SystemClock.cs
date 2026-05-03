@@ -1,4 +1,4 @@
-﻿using B2.Application.Abstractions;
+using B2.Application.Abstractions;
 
 namespace B2.Infrastructure.Clock;
 

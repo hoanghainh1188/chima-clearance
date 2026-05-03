@@ -1,4 +1,4 @@
-﻿using B2.Application.Abstractions;
+using B2.Application.Abstractions;
 using B2.Domain.Declarations;
 using Microsoft.EntityFrameworkCore;
 

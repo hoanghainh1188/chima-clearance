@@ -1,4 +1,4 @@
-﻿namespace B2.Application.Abstractions;
+namespace B2.Application.Abstractions;
 
 public interface IRefreshTokenRepository
 {

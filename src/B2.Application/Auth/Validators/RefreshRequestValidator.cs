@@ -1,4 +1,4 @@
-﻿using B2.Shared.Contracts.Auth;
+using B2.Shared.Contracts.Auth;
 using FluentValidation;
 
 namespace B2.Application.Auth.Validators;

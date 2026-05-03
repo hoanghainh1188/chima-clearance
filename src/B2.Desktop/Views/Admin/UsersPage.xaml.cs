@@ -1,4 +1,4 @@
-﻿using B2.Desktop.ViewModels.Admin;
+using B2.Desktop.ViewModels.Admin;
 
 namespace B2.Desktop.Views.Admin;
 

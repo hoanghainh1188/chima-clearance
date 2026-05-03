@@ -1,4 +1,4 @@
-﻿namespace B2.Domain.Audit;
+namespace B2.Domain.Audit;
 
 public sealed class AuditLog
 {

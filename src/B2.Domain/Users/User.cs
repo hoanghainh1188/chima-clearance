@@ -1,4 +1,4 @@
-﻿namespace B2.Domain.Users;
+namespace B2.Domain.Users;
 
 /// <summary>
 /// User aggregate (FR-014: no hard delete — use <see cref="IsActive"/>).

@@ -1,4 +1,4 @@
-﻿using B2.Domain.MasterData;
+using B2.Domain.MasterData;
 
 namespace B2.Application.Abstractions;
 
