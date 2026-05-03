@@ -29,8 +29,10 @@
               Text="{x:Static s:AppResources.Login_ShowPasswordToggle}"
               Clicked="OnTogglePasswordClicked"
               SemanticProperties.Hint="{x:Static s:AppResources.Login_ShowPasswordToggle}" />
-      <Label AutomationProperties.IsLiveSetting="Polite"
-             Text="{Binding ErrorMessage}"
+      <!-- Wireframe § 6.1 calls for an a11y "polite" live region on error.
+           .NET MAUI 8 has no IsLiveSetting equivalent on Label; the bound
+           SemanticProperties.Description gives screen readers the message. -->
+      <Label Text="{Binding ErrorMessage}"
              TextColor="{StaticResource ColorError}"
              SemanticProperties.Description="{Binding ErrorMessage}"
              IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
