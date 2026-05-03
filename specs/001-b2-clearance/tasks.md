@@ -1,4 +1,4 @@
-# Tasks — Chima Customs B2
+﻿# Tasks — Chima Customs B2
 
 **Feature**: `001-b2-clearance` · **Date**: 2026-05-03 · **Plan**:
 [`plan.md`](./plan.md) · **Constitution**:
@@ -187,98 +187,116 @@ Processor + one Yard; an Operator-level call to `POST /api/users` returns 403.
 
 ### Cross-cutting infrastructure for S1+
 
-- [ ] **T-S1-01** [P] Implement `IClock` (UTC) in `B2.Application/Abstractions/`
+- [x] **T-S1-01** [P] Implement `IClock` (UTC) in `B2.Application/Abstractions/`
   and `SystemClock` in `B2.Infrastructure/Clock/`. Inject everywhere a server
   timestamp is needed (INV-3, FR-004). Unit-test that two consecutive calls are
   monotonic-non-decreasing. **Dep**: T-S0-04. **LOC**: ~40.
-- [ ] **T-S1-02** [P] Implement Serilog setup in
+- [x] **T-S1-02** [P] Implement Serilog setup in
   `src/B2.Server.Service/Serilog/SerilogStartup.cs` with rolling file sink at
   `C:\ProgramData\B2\logs\b2-yyyymmdd.log` and a bounded in-memory sink (1000
   entries) registered as singleton in DI for the `F-18` log viewer. Files:
   `SerilogStartup.cs`, `InMemoryLogSink.cs`. **Dep**: T-S0-12. **LOC**: ~120.
-- [ ] **T-S1-03** [P] Implement `ProblemDetails` exception-mapping middleware
+- [x] **T-S1-03** [P] Implement `ProblemDetails` exception-mapping middleware
   in `src/B2.Server.Api/Middleware/ProblemDetailsMiddleware.cs` per
   [`research.md § 2.6`](./research.md). Map `DomainException → 400/404/409` with
   stable English `code` field; unhandled → 500 + correlationId. **Dep**: T-S0-04.
   **LOC**: ~150.
-- [ ] **T-S1-04** Implement W3C Trace-Context correlation-ID propagation in
+- [x] **T-S1-04** Implement W3C Trace-Context correlation-ID propagation in
   `src/B2.Server.Api/Middleware/CorrelationIdMiddleware.cs`. Every request gets
   / inherits a correlation id; Serilog enriches every log line with it.
   **Dep**: T-S1-02, T-S1-03. **LOC**: ~80.
-- [ ] **T-S1-05** Implement `B2DbContext` in
+- [x] **T-S1-05** Implement `B2DbContext` in
   `src/B2.Infrastructure/Persistence/B2DbContext.cs` + `SqliteStartup`
   applying PRAGMAs from [`data-model.md § 9`](./data-model.md). Files:
   `B2DbContext.cs`, `SqliteStartup.cs`,
   `Persistence/Configurations/` (one per entity placeholder). **Dep**: T-S0-04.
   **LOC**: ~200.
-- [ ] **T-S1-06** Implement initial EF Core migration `0001_BaselineSchema`
+- [x] **T-S1-06** Implement initial EF Core migration `0001_BaselineSchema`
   generating tables for `User`, `Processor`, `Yard`, `Declaration`, `Vehicle`
   (incl. `PlateLast4` STORED column), `DailyHeader`, `AuditLog`, `IdempotencyKey`,
   with all indexes from [`data-model.md`](./data-model.md). Apply at startup.
   Files: `src/B2.Infrastructure/Migrations/0001_BaselineSchema.cs`. **Dep**:
   T-S1-05. **LOC**: ~250.
-- [ ] **T-S1-07** Implement `AuditMiddleware` in
+- [x] **T-S1-07** Implement `AuditMiddleware` in
   `src/B2.Server.Api/Middleware/AuditMiddleware.cs` writing one immutable
   `AuditLog` row per successful POST/PUT/DELETE/PATCH (excludes
   `/api/admin/health`). Includes actor / action / entity / before / after JSON
   / reason / correlationId. **Dep**: T-S1-04, T-S1-06. **LOC**: ~180.
-- [ ] **T-S1-08** Implement `IdempotencyMiddleware` in
+- [x] **T-S1-08** Implement `IdempotencyMiddleware` in
   `src/B2.Server.Api/Middleware/IdempotencyMiddleware.cs` per
   [`research.md § 2.7`](./research.md). Storage in
   `IdempotencyKey` table; replays return cached body / status. **Dep**: T-S1-06.
   **LOC**: ~180.
-- [ ] **T-S1-09** [P] Implement `IdempotencyKeyEvictionJob` (Quartz, every 30 min)
+- [x] **T-S1-09** [P] Implement `IdempotencyKeyEvictionJob` (Quartz, every 30 min)
   in `src/B2.Infrastructure/Jobs/IdempotencyKeyEvictionJob.cs`. **Dep**: T-S1-08.
   **LOC**: ~60.
 
 ### F-01 Login
 
-- [ ] **T-S1-10** [P] [F-01] Write Gherkin tests for F-01 (login, lockout,
+- [x] **T-S1-10** [P] [F-01] Write Gherkin tests for F-01 (login, lockout,
   auto-logout) in `tests/B2.Server.Api.Tests/Auth/LoginEndpointTests.cs` —
   scenarios verbatim from [`spec.md` F-01](./spec.md) §
   Acceptance Scenarios. Tag `[Trait("Feature","F-01")]`. **Dep**: T-S1-04..08.
   **LOC**: ~250.
-- [ ] **T-S1-11** [F-01] Implement `User` aggregate + `Username` /
+- [x] **T-S1-11** [F-01] Implement `User` aggregate + `Username` /
   `RoleEnum` value objects in `src/B2.Domain/Users/`. Enforce INV-8 (write-once
   fields). Unit tests in `tests/B2.Domain.Tests/Users/UserTests.cs` covering
   `MustChangePassword`, lockout state machine. **Dep**: T-S0-04. **LOC**: ~250.
-- [ ] **T-S1-12** [F-01] Implement `BCryptPasswordHasher` and
+- [x] **T-S1-12** [F-01] Implement `BCryptPasswordHasher` and
   `JwtTokenService` (RS256) in
   `src/B2.Infrastructure/Auth/`. Key sealed via DPAPI in
   `C:\ProgramData\B2\keys\`. Unit tests cover hash/verify and token
   issue/validate. **Dep**: T-S1-11. **LOC**: ~280.
-- [ ] **T-S1-13** [F-01] Implement `LoginCommandHandler` +
+- [x] **T-S1-13** [F-01] Implement `LoginCommandHandler` +
   `RefreshCommandHandler` + `ChangePasswordCommandHandler` in
   `src/B2.Application/Auth/`. FluentValidation validators in
   `src/B2.Application/Auth/Validators/`. **Dep**: T-S1-11, T-S1-12. **LOC**: ~280.
-- [ ] **T-S1-14** [F-01] Wire `/api/auth/login`, `/api/auth/refresh`,
+- [x] **T-S1-14** [F-01] Wire `/api/auth/login`, `/api/auth/refresh`,
   `/api/auth/logout`, `/api/auth/change-password` endpoints in
   `src/B2.Server.Api/Endpoints/AuthEndpoints.cs`. Make T-S1-10 pass green.
   **Dep**: T-S1-13. **LOC**: ~150.
-- [ ] **T-S1-15** [F-01] Implement `LoginPage.xaml` + `LoginViewModel.cs` per
+- [x] **T-S1-15** [F-01] Implement `LoginPage.xaml` + `LoginViewModel.cs` per
   [wireframe § 6.1](../05-ui-wireframes.md). TabIndex per § 6.1 (1=username,
   2=password, 3=show-toggle, 4=login button); Enter submits; lockout
   countdown; aria-live error region. Files: `src/B2.Desktop/Views/LoginPage.xaml`,
   `src/B2.Desktop/ViewModels/LoginViewModel.cs`. **Dep**: T-S1-14. **LOC**: ~250.
-- [ ] **T-S1-16** [F-01] Wire Vietnamese strings for Login page into
+- [x] **T-S1-16** [F-01] Wire Vietnamese strings for Login page into
   `src/B2.Desktop/Resources/Strings/AppResources.vi.resx` (verbatim from
   wireframe § 6.1). Update `LoginPage.xaml` to use `{x:Static …}` references.
   **Dep**: T-S1-15. **LOC**: ~80. **DoD**: §DoD-6.
+- [x] **T-S1-22** [F-01] Implement `RequirePasswordChangeMiddleware` in
+  `src/B2.Server.Api/Middleware/` and wire it between `UseAuthentication` and
+  `UseAuthorization` in `B2.Server.Api/Hosting/B2ApiHost.cs`. Authenticated
+  requests carrying `must_change_password=true` are rejected with `403` /
+  `code: PASSWORD_CHANGE_REQUIRED`; whitelist `POST /api/auth/change-password`
+  and `POST /api/auth/logout`. Tests in
+  `tests/B2.Server.Api.Tests/Auth/ChangePasswordEndpointTests.cs` cover blocked
+  first-login, successful rotation, wrong current password, and weak new
+  password. Update `LoginAsAdminAsync` test helper to bootstrap the seeded admin
+  (login → change → re-login) so existing tests keep green. **Dep**: T-S1-14.
+  **LOC**: ~180. **DoD**: §DoD-4, §DoD-7, §DoD-8.
+- [x] **T-S1-23** [F-01] Implement `Views/ChangePasswordPage.xaml` +
+  `ViewModels/ChangePasswordViewModel.cs` with vi.resx strings; register
+  `auth/change-password` route in `AppShell` and DI in `MauiProgram`. Login
+  flow now redirects to the page when `LoginResponse.MustChangePassword` is
+  true; on success the page clears the access token and routes back to
+  `//login` so the user re-authenticates with the new password. **Dep**:
+  T-S1-15, T-S1-22. **LOC**: ~220. **DoD**: §DoD-6.
 
 ### F-02 User & Role Management
 
-- [ ] **T-S1-17** [P] [F-02] Write Gherkin tests for F-02 in
+- [x] **T-S1-17** [P] [F-02] Write Gherkin tests for F-02 in
   `tests/B2.Server.Api.Tests/Users/UsersEndpointTests.cs` — verbatim from
   [`spec.md` F-02](./spec.md). Tag `[Trait("Feature","F-02")]`. Include
   Operator-403 case (FR-027). **Dep**: T-S1-09. **LOC**: ~200.
-- [ ] **T-S1-18** [F-02] Implement `CreateUserCommand` /
+- [x] **T-S1-18** [F-02] Implement `CreateUserCommand` /
   `UpdateUserCommand` / `ResetPasswordCommand` handlers + validators in
   `src/B2.Application/Users/`. Enforce "deactivate, not delete" (FR-014).
   **Dep**: T-S1-11, T-S1-13. **LOC**: ~250.
-- [ ] **T-S1-19** [F-02] Wire `/api/users` endpoints in
+- [x] **T-S1-19** [F-02] Wire `/api/users` endpoints in
   `src/B2.Server.Api/Endpoints/UsersEndpoints.cs` with `AdminOnly` policy
   (FR-027 row). Make T-S1-17 green. **Dep**: T-S1-18. **LOC**: ~150.
-- [ ] **T-S1-20** [F-02] Implement `Admin/UsersPage.xaml` +
+- [x] **T-S1-20** [F-02] Implement `Admin/UsersPage.xaml` +
   `UsersViewModel.cs` + Add/Edit modal per [wireframe § 6.8](../05-ui-wireframes.md).
   Bind to API via Refit `IB2Api`. Vietnamese copy verbatim into
   `AppResources.vi.resx`. Files:
@@ -288,7 +306,7 @@ Processor + one Yard; an Operator-level call to `POST /api/users` returns 403.
 
 ### F-03 Processors + F-04 Yards (master data — combined wireframe § 6.9)
 
-- [ ] **T-S1-21** [P] [F-03] [F-04] Write Gherkin tests in
+- [x] **T-S1-21** [P] [F-03] [F-04] Write Gherkin tests in
   `tests/B2.Server.Api.Tests/MasterData/{ProcessorsTests,YardsTests}.cs`
   verbatim from `spec.md` F-03 + F-04 (incl. yard-code uniqueness, processor
   unknown-on-entry rejection). Tag `[Trait("Feature","F-03")]` and

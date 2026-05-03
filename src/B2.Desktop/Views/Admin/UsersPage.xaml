@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage x:Class="B2.Desktop.Views.Admin.UsersPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:B2.Desktop.ViewModels.Admin"
+             xmlns:s="clr-namespace:B2.Desktop.Resources.Strings"
+             xmlns:contracts="clr-namespace:B2.Shared.Contracts.Users;assembly=B2.Shared.Contracts"
+             x:DataType="vm:UsersViewModel"
+             Title="{x:Static s:AppResources.Users_PageTitle}"
+             BackgroundColor="{StaticResource ColorSurface}">
+  <Grid Padding="{StaticResource SpacingM}" RowDefinitions="Auto,*">
+    <Label Grid.Row="0"
+           Text="{x:Static s:AppResources.Users_PageTitle}"
+           FontSize="{StaticResource FontSizeXL}"
+           TextColor="{StaticResource ColorPrimary}" />
+    <Grid Grid.Row="1">
+      <ActivityIndicator IsRunning="{Binding IsLoading}"
+                         IsVisible="{Binding IsLoading}"
+                         VerticalOptions="Center" />
+      <VerticalStackLayout Spacing="{StaticResource SpacingS}"
+                           IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
+        <Label Text="{Binding ErrorMessage}"
+               TextColor="{StaticResource ColorError}"
+               IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+        <CollectionView ItemsSource="{Binding Users}">
+          <CollectionView.ItemTemplate>
+            <DataTemplate x:DataType="contracts:UserDto">
+              <VerticalStackLayout Padding="8">
+                <Label Text="{Binding Username}" FontAttributes="Bold" />
+                <Label Text="{Binding FullName}" />
+                <Label Text="{Binding Role}" FontSize="12" TextColor="{StaticResource ColorOnSurface}" />
+              </VerticalStackLayout>
+            </DataTemplate>
+          </CollectionView.ItemTemplate>
+        </CollectionView>
+      </VerticalStackLayout>
+    </Grid>
+  </Grid>
+</ContentPage>

@@ -1,7 +1,20 @@
-using B2.Server.Service;
+using B2.Server.Api.Hosting;
+using B2.Server.Service.Serilog;
+using Serilog;
 
-var builder = Host.CreateApplicationBuilder(args);
-builder.Services.AddHostedService<Worker>();
+var memorySink = new InMemoryLogStore();
 
-var host = builder.Build();
-host.Run();
+var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddSingleton(memorySink);
+builder.Host.UseSerilog((ctx, _, cfg) => SerilogStartup.Configure(cfg, ctx.Configuration, memorySink));
+
+if (OperatingSystem.IsWindows())
+{
+    builder.Host.UseWindowsService();
+}
+
+B2ApiHost.ConfigureServices(builder);
+var app = builder.Build();
+await B2ApiHost.InitializeDatabaseAsync(app);
+B2ApiHost.MapPipeline(app);
+app.Run();

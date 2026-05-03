@@ -1,15 +1,53 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using B2.Desktop.Services.Api;
+using B2.Desktop.ViewModels;
+using B2.Desktop.ViewModels.Admin;
+using B2.Desktop.Views;
+using B2.Desktop.Views.Admin;
+using CommunityToolkit.Maui;
+using Microsoft.Extensions.Logging;
+using Refit;
+
 namespace B2.Desktop;
 
-// Sprint S0: minimal MauiApp builder so the project compiles and the MAUI
-// source generators can emit the Windows entry point. UI scaffolding (Shell,
-// pages, view-models, resource dictionaries) lands in S1+ per the
-// implementation plan.
 public static class MauiProgram
 {
     public static MauiApp CreateMauiApp()
     {
         var builder = MauiApp.CreateBuilder();
-        builder.UseMauiApp<App>();
+        builder
+            .UseMauiApp<App>()
+            .UseMauiCommunityToolkit();
+
+        const string apiBase = "http://127.0.0.1:5000/";
+        var refitSettings = new RefitSettings
+        {
+            ContentSerializer = new SystemTextJsonContentSerializer(
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true,
+                    Converters = { new JsonStringEnumConverter() },
+                }),
+        };
+
+        builder.Services.AddSingleton<AuthTokenHandler>();
+        builder.Services.AddRefitClient<IB2Api>(refitSettings)
+            .ConfigureHttpClient(c => c.BaseAddress = new Uri(apiBase))
+            .AddHttpMessageHandler<AuthTokenHandler>();
+
+        builder.Services.AddTransient<LoginViewModel>();
+        builder.Services.AddTransient<LoginPage>();
+        builder.Services.AddTransient<ChangePasswordViewModel>();
+        builder.Services.AddTransient<ChangePasswordPage>();
+        builder.Services.AddTransient<UsersViewModel>();
+        builder.Services.AddTransient<UsersPage>();
+        builder.Services.AddSingleton<AppShell>();
+
+#if DEBUG
+        builder.Logging.AddDebug();
+#endif
+
         return builder.Build();
     }
 }
