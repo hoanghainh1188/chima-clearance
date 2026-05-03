@@ -1,0 +1,1296 @@
+openapi: 3.1.0
+info:
+  title: Chima Customs B2 — Server API
+  version: 1.0.0-phase1
+  description: |
+    LAN-only HTTP/JSON API for the Customs Gate B2 vehicle-clearance system.
+    Hosted by `B2.Server.Service` (Windows Service) on the entry-gate PC at
+    `https://entry-pc:5001`. Self-signed cert installed to `LocalMachine\Root`.
+
+    **Authentication**: JWT (RS256) bearer token, except where `security: []`.
+    **Idempotency**: `Idempotency-Key` header on `POST /api/declarations` and
+    `POST /api/vehicles/{id}/exit`. Replays within 24 h return the cached response.
+    **Errors**: every error response is a `ProblemDetails` document (RFC 7807).
+    **Source authorities**: paths labelled `x-source: locked` are reproduced
+    verbatim from `specs/02-architecture.md § 6`. Paths labelled
+    `x-source: pending-adr-0006` are added by the spec's clarification rounds
+    (FR-022 / FR-025 / FR-026 / FR-027 / F-17 simple v1) and are formalised by
+    `docs/adr/ADR-0006-api-surface-extensions.md` (to be merged in Sprint S0).
+
+    Role authorization mirrors `spec.md` FR-027 exactly. Each operation lists
+    its allowed roles via `x-roles`.
+  contact:
+    name: Project team — see specs/04-implementation-plan.md § 12 (operator runbook)
+servers:
+  - url: https://entry-pc:5001
+    description: Entry-gate PC (LAN, self-signed cert)
+
+tags:
+  - name: Auth
+    description: F-01 — login / refresh / logout / change-password
+  - name: Users
+    description: F-02 — Admin user management
+  - name: Master data
+    description: F-03 / F-04 — Processors and Yards
+  - name: Declarations
+    description: F-05 / F-06 / F-09 / F-10 / FR-022 — declaration lifecycle
+  - name: Vehicles
+    description: F-07 / F-08 / F-17 — vehicle search, exit, suggestions
+  - name: Daily headers
+    description: F-11 / F-12 / FR-025 — per-day header rows
+  - name: Reports
+    description: F-14 — aggregated reports
+  - name: Export
+    description: F-13 — Sổ B2 Excel export
+  - name: Admin
+    description: F-15 / F-16 / F-18 / FR-026 — backup, audit, health, logs
+  - name: Realtime
+    description: F-08 / F-09 / F-10 — SignalR hub (WebSocket)
+
+# ───────────────────────────────────────────────────────────────────────────
+# Paths — declaration order roughly mirrors `02-architecture.md § 6`.
+# Every path declares: tags, summary, security, x-source, x-roles, x-feature.
+# ───────────────────────────────────────────────────────────────────────────
+
+paths:
+
+  # ── Auth ──
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Issue JWT (8 h) + refresh token (7 d)
+      x-source: locked
+      x-roles: [Admin, Operator, Supervisor, anonymous]
+      x-feature: F-01
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/LoginRequest' }
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '423': { $ref: '#/components/responses/Locked' }
+
+  /api/auth/refresh:
+    post:
+      tags: [Auth]
+      summary: Rotate JWT using a refresh token
+      x-source: locked
+      x-roles: [Admin, Operator, Supervisor]
+      x-feature: F-01
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RefreshRequest' }
+      responses:
+        '200':
+          description: New JWT issued
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/LoginResponse' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/auth/logout:
+    post:
+      tags: [Auth]
+      summary: Revoke the current refresh token
+      x-source: locked
+      x-roles: [Admin, Operator, Supervisor]
+      x-feature: F-01
+      responses:
+        '204': { description: Logged out }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  /api/auth/change-password:
+    post:
+      tags: [Auth]
+      summary: Authenticated user changes their own password (used at first-login)
+      x-source: pending-adr-0006
+      x-roles: [Admin, Operator, Supervisor]
+      x-feature: F-01
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ChangePasswordRequest' }
+      responses:
+        '204': { description: Password changed }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '401': { $ref: '#/components/responses/Unauthorized' }
+
+  # ── Users (Admin only) ──
+  /api/users:
+    get:
+      tags: [Users]
+      summary: List users
+      x-source: locked
+      x-roles: [Admin]
+      x-feature: F-02
+      responses:
+        '200':
+          description: Page of users
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserList' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+    post:
+      tags: [Users]
+      summary: Create a user (forces password change on first login)
+      x-source: locked
+      x-roles: [Admin]
+      x-feature: F-02
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserCreateRequest' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserDto' }
+        '400': { $ref: '#/components/responses/BadRequest' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/users/{id}:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+    put:
+      tags: [Users]
+      summary: Update a user (name / role / active)
+      x-source: locked
+      x-roles: [Admin]
+      x-feature: F-02
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UserUpdateRequest' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/UserDto' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/users/{id}/reset-password:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [Users]
+      summary: Admin resets a user's password (forces change on next login)
+      x-source: locked
+      x-roles: [Admin]
+      x-feature: F-02
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/PasswordResetRequest' }
+      responses:
+        '204': { description: Reset }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  # ── Master data — Processors ──
+  /api/master/processors:
+    get:
+      tags: [Master data]
+      summary: List processors (active first; includeInactive query opt-in)
+      x-source: locked
+      x-roles: [Admin, Operator, Supervisor]
+      x-feature: F-03
+      parameters:
+        - { in: query, name: includeInactive, schema: { type: boolean, default: false } }
+      responses:
+        '200':
+          description: Page of processors
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProcessorList' }
+    post:
+      tags: [Master data]
+      summary: Create a processor
+      x-source: locked
+      x-roles: [Admin]
+      x-feature: F-03
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProcessorWriteRequest' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProcessorDto' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: Duplicate FullName
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+
+  /api/master/processors/{id}:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+    put:
+      tags: [Master data]
+      summary: Update processor (rename / activate / deactivate)
+      x-source: locked
+      x-roles: [Admin]
+      x-feature: F-03
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/ProcessorWriteRequest' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ProcessorDto' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Master data]
+      summary: Deactivate a processor (history preserved; never hard-deleted)
+      x-source: locked
+      x-roles: [Admin]
+      x-feature: F-03
+      responses:
+        '204': { description: Deactivated }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  # ── Master data — Yards ──
+  /api/master/yards:
+    get:
+      tags: [Master data]
+      summary: List yards
+      x-source: locked
+      x-roles: [Admin, Operator, Supervisor]
+      x-feature: F-04
+      parameters:
+        - { in: query, name: includeInactive, schema: { type: boolean, default: false } }
+      responses:
+        '200':
+          description: Page of yards
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/YardList' }
+    post:
+      tags: [Master data]
+      summary: Create a yard (Code unique, F-04)
+      x-source: locked
+      x-roles: [Admin]
+      x-feature: F-04
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/YardWriteRequest' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/YardDto' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: Duplicate Code
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+
+  /api/master/yards/{id}:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+    put:
+      tags: [Master data]
+      summary: Update yard
+      x-source: locked
+      x-roles: [Admin]
+      x-feature: F-04
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/YardWriteRequest' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/YardDto' }
+        '404': { $ref: '#/components/responses/NotFound' }
+    delete:
+      tags: [Master data]
+      summary: Deactivate a yard
+      x-source: locked
+      x-roles: [Admin]
+      x-feature: F-04
+      responses:
+        '204': { description: Deactivated }
+
+  # ── Declarations ──
+  /api/declarations:
+    get:
+      tags: [Declarations]
+      summary: Paginated ledger with filters (date / status / plate / processor / yard / officer)
+      x-source: locked
+      x-roles: [Admin, Operator, Supervisor]
+      x-feature: F-10
+      parameters:
+        - { in: query, name: from, schema: { type: string, format: date } }
+        - { in: query, name: to, schema: { type: string, format: date } }
+        - { in: query, name: status, schema: { type: string, enum: [Open, AllExited, KVGSConfirmed, Cancelled, All] } }
+        - { in: query, name: plate, schema: { type: string } }
+        - { in: query, name: processorId, schema: { type: string, format: uuid } }
+        - { in: query, name: yardId, schema: { type: string, format: uuid } }
+        - { in: query, name: enteredByUserId, schema: { type: string, format: uuid } }
+        - { in: query, name: confirmedByUserId, schema: { type: string, format: uuid } }
+        - { in: query, name: includeCancelled, schema: { type: boolean, default: false }, description: 'FR-023: Cancelled rows excluded by default' }
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - { in: query, name: pageSize, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+        - { in: query, name: since, schema: { type: string, format: date-time }, description: 'Used by 🟡 polling fallback (FR-028) for delta fetch' }
+      responses:
+        '200':
+          description: Page of declarations
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DeclarationList' }
+    post:
+      tags: [Declarations]
+      summary: Create declaration with first vehicle (idempotent on Idempotency-Key)
+      x-source: locked
+      x-roles: [Admin, Operator]
+      x-feature: F-05
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/DeclarationCreateRequest' }
+      responses:
+        '201':
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DeclarationDto' }
+        '400':
+          description: 'Validation error: DECLARATION_NUMBER_INVALID, MASTER_PROCESSOR_NOT_FOUND, MASTER_YARD_NOT_FOUND'
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: 'DECLARATION_NUMBER_DUPLICATE'
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+
+  /api/declarations/{id}:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+    get:
+      tags: [Declarations]
+      summary: Declaration detail + child vehicles
+      x-source: locked
+      x-roles: [Admin, Operator, Supervisor]
+      x-feature: F-10
+      responses:
+        '200':
+          description: Detail
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DeclarationDetailDto' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/declarations/{id}/vehicles:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [Declarations]
+      summary: Add a child vehicle to an existing declaration
+      x-source: locked
+      x-roles: [Admin, Operator]
+      x-feature: F-06
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/VehicleAddRequest' }
+      responses:
+        '201':
+          description: Added
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VehicleDto' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: 'DECLARATION_LOCKED (KVGSConfirmed) or DECLARATION_NOT_OPEN (Cancelled)'
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+
+  /api/declarations/{id}/kvgs-confirm:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [Declarations]
+      summary: Confirm KVGS for an AllExited declaration
+      x-source: locked
+      x-roles: [Admin, Supervisor]
+      x-feature: F-09
+      responses:
+        '200':
+          description: Confirmed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DeclarationDto' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: 'DECLARATION_NOT_READY_FOR_KVGS'
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+
+  /api/declarations/{id}/cancel:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [Declarations]
+      summary: Admin cancels a declaration (Status must be Open)
+      x-source: pending-adr-0006
+      x-roles: [Admin]
+      x-feature: FR-022
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CancelRequest' }
+      responses:
+        '200':
+          description: Cancelled
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DeclarationDto' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: 'DECLARATION_NOT_OPEN'
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+
+  # ── Vehicles ──
+  /api/vehicles/search:
+    get:
+      tags: [Vehicles]
+      summary: Search by plate suffix (3 or 4 trailing digits)
+      x-source: locked
+      x-roles: [Admin, Operator, Supervisor]
+      x-feature: F-07
+      parameters:
+        - { in: query, name: suffix, required: true, schema: { type: string, pattern: '^[0-9]{3,4}$' } }
+        - { in: query, name: unexited, schema: { type: boolean, default: true } }
+        - { in: query, name: limit, schema: { type: integer, minimum: 1, maximum: 50, default: 10 } }
+      responses:
+        '200':
+          description: Match list (sorted by EntryTime asc)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VehicleSearchResult' }
+
+  /api/vehicles/{id}/exit:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [Vehicles]
+      summary: Mark vehicle exit (idempotent on Idempotency-Key)
+      x-source: locked
+      x-roles: [Admin, Operator]
+      x-feature: F-08
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '200':
+          description: Exit recorded
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VehicleDto' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '409':
+          description: 'VEHICLE_ALREADY_EXITED — body identifies the winning operator (FR-024)'
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/AlreadyExitedProblem' }
+
+  /api/vehicles/{id}/un-exit:
+    parameters:
+      - { in: path, name: id, required: true, schema: { type: string, format: uuid } }
+    post:
+      tags: [Vehicles]
+      summary: Admin override — clear exit (audited reason required)
+      x-source: pending-adr-0006
+      x-roles: [Admin]
+      x-feature: F-08
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/UnExitRequest' }
+      responses:
+        '200':
+          description: Reverted
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/VehicleDto' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/vehicles/suggest:
+    get:
+      tags: [Vehicles]
+      summary: F-17 simple v1 — top-1 pair suggestion from last 90 days
+      x-source: pending-adr-0006
+      x-roles: [Admin, Operator, Supervisor]
+      x-feature: F-17
+      parameters:
+        - { in: query, name: plate, required: true, schema: { type: string } }
+        - { in: query, name: field, required: true, schema: { type: string, enum: [trailer, company, goods] } }
+      responses:
+        '200':
+          description: Suggestion (null when no pair seen in last 90 days)
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/SuggestResponse' }
+
+  # ── Daily headers ──
+  /api/daily-headers/{date}:
+    parameters:
+      - { in: path, name: date, required: true, schema: { type: string, format: date } }
+    get:
+      tags: [Daily headers]
+      summary: Read a single daily header
+      x-source: locked
+      x-roles: [Admin, Operator, Supervisor]
+      x-feature: F-11
+      responses:
+        '200':
+          description: Header
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DailyHeaderDto' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
+  /api/daily-headers/{date}/officer:
+    parameters:
+      - { in: path, name: date, required: true, schema: { type: string, format: date } }
+    patch:
+      tags: [Daily headers]
+      summary: Inline edit OnDutyOfficerName (today only — INV-11; any role — FR-025)
+      x-source: pending-adr-0006
+      x-roles: [Admin, Operator, Supervisor]
+      x-feature: FR-025
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/OfficerNameRequest' }
+      responses:
+        '200':
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DailyHeaderDto' }
+        '409':
+          description: 'Editing not-today header forbidden (INV-11)'
+          content:
+            application/problem+json:
+              schema: { $ref: '#/components/schemas/ProblemDetails' }
+
+  # ── Reports ──
+  /api/reports/by-processor:
+    get:
+      tags: [Reports]
+      summary: Vehicle count per processor in [from, to]
+      x-source: locked
+      x-roles: [Admin, Supervisor]
+      x-feature: F-14
+      parameters:
+        - { in: query, name: from, required: true, schema: { type: string, format: date } }
+        - { in: query, name: to, required: true, schema: { type: string, format: date } }
+        - { in: query, name: includeCancelled, schema: { type: boolean, default: false } }
+      responses:
+        '200':
+          description: List
+          content: { application/json: { schema: { $ref: '#/components/schemas/ByProcessorReport' } } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/reports/by-yard:
+    get:
+      tags: [Reports]
+      summary: Per yard
+      x-source: locked
+      x-roles: [Admin, Supervisor]
+      x-feature: F-14
+      parameters:
+        - { in: query, name: from, required: true, schema: { type: string, format: date } }
+        - { in: query, name: to, required: true, schema: { type: string, format: date } }
+        - { in: query, name: includeCancelled, schema: { type: boolean, default: false } }
+      responses:
+        '200':
+          description: List
+          content: { application/json: { schema: { $ref: '#/components/schemas/ByYardReport' } } }
+
+  /api/reports/by-hour:
+    get:
+      tags: [Reports]
+      summary: Per exit hour bucket (default 60-min, configurable)
+      x-source: locked
+      x-roles: [Admin, Supervisor]
+      x-feature: F-14
+      parameters:
+        - { in: query, name: date, required: true, schema: { type: string, format: date } }
+        - { in: query, name: bucketMinutes, schema: { type: integer, minimum: 5, maximum: 240, default: 60 } }
+      responses:
+        '200':
+          description: List
+          content: { application/json: { schema: { $ref: '#/components/schemas/ByHourReport' } } }
+
+  /api/reports/by-officer:
+    get:
+      tags: [Reports]
+      summary: Per entered-by / confirmed-by officer
+      x-source: locked
+      x-roles: [Admin, Supervisor]
+      x-feature: F-14
+      parameters:
+        - { in: query, name: from, required: true, schema: { type: string, format: date } }
+        - { in: query, name: to, required: true, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: List
+          content: { application/json: { schema: { $ref: '#/components/schemas/ByOfficerReport' } } }
+
+  /api/reports/pending:
+    get:
+      tags: [Reports]
+      summary: Vehicles still inside as of an instant
+      x-source: locked
+      x-roles: [Admin, Supervisor]
+      x-feature: F-14
+      parameters:
+        - { in: query, name: asOf, schema: { type: string, format: date-time } }
+      responses:
+        '200':
+          description: List
+          content: { application/json: { schema: { $ref: '#/components/schemas/PendingReport' } } }
+
+  /api/reports/excel:
+    get:
+      tags: [Export]
+      summary: Sổ B2 template-based Excel export (FR-015 — daily-headers / colours / notes always on)
+      x-source: locked
+      x-roles: [Admin, Supervisor]
+      x-feature: F-13
+      parameters:
+        - { in: query, name: from, required: true, schema: { type: string, format: date } }
+        - { in: query, name: to, required: true, schema: { type: string, format: date } }
+      responses:
+        '200':
+          description: 'XLSX file: SoB2_{from:yyyyMMdd}_{to:yyyyMMdd}.xlsx'
+          content:
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema: { type: string, format: binary }
+
+  # ── Admin ──
+  /api/admin/audit:
+    get:
+      tags: [Admin]
+      summary: Browse audit log (read-only)
+      x-source: locked
+      x-roles: [Admin]
+      x-feature: F-16
+      parameters:
+        - { in: query, name: entityType, schema: { type: string } }
+        - { in: query, name: entityId, schema: { type: string, format: uuid } }
+        - { in: query, name: actorUserId, schema: { type: string, format: uuid } }
+        - { in: query, name: from, schema: { type: string, format: date-time } }
+        - { in: query, name: to, schema: { type: string, format: date-time } }
+        - { in: query, name: page, schema: { type: integer, minimum: 1, default: 1 } }
+        - { in: query, name: pageSize, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        '200':
+          description: Page of audit rows
+          content: { application/json: { schema: { $ref: '#/components/schemas/AuditList' } } }
+
+  /api/admin/backup-now:
+    post:
+      tags: [Admin]
+      summary: Trigger one-shot encrypted snapshot (FR-026 key-wrap)
+      x-source: locked
+      x-roles: [Admin]
+      x-feature: F-15
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/BackupNowRequest' }
+      responses:
+        '202':
+          description: Backup started
+          content: { application/json: { schema: { $ref: '#/components/schemas/BackupSnapshotDto' } } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/admin/restore:
+    post:
+      tags: [Admin]
+      summary: Restore from a snapshot (typed RESTORE confirmation; password OR recovery code — FR-026)
+      x-source: locked
+      x-roles: [Admin]
+      x-feature: F-15
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [snapshot, confirm]
+              properties:
+                snapshot: { type: string, format: binary }
+                confirm: { type: string, enum: [RESTORE], description: 'FR-013 typed confirmation' }
+                password: { type: string, description: 'Either password or recoveryCode required (FR-026)' }
+                recoveryCode: { type: string, description: 'Either password or recoveryCode required (FR-026)' }
+      responses:
+        '202': { description: Restore started; service restarts after swap (≤ 30 s) }
+        '400':
+          description: 'Confirm word missing OR neither password nor recoveryCode supplied OR both wrappings failed'
+          content: { application/problem+json: { schema: { $ref: '#/components/schemas/ProblemDetails' } } }
+        '403': { $ref: '#/components/responses/Forbidden' }
+
+  /api/admin/health:
+    get:
+      tags: [Admin]
+      summary: Service health (uptime, DB size, replica timestamps, recovery-code-acknowledged flag)
+      x-source: locked
+      x-roles: [Admin, Operator, Supervisor, anonymous]
+      x-feature: F-18
+      security: []
+      responses:
+        '200':
+          description: Health status
+          content: { application/json: { schema: { $ref: '#/components/schemas/HealthDto' } } }
+
+  /api/admin/logs:
+    get:
+      tags: [Admin]
+      summary: Read in-memory log buffer (newest first; F-18)
+      x-source: pending-adr-0006
+      x-roles: [Admin]
+      x-feature: F-18
+      parameters:
+        - { in: query, name: level, schema: { type: string, enum: [Information, Warning, Error] } }
+        - { in: query, name: q, schema: { type: string } }
+        - { in: query, name: page, schema: { type: integer, default: 1 } }
+        - { in: query, name: pageSize, schema: { type: integer, maximum: 200, default: 50 } }
+      responses:
+        '200':
+          description: Page of log lines
+          content: { application/json: { schema: { $ref: '#/components/schemas/LogList' } } }
+
+  # ── SignalR (described informationally; OpenAPI cannot describe WS) ──
+  /hubs/events:
+    get:
+      tags: [Realtime]
+      summary: SignalR hub — push DeclarationCreated, VehicleExited, DeclarationReadyForKvgs, DeclarationKvgsConfirmed, DeclarationCancelled, DailyHeaderOfficerChanged
+      x-source: locked
+      x-roles: [Admin, Operator, Supervisor]
+      x-feature: F-08, F-09, F-10, FR-022, FR-025
+      x-protocol: websocket-signalr
+      responses:
+        '101': { description: Switching Protocols (WebSocket upgrade) }
+
+# ───────────────────────────────────────────────────────────────────────────
+# Components
+# ───────────────────────────────────────────────────────────────────────────
+
+components:
+
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT (RS256)
+
+  parameters:
+    IdempotencyKey:
+      in: header
+      name: Idempotency-Key
+      required: false
+      schema: { type: string, maxLength: 64 }
+      description: 'Polly-retry-safe; replays within 24 h return the cached response (research § 2.7)'
+
+  responses:
+    BadRequest:
+      description: Validation error
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    Unauthorized:
+      description: Missing or invalid JWT
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    Forbidden:
+      description: Caller lacks the required role per FR-027
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    NotFound:
+      description: Resource not found
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+    Locked:
+      description: Account locked (5 fails / 10 min — FR-018)
+      content:
+        application/problem+json:
+          schema: { $ref: '#/components/schemas/ProblemDetails' }
+
+  schemas:
+
+    # Generic
+    ProblemDetails:
+      type: object
+      required: [type, title, status]
+      properties:
+        type: { type: string, format: uri }
+        title: { type: string }
+        status: { type: integer }
+        detail: { type: string }
+        instance: { type: string }
+        correlationId: { type: string, description: 'FR-016 — surfaced to user as "Mã: {correlationId}"' }
+        code: { type: string, description: 'Stable English error code (e.g., DECLARATION_NUMBER_DUPLICATE)' }
+
+    AlreadyExitedProblem:
+      allOf:
+        - $ref: '#/components/schemas/ProblemDetails'
+        - type: object
+          properties:
+            winnerUsername: { type: string }
+            exitTime: { type: string, format: date-time }
+
+    Page:
+      type: object
+      required: [page, pageSize, total]
+      properties:
+        page: { type: integer }
+        pageSize: { type: integer }
+        total: { type: integer }
+
+    # Auth
+    LoginRequest:
+      type: object
+      required: [username, password]
+      properties:
+        username: { type: string, pattern: '^[a-z][a-z0-9_]{2,49}$' }
+        password: { type: string }
+
+    LoginResponse:
+      type: object
+      required: [accessToken, refreshToken, mustChangePassword, role]
+      properties:
+        accessToken: { type: string }
+        refreshToken: { type: string }
+        accessTokenExpiresAt: { type: string, format: date-time }
+        mustChangePassword: { type: boolean }
+        role: { type: string, enum: [Admin, Operator, Supervisor] }
+        userId: { type: string, format: uuid }
+        fullName: { type: string }
+
+    RefreshRequest:
+      type: object
+      required: [refreshToken]
+      properties:
+        refreshToken: { type: string }
+
+    ChangePasswordRequest:
+      type: object
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword: { type: string }
+        newPassword: { type: string, minLength: 10 }
+
+    # Users
+    UserDto:
+      type: object
+      required: [id, username, fullName, role, isActive]
+      properties:
+        id: { type: string, format: uuid }
+        username: { type: string }
+        fullName: { type: string }
+        role: { type: string, enum: [Admin, Operator, Supervisor] }
+        isActive: { type: boolean }
+        mustChangePassword: { type: boolean }
+        lastLoginAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    UserList:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          required: [items]
+          properties:
+            items: { type: array, items: { $ref: '#/components/schemas/UserDto' } }
+
+    UserCreateRequest:
+      type: object
+      required: [username, fullName, role, temporaryPassword]
+      properties:
+        username: { type: string, pattern: '^[a-z][a-z0-9_]{2,49}$' }
+        fullName: { type: string, maxLength: 200 }
+        role: { type: string, enum: [Admin, Operator, Supervisor] }
+        temporaryPassword: { type: string, minLength: 10 }
+
+    UserUpdateRequest:
+      type: object
+      properties:
+        fullName: { type: string, maxLength: 200 }
+        role: { type: string, enum: [Admin, Operator, Supervisor] }
+        isActive: { type: boolean }
+
+    PasswordResetRequest:
+      type: object
+      required: [temporaryPassword]
+      properties:
+        temporaryPassword: { type: string, minLength: 10 }
+
+    # Master data
+    ProcessorDto:
+      type: object
+      required: [id, fullName, isActive]
+      properties:
+        id: { type: string, format: uuid }
+        fullName: { type: string }
+        isActive: { type: boolean }
+    ProcessorWriteRequest:
+      type: object
+      required: [fullName]
+      properties:
+        fullName: { type: string, maxLength: 200 }
+        isActive: { type: boolean }
+    ProcessorList:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          required: [items]
+          properties:
+            items: { type: array, items: { $ref: '#/components/schemas/ProcessorDto' } }
+
+    YardDto:
+      type: object
+      required: [id, code, name, isActive]
+      properties:
+        id: { type: string, format: uuid }
+        code: { type: string }
+        name: { type: string }
+        isActive: { type: boolean }
+    YardWriteRequest:
+      type: object
+      required: [code, name]
+      properties:
+        code: { type: string, pattern: '^[A-Z0-9]{1,20}$' }
+        name: { type: string, maxLength: 200 }
+        isActive: { type: boolean }
+    YardList:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          required: [items]
+          properties:
+            items: { type: array, items: { $ref: '#/components/schemas/YardDto' } }
+
+    # Declarations
+    DeclarationCreateRequest:
+      type: object
+      required: [declarationNumber, processorId, companyName, goodsName, yardId, firstVehicle]
+      properties:
+        declarationNumber: { type: string, pattern: '^[0-9]{12}$' }
+        processorId: { type: string, format: uuid }
+        companyName: { type: string, maxLength: 200 }
+        goodsName: { type: string, maxLength: 200 }
+        yardId: { type: string, format: uuid }
+        firstVehicle: { $ref: '#/components/schemas/VehicleAddRequest' }
+
+    VehicleAddRequest:
+      type: object
+      required: [plateNumber]
+      properties:
+        plateNumber: { type: string, pattern: '^[0-9]{2}[A-Za-z]{1,2}[0-9]{4,5}$', description: 'Server uppercases on store (FR-006 / INV-2)' }
+        trailerOrContainerNumber: { type: string, maxLength: 20 }
+        note: { type: string, maxLength: 500 }
+
+    DeclarationDto:
+      type: object
+      required: [id, declarationNumber, status, enteredAt, businessDate]
+      properties:
+        id: { type: string, format: uuid }
+        declarationNumber: { type: string }
+        processor: { $ref: '#/components/schemas/ProcessorDto' }
+        companyName: { type: string }
+        goodsName: { type: string }
+        yard: { $ref: '#/components/schemas/YardDto' }
+        status: { type: string, enum: [Open, AllExited, KVGSConfirmed, Cancelled] }
+        enteredByUserId: { type: string, format: uuid }
+        enteredAt: { type: string, format: date-time }
+        businessDate: { type: string, format: date }
+        kvgsConfirmedByUserId: { type: string, format: uuid, nullable: true }
+        kvgsConfirmedAt: { type: string, format: date-time, nullable: true }
+        cancelledByUserId: { type: string, format: uuid, nullable: true }
+        cancelledAt: { type: string, format: date-time, nullable: true }
+        cancellationReason: { type: string, nullable: true }
+
+    DeclarationDetailDto:
+      allOf:
+        - $ref: '#/components/schemas/DeclarationDto'
+        - type: object
+          required: [vehicles]
+          properties:
+            vehicles: { type: array, items: { $ref: '#/components/schemas/VehicleDto' } }
+
+    DeclarationList:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          required: [items]
+          properties:
+            items: { type: array, items: { $ref: '#/components/schemas/DeclarationDto' } }
+
+    CancelRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 1, maxLength: 500 }
+
+    # Vehicles
+    VehicleDto:
+      type: object
+      required: [id, declarationId, plateNumber, entryTime, exitMarked]
+      properties:
+        id: { type: string, format: uuid }
+        declarationId: { type: string, format: uuid }
+        plateNumber: { type: string }
+        trailerOrContainerNumber: { type: string, nullable: true }
+        entryTime: { type: string, format: date-time }
+        exitMarked: { type: boolean }
+        exitTime: { type: string, format: date-time, nullable: true }
+        exitConfirmedByUserId: { type: string, format: uuid, nullable: true }
+        note: { type: string, nullable: true }
+
+    VehicleSearchResult:
+      type: object
+      required: [items, suffix]
+      properties:
+        suffix: { type: string }
+        items: { type: array, items: { $ref: '#/components/schemas/VehicleDto' } }
+
+    UnExitRequest:
+      type: object
+      required: [reason]
+      properties:
+        reason: { type: string, minLength: 1, maxLength: 500 }
+
+    SuggestResponse:
+      type: object
+      properties:
+        plate: { type: string }
+        field: { type: string, enum: [trailer, company, goods] }
+        suggestion: { type: string, nullable: true, description: 'null when no pair seen in last 90 days' }
+        sampleSize: { type: integer, description: 'Count of pairings observed' }
+
+    # Daily headers
+    DailyHeaderDto:
+      type: object
+      required: [id, date, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        date: { type: string, format: date }
+        onDutyOfficerName: { type: string, nullable: true }
+        totalVehicles: { type: integer, nullable: true }
+        createdAt: { type: string, format: date-time }
+        lastSummaryComputedAt: { type: string, format: date-time, nullable: true }
+
+    OfficerNameRequest:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, maxLength: 200 }
+
+    # Reports
+    ByProcessorRow:
+      type: object
+      required: [processorId, fullName, totalVehicles]
+      properties:
+        processorId: { type: string, format: uuid }
+        fullName: { type: string }
+        totalVehicles: { type: integer }
+    ByProcessorReport:
+      type: object
+      required: [from, to, items]
+      properties:
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        items: { type: array, items: { $ref: '#/components/schemas/ByProcessorRow' } }
+
+    ByYardRow:
+      type: object
+      required: [yardId, code, totalVehicles]
+      properties:
+        yardId: { type: string, format: uuid }
+        code: { type: string }
+        totalVehicles: { type: integer }
+    ByYardReport:
+      type: object
+      required: [from, to, items]
+      properties:
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        items: { type: array, items: { $ref: '#/components/schemas/ByYardRow' } }
+
+    ByHourRow:
+      type: object
+      required: [bucketStart, bucketEnd, exitedCount]
+      properties:
+        bucketStart: { type: string, format: date-time }
+        bucketEnd: { type: string, format: date-time }
+        exitedCount: { type: integer }
+    ByHourReport:
+      type: object
+      required: [date, bucketMinutes, items]
+      properties:
+        date: { type: string, format: date }
+        bucketMinutes: { type: integer }
+        items: { type: array, items: { $ref: '#/components/schemas/ByHourRow' } }
+
+    ByOfficerRow:
+      type: object
+      required: [userId, fullName, vehiclesEntered, declarationsKvgsConfirmed]
+      properties:
+        userId: { type: string, format: uuid }
+        fullName: { type: string }
+        vehiclesEntered: { type: integer }
+        declarationsKvgsConfirmed: { type: integer }
+    ByOfficerReport:
+      type: object
+      required: [from, to, items]
+      properties:
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        items: { type: array, items: { $ref: '#/components/schemas/ByOfficerRow' } }
+
+    PendingRow:
+      type: object
+      required: [vehicleId, plateNumber, hoursInside]
+      properties:
+        vehicleId: { type: string, format: uuid }
+        plateNumber: { type: string }
+        declarationNumber: { type: string }
+        hoursInside: { type: number, format: float }
+    PendingReport:
+      type: object
+      required: [asOf, items]
+      properties:
+        asOf: { type: string, format: date-time }
+        items: { type: array, items: { $ref: '#/components/schemas/PendingRow' } }
+
+    # Admin
+    AuditRow:
+      type: object
+      required: [id, entityType, entityId, action, actorUserId, at]
+      properties:
+        id: { type: string, format: uuid }
+        entityType: { type: string }
+        entityId: { type: string, format: uuid }
+        action: { type: string, enum: [Create, Update, Delete, Cancel, UnExit, Restore, OfficerNameChanged] }
+        changesJson: { type: string, description: 'JSON {"before": {...}, "after": {...}}' }
+        reason: { type: string, nullable: true }
+        actorUserId: { type: string, format: uuid, nullable: true }
+        at: { type: string, format: date-time }
+    AuditList:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          required: [items]
+          properties:
+            items: { type: array, items: { $ref: '#/components/schemas/AuditRow' } }
+
+    BackupNowRequest:
+      type: object
+      properties:
+        targets: { type: array, items: { type: string }, description: 'Default: all configured targets' }
+
+    BackupSnapshotDto:
+      type: object
+      required: [fileName, sizeBytes, createdAt, actorUserId, targets]
+      properties:
+        fileName: { type: string }
+        sizeBytes: { type: integer }
+        createdAt: { type: string, format: date-time }
+        actorUserId: { type: string, format: uuid }
+        targets: { type: array, items: { type: string } }
+
+    HealthDto:
+      type: object
+      required: [serviceUptimeSeconds, dbSizeBytes, freeDiskBytes, replicas, recoveryCodeAcknowledgedAtInstall]
+      properties:
+        serviceUptimeSeconds: { type: integer }
+        memoryUsedMb: { type: integer }
+        dbSizeBytes: { type: integer }
+        freeDiskBytes: { type: integer }
+        replicas:
+          type: array
+          items:
+            type: object
+            required: [target, status, lastSyncAt]
+            properties:
+              target: { type: string }
+              status: { type: string, enum: [OK, Slow, Failed] }
+              lastSyncAt: { type: string, format: date-time, nullable: true }
+        openDeclarationsOlderThan24h: { type: integer }
+        failedLoginsLastHour: { type: integer }
+        pendingQuartzJobs: { type: integer }
+        recoveryCodeAcknowledgedAtInstall: { type: boolean }
+
+    LogRow:
+      type: object
+      required: [at, level, message]
+      properties:
+        at: { type: string, format: date-time }
+        level: { type: string, enum: [Information, Warning, Error] }
+        message: { type: string }
+        correlationId: { type: string, nullable: true }
+    LogList:
+      allOf:
+        - $ref: '#/components/schemas/Page'
+        - type: object
+          required: [items]
+          properties:
+            items: { type: array, items: { $ref: '#/components/schemas/LogRow' } }
+
+security:
+  - bearerAuth: []
