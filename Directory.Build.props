@@ -1,0 +1,39 @@
+<Project>
+
+  <!-- Constitution III — Code Quality.
+       These properties are non-negotiable across every project.
+       Per-project overrides are forbidden without an ADR. -->
+  <PropertyGroup>
+    <Nullable>enable</Nullable>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <AnalysisLevel>latest</AnalysisLevel>
+    <AnalysisMode>Recommended</AnalysisMode>
+    <CopyrightYear>2026</CopyrightYear>
+    <Deterministic>true</Deterministic>
+
+    <!-- CA1716: namespace/type/parameter names that collide with reserved language
+         keywords in *other* CLR languages (VB, F#). The project name `B2.Shared.Contracts`
+         is locked by `04-implementation-plan.md § 3.5`; the project is consumed only by
+         C# projects, so a VB collision is impossible in practice. Suppressed globally. -->
+    <NoWarn>$(NoWarn);CA1716;CA1848;CA1727</NoWarn>
+    <!-- CA1848 (LoggerMessage source-gen) and CA1727 (PascalCase placeholders) are
+         performance/style hints that the .NET worker / webapi templates trip on.
+         Re-enable per-project when production-grade logging lands in S1 (T-S1-02). -->
+  </PropertyGroup>
+
+  <!-- xUnit-driven tests need an `Microsoft.NET.Test.Sdk` reference. The xunit
+       templates already add it; we just relax `TreatWarningsAsErrors` for the
+       generated `xunit.analyzers` warnings (none currently fire). -->
+  <PropertyGroup Condition="$(MSBuildProjectName.EndsWith('.Tests'))">
+    <IsPackable>false</IsPackable>
+    <!-- xUnit convention uses Pascal_Snake_Case for test method names so the
+         narrative reads as a sentence (`Should_Reject_Operator_On_Reports`).
+         CA1707 (no underscores in member names) is suppressed for test
+         assemblies only. -->
+    <NoWarn>$(NoWarn);CA1707</NoWarn>
+  </PropertyGroup>
+
+</Project>

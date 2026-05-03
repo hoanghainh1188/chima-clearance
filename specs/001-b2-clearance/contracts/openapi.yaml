@@ -597,6 +597,24 @@ paths:
               schema: { $ref: '#/components/schemas/DailyHeaderDto' }
         '404': { $ref: '#/components/responses/NotFound' }
 
+  /api/daily-headers/{date}/recompute:
+    parameters:
+      - { in: path, name: date, required: true, schema: { type: string, format: date } }
+    post:
+      tags: [Daily headers]
+      summary: Admin re-runs the daily summary on demand (F-12 "Recompute today's summary")
+      x-source: pending-adr-0006
+      x-roles: [Admin]
+      x-feature: F-12
+      responses:
+        '200':
+          description: Recomputed
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/DailyHeaderDto' }
+        '403': { $ref: '#/components/responses/Forbidden' }
+        '404': { $ref: '#/components/responses/NotFound' }
+
   /api/daily-headers/{date}/officer:
     parameters:
       - { in: path, name: date, required: true, schema: { type: string, format: date } }

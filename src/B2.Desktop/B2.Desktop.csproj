@@ -1,0 +1,60 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\B2.Shared.Contracts\B2.Shared.Contracts.csproj" />
+    <!-- .NET 8+: UseMaui no longer pulls Controls implicitly (MA002). Align with installed MAUI SDK band. -->
+    <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.100" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <!-- Phase 1: Windows target only. Constitution VIII binds the wireframes to MAUI;
+         cross-platform option (macOS/iOS/Android) preserved for the future. -->
+    <TargetFrameworks>net8.0-windows10.0.19041.0</TargetFrameworks>
+    <!-- Plural RuntimeIdentifiers signals NuGet Restore to pull the win-x64 runtime
+         pack (Microsoft.NETCore.App.Runtime.win-x64) without making every build
+         platform-specific. Singular RuntimeIdentifier would force solution-level
+         build into NETSDK1134; passing -r at the solution-build CLI is also forbidden.
+         MAUI + WindowsPackageType=None still resolves the runtime pack at build time,
+         so restore must have already fetched it — hence the plural form here. -->
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+
+    <UseMaui>true</UseMaui>
+    <SingleProject>true</SingleProject>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>B2.Desktop</RootNamespace>
+
+    <!-- Required: ship as plain Win32 exe so Velopack / Inno Setup can deploy on
+         locked-down customs PCs (per `04-implementation-plan.md § 4.1`). -->
+    <WindowsPackageType>None</WindowsPackageType>
+    <!-- WindowsAppSDK auto-enables its self-contained MSIX path when a RID is
+         present, even with WindowsPackageType=None. That path needs an
+         AppxManifest.xml that we don't ship (we're unpackaged). Disable it so
+         `dotnet build` doesn't run Microsoft.WindowsAppSDK.SelfContained.targets. -->
+    <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
+
+    <!-- App identity -->
+    <ApplicationTitle>Sổ B2 — Cửa khẩu Chi Ma</ApplicationTitle>
+    <ApplicationId>vn.customs.chima.b2.desktop</ApplicationId>
+    <ApplicationIdGuid>4f9e5a90-26b5-4f1f-9c4e-4a3c4d5b6e7f</ApplicationIdGuid>
+    <ApplicationVersion>1</ApplicationVersion>
+    <ApplicationDisplayVersion>0.0.1</ApplicationDisplayVersion>
+
+    <!-- Min Windows 10 version with MAUI WinUI support -->
+    <SupportedOSPlatformVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</SupportedOSPlatformVersion>
+    <TargetPlatformMinVersion Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows'">10.0.17763.0</TargetPlatformMinVersion>
+  </PropertyGroup>
+
+  <!-- MAUI workload required: `dotnet workload install maui` once per dev machine.
+       CI installs this in the windows-2022 job per `04-implementation-plan.md § 7`. -->
+
+  <!-- Per Microsoft Learn (Publish an unpackaged .NET MAUI app for Windows with
+       the CLI), the RID is set conditionally only at publish time via
+       `-p:RuntimeIdentifierOverride=win-x64`. Hardcoding RuntimeIdentifier here
+       forces every build to be platform-specific, which requires a runtime pack
+       (Microsoft.NETCore.App.Runtime.win-x64) that solution-level restore
+       doesn't pull → NETSDK1112. Leave plain `dotnet build` framework-dependent. -->
+  <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows' and '$(RuntimeIdentifierOverride)' != ''">
+    <RuntimeIdentifier>$(RuntimeIdentifierOverride)</RuntimeIdentifier>
+  </PropertyGroup>
+
+</Project>

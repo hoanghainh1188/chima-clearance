@@ -1,0 +1,81 @@
+# .NET / C#
+bin/
+obj/
+*.user
+*.suo
+*.userprefs
+*.cache
+packages/
+.vs/
+*.lock.json
+
+# Build outputs
+[Bb]uild/
+[Dd]ebug/
+[Rr]elease/
+x64/
+x86/
+[Aa][Rr][Mm]/
+[Aa][Rr][Mm]64/
+bld/
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# .NET Core
+project.lock.json
+project.fragment.lock.json
+artifacts/
+**/Properties/launchSettings.json
+
+# Test results
+[Tt]est[Rr]esult*/
+[Bb]uild[Ll]og.*
+*.coverage
+*.coveragexml
+TestResults/
+*.cobertura.xml
+
+# NuGet
+*.nupkg
+*.snupkg
+**/[Pp]ackages/*
+!**/[Pp]ackages/build/
+
+# MAUI
+*.appx
+*.appxbundle
+*.appxupload
+*.msix
+*.msixbundle
+
+# IDE
+.vscode/
+.idea/
+*.suo
+*.user
+.vs/
+*.swp
+*.tmp
+*.bak
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Secrets / local-only config
+.env
+.env.local
+*.local.json
+appsettings.Development.json
+appsettings.Local.json
+
+# Project-specific
+C:\ProgramData\B2\
+b2.db*
+*.bak.zip
+litestream.yml.local
+
+# Allow specific .claude files (CLAUDE.md, settings.json) but ignore local overrides
+.claude/settings.local.json
