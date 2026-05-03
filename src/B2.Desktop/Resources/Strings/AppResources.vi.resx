@@ -1,0 +1,90 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Resources.Extensions, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Resources.Extensions, Version=8.0.0.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51</value>
+  </resheader>
+  <data name="Shell_AppTitle" xml:space="preserve">
+    <value>Sổ B2</value>
+  </data>
+  <data name="Shell_LoginTab" xml:space="preserve">
+    <value>Đăng nhập</value>
+  </data>
+  <data name="Login_AppTitle" xml:space="preserve">
+    <value>SỔ B2 — CHI MA</value>
+  </data>
+  <data name="Login_AppSubtitle" xml:space="preserve">
+    <value>Phần mềm quản lý thông quan</value>
+  </data>
+  <data name="Login_UsernameLabel" xml:space="preserve">
+    <value>Tên đăng nhập</value>
+  </data>
+  <data name="Login_PasswordLabel" xml:space="preserve">
+    <value>Mật khẩu</value>
+  </data>
+  <data name="Login_Submit" xml:space="preserve">
+    <value>ĐĂNG NHẬP</value>
+  </data>
+  <data name="Login_ShowPasswordToggle" xml:space="preserve">
+    <value>Hiện/ẩn mật khẩu</value>
+  </data>
+  <data name="Login_Error_Generic" xml:space="preserve">
+    <value>Sai tên đăng nhập hoặc mật khẩu</value>
+  </data>
+  <data name="Login_AccountLocked" xml:space="preserve">
+    <value>Tài khoản tạm khóa 15 phút.</value>
+  </data>
+  <data name="Users_PageTitle" xml:space="preserve">
+    <value>Quản trị — Người dùng</value>
+  </data>
+  <data name="Users_Loading" xml:space="preserve">
+    <value>Đang tải…</value>
+  </data>
+  <data name="Users_Error_Load" xml:space="preserve">
+    <value>Không tải được danh sách (kiểm tra kết nối tới máy chủ).</value>
+  </data>
+  <data name="ChangePassword_PageTitle" xml:space="preserve">
+    <value>Đổi mật khẩu</value>
+  </data>
+  <data name="ChangePassword_Subtitle" xml:space="preserve">
+    <value>Đăng nhập lần đầu — bạn cần đổi mật khẩu trước khi tiếp tục.</value>
+  </data>
+  <data name="ChangePassword_CurrentLabel" xml:space="preserve">
+    <value>Mật khẩu hiện tại</value>
+  </data>
+  <data name="ChangePassword_NewLabel" xml:space="preserve">
+    <value>Mật khẩu mới</value>
+  </data>
+  <data name="ChangePassword_ConfirmLabel" xml:space="preserve">
+    <value>Nhập lại mật khẩu mới</value>
+  </data>
+  <data name="ChangePassword_ComplexityHint" xml:space="preserve">
+    <value>≥ 10 ký tự, bao gồm 3 trong 4 nhóm: chữ hoa, chữ thường, số, ký tự đặc biệt.</value>
+  </data>
+  <data name="ChangePassword_Submit" xml:space="preserve">
+    <value>LƯU MẬT KHẨU MỚI</value>
+  </data>
+  <data name="ChangePassword_Error_Mismatch" xml:space="preserve">
+    <value>Hai mật khẩu mới không khớp.</value>
+  </data>
+  <data name="ChangePassword_Error_Weak" xml:space="preserve">
+    <value>Mật khẩu mới chưa đủ độ phức tạp.</value>
+  </data>
+  <data name="ChangePassword_Error_WrongCurrent" xml:space="preserve">
+    <value>Mật khẩu hiện tại không đúng.</value>
+  </data>
+  <data name="ChangePassword_Error_Generic" xml:space="preserve">
+    <value>Không đổi được mật khẩu (kiểm tra kết nối tới máy chủ).</value>
+  </data>
+  <data name="ChangePassword_SuccessRelogin" xml:space="preserve">
+    <value>Đổi mật khẩu thành công. Vui lòng đăng nhập lại.</value>
+  </data>
+</root>

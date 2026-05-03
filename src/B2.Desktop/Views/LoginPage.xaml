@@ -1,0 +1,48 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage x:Class="B2.Desktop.Views.LoginPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:B2.Desktop.ViewModels"
+             xmlns:s="clr-namespace:B2.Desktop.Resources.Strings"
+             x:DataType="vm:LoginViewModel"
+             Title="{x:Static s:AppResources.Login_AppTitle}"
+             BackgroundColor="{StaticResource ColorSurface}">
+  <ScrollView>
+    <VerticalStackLayout Padding="{StaticResource SpacingL}" Spacing="{StaticResource SpacingM}">
+      <Label Text="{x:Static s:AppResources.Login_AppTitle}"
+             FontSize="{StaticResource FontSizeXL}"
+             TextColor="{StaticResource ColorPrimary}"
+             HorizontalOptions="Center" />
+      <Label Text="{x:Static s:AppResources.Login_AppSubtitle}"
+             HorizontalOptions="Center"
+             TextColor="{StaticResource ColorOnSurface}" />
+      <Label Text="{x:Static s:AppResources.Login_UsernameLabel}" />
+      <Entry x:Name="UsernameEntry"
+             Text="{Binding Username}"
+             TabIndex="1"
+             SemanticProperties.Hint="{x:Static s:AppResources.Login_UsernameLabel}" />
+      <Label Text="{x:Static s:AppResources.Login_PasswordLabel}" />
+      <Entry x:Name="PasswordEntry"
+             Text="{Binding Password}"
+             IsPassword="True"
+             TabIndex="2"
+             SemanticProperties.Hint="{x:Static s:AppResources.Login_PasswordLabel}" />
+      <Button Text="{x:Static s:AppResources.Login_ShowPasswordToggle}"
+              TabIndex="3"
+              Clicked="OnTogglePasswordClicked"
+              SemanticProperties.Hint="{x:Static s:AppResources.Login_ShowPasswordToggle}" />
+      <Label AutomationProperties.IsLiveSetting="Polite"
+             Text="{Binding ErrorMessage}"
+             TextColor="{StaticResource ColorError}"
+             SemanticProperties.Description="{Binding ErrorMessage}"
+             IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+      <Button Text="{x:Static s:AppResources.Login_Submit}"
+              Command="{Binding LoginCommand}"
+              TabIndex="4"
+              BackgroundColor="{StaticResource ColorPrimary}"
+              TextColor="White"
+              SemanticProperties.Hint="{x:Static s:AppResources.Login_Submit}" />
+      <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+    </VerticalStackLayout>
+  </ScrollView>
+</ContentPage>

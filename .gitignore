@@ -1,4 +1,4 @@
-# .NET / C#
+﻿# .NET / C#
 bin/
 obj/
 *.user
@@ -72,7 +72,10 @@ appsettings.Development.json
 appsettings.Local.json
 
 # Project-specific
-C:\ProgramData\B2\
+# Windows service data directory (path varies; ignore common local DB copies)
+**/B2/db/*.db
+**/B2/db/*.db-shm
+**/B2/db/*.db-wal
 b2.db*
 *.bak.zip
 litestream.yml.local

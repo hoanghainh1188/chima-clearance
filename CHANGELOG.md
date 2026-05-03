@@ -6,6 +6,29 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 
+### Added
+
+- `RequirePasswordChangeMiddleware` — FR-017 enforcement; authenticated
+  requests with `must_change_password=true` claim are rejected `403` /
+  `PASSWORD_CHANGE_REQUIRED` except `POST /api/auth/change-password` and
+  `POST /api/auth/logout` (`src/B2.Server.Api/Middleware/`).
+- `ChangePasswordPage.xaml` + `ChangePasswordViewModel.cs` for forced
+  first-login rotation flow on Desktop, wired into `AppShell` route
+  `auth/change-password` and `MauiProgram` DI. Vietnamese strings in
+  `AppResources.vi.resx`.
+- `tests/B2.Server.Api.Tests/Auth/ChangePasswordEndpointTests.cs` — four
+  scenarios: blocked first-login, successful rotation, wrong current
+  password, weak new password.
+
+### Changed
+
+- `LoginViewModel` redirects to `auth/change-password` when
+  `LoginResponse.MustChangePassword` is true.
+- `LoginAsAdminAsync` test helper now bootstraps the seeded admin
+  (login → change-password → re-login) so existing integration tests keep
+  green under the new middleware.
+- Marked tasks `T-S1-22` and `T-S1-23` complete in `tasks.md`.
+
 ## [0.0.1] — 2026-05-03 — Sprint S0 (Bootstrap)
 
 ### Added
