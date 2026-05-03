@@ -1,0 +1,99 @@
+# Constitution III — Code Quality. `dotnet format --verify-no-changes` is the CI gate.
+# Source of truth for code style across the solution.
+root = true
+
+# All files
+[*]
+indent_style = space
+end_of_line = lf
+insert_final_newline = true
+trim_trailing_whitespace = true
+charset = utf-8
+
+# C# files
+[*.cs]
+indent_size = 4
+max_line_length = 120
+
+# C# language conventions
+csharp_new_line_before_open_brace = all
+csharp_new_line_before_else = true
+csharp_new_line_before_catch = true
+csharp_new_line_before_finally = true
+csharp_indent_case_contents = true
+csharp_indent_switch_labels = true
+csharp_space_after_cast = false
+csharp_space_after_keywords_in_control_flow_statements = true
+csharp_preserve_single_line_blocks = true
+csharp_preserve_single_line_statements = false
+
+# var preferences (prefer explicit types in public API surfaces, var elsewhere)
+csharp_style_var_for_built_in_types = true:suggestion
+csharp_style_var_when_type_is_apparent = true:suggestion
+csharp_style_var_elsewhere = true:suggestion
+
+# Expression-bodied members
+csharp_style_expression_bodied_methods = when_on_single_line:suggestion
+csharp_style_expression_bodied_constructors = when_on_single_line:suggestion
+csharp_style_expression_bodied_properties = true:suggestion
+csharp_style_expression_bodied_lambdas = true:suggestion
+
+# Pattern matching
+csharp_style_pattern_matching_over_is_with_cast_check = true:warning
+csharp_style_pattern_matching_over_as_with_null_check = true:warning
+
+# Null checking
+csharp_style_throw_expression = true:suggestion
+csharp_style_conditional_delegate_call = true:warning
+
+# Modifier preferences
+csharp_preferred_modifier_order = public,private,protected,internal,static,extern,new,virtual,abstract,sealed,override,readonly,unsafe,volatile,async:warning
+
+# Naming conventions — prefix interfaces with I; PascalCase for public members
+dotnet_naming_rule.interfaces_must_be_prefixed_with_i.severity = warning
+dotnet_naming_rule.interfaces_must_be_prefixed_with_i.symbols = interfaces
+dotnet_naming_rule.interfaces_must_be_prefixed_with_i.style = i_prefix_pascal_case
+dotnet_naming_symbols.interfaces.applicable_kinds = interface
+dotnet_naming_symbols.interfaces.applicable_accessibilities = *
+dotnet_naming_style.i_prefix_pascal_case.required_prefix = I
+dotnet_naming_style.i_prefix_pascal_case.capitalization = pascal_case
+
+# Async methods end with Async
+dotnet_naming_rule.async_methods_end_with_async.severity = suggestion
+dotnet_naming_rule.async_methods_end_with_async.symbols = async_methods
+dotnet_naming_rule.async_methods_end_with_async.style = ends_with_async
+dotnet_naming_symbols.async_methods.applicable_kinds = method
+dotnet_naming_symbols.async_methods.applicable_accessibilities = *
+dotnet_naming_symbols.async_methods.required_modifiers = async
+dotnet_naming_style.ends_with_async.required_suffix = Async
+dotnet_naming_style.ends_with_async.capitalization = pascal_case
+
+# Forbidden constructs (Constitution III) — surfaced as warnings (TWAE elevates them).
+# I/O `.Result` / `.Wait()` / `.GetAwaiter().GetResult()` outside `Main`.
+# Detected by Microsoft.VisualStudio.Threading.Analyzers (added in S1 cross-cutting).
+dotnet_diagnostic.VSTHRD002.severity = warning
+dotnet_diagnostic.VSTHRD003.severity = warning
+dotnet_diagnostic.VSTHRD104.severity = warning
+
+# Project files
+[*.{csproj,props,targets}]
+indent_size = 2
+
+# JSON / YAML
+[*.{json,yml,yaml}]
+indent_size = 2
+
+# Markdown — preserve trailing whitespace (line breaks)
+[*.md]
+trim_trailing_whitespace = false
+indent_size = 2
+
+# Bash
+[*.sh]
+end_of_line = lf
+indent_size = 2
+
+# Resx — VS-managed
+[*.resx]
+indent_size = 2
+end_of_line = crlf

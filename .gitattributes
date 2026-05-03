@@ -1,0 +1,31 @@
+﻿# Match .editorconfig (end_of_line = lf). Prevents CRLF working trees on Windows
+# when core.autocrlf is true, which breaks `dotnet format --verify-no-changes`.
+* text=auto
+
+*.cs text eol=lf
+*.csproj text eol=lf
+*.sln text eol=lf
+*.slnf text eol=lf
+*.props text eol=lf
+*.targets text eol=lf
+*.json text eol=lf
+*.md text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+*.xml text eol=lf
+*.xaml text eol=lf
+.editorconfig text eol=lf
+.gitattributes text eol=lf
+.gitignore text eol=lf
+
+# Visual Studio resource files — .editorconfig keeps CRLF for these
+*.resx text eol=crlf
+
+# Binary
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.snk binary
+*.pfx binary

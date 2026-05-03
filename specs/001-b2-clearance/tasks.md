@@ -117,7 +117,7 @@ integration sweeps where appropriate.
 **Exit gate**: `dotnet build` and `dotnet test` (empty suites) both green;
 `dotnet format --verify-no-changes` clean.
 
-- [ ] **T-S0-01** Initialise solution per
+- [X] **T-S0-01** Initialise solution per
   [`quickstart.md § 3`](./quickstart.md): create `B2.sln` + 8 production projects
   + 5 test projects via the `dotnet new` commands listed in
   [`04-implementation-plan.md § 3.5`](../04-implementation-plan.md). Files:
@@ -132,42 +132,42 @@ integration sweeps where appropriate.
   `tests/B2.Server.Api.Tests/`, `tests/B2.Desktop.Tests/`,
   `tests/B2.Performance.Tests/`. **Dep**: none. **LOC**: ~50 (project files).
   **DoD**: §DoD-1, DoD-9 partial.
-- [ ] **T-S0-02** Add `Directory.Build.props` at repo root enforcing
+- [X] **T-S0-02** Add `Directory.Build.props` at repo root enforcing
   `<Nullable>enable</Nullable>`, `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>`,
   `<LangVersion>latest</LangVersion>`. Files: `Directory.Build.props`,
   `.editorconfig`. **Dep**: T-S0-01. **LOC**: ~80. **DoD**: §DoD-1.
-- [ ] **T-S0-03** [P] Wire project references per dependency rules
+- [X] **T-S0-03** [P] Wire project references per dependency rules
   (Constitution V; [`plan.md` Project Structure](./plan.md)). Use
   `dotnet add reference`. Files: `*.csproj` (edits only). **Dep**: T-S0-01.
   **LOC**: ~30. **DoD**: §DoD-1.
-- [ ] **T-S0-04** [P] Add ArchUnitNET dependency-rule test asserting
+- [X] **T-S0-04** [P] Add ArchUnitNET dependency-rule test asserting
   Constitution V layers in `tests/B2.Server.Api.Tests/Architecture/LayerRulesTests.cs`.
   Verify: `B2.Domain` references nothing outside the BCL; no project references
   `B2.Desktop`; `B2.Desktop` and `B2.Server.Api` only share types via
   `B2.Shared.Contracts`. **Dep**: T-S0-03. **LOC**: ~80. **DoD**: §DoD-1, DoD-2.
-- [ ] **T-S0-05** [P] Configure MAUI Windows-only target in `B2.Desktop.csproj`
+- [X] **T-S0-05** [P] Configure MAUI Windows-only target in `B2.Desktop.csproj`
   (`<TargetFrameworks>net8.0-windows10.0.19041.0</TargetFrameworks>`,
   `<UseMaui>true</UseMaui>`, `<SingleProject>true</SingleProject>`,
   `<WindowsPackageType>None</WindowsPackageType>`). Files:
   `src/B2.Desktop/B2.Desktop.csproj`. **Dep**: T-S0-01. **LOC**: ~30. **DoD**: §DoD-1.
-- [ ] **T-S0-06** [P] Author `docs/adr/ADR-0001-modular-monolith.md` per the
+- [X] **T-S0-06** [P] Author `docs/adr/ADR-0001-modular-monolith.md` per the
   template in [`04-implementation-plan.md § 9`](../04-implementation-plan.md);
   rationale from [`01-overview.md § 4`](../01-overview.md). **Dep**: none. **LOC**:
   ~80. **DoD**: §DoD-1.
-- [ ] **T-S0-07** [P] Author `docs/adr/ADR-0002-sqlite-as-primary-store.md`.
+- [X] **T-S0-07** [P] Author `docs/adr/ADR-0002-sqlite-as-primary-store.md`.
   **Dep**: none. **LOC**: ~60. **DoD**: §DoD-1.
-- [ ] **T-S0-08** [P] Author `docs/adr/ADR-0003-dotnet-maui-as-desktop-ui.md`.
+- [X] **T-S0-08** [P] Author `docs/adr/ADR-0003-dotnet-maui-as-desktop-ui.md`.
   **Dep**: none. **LOC**: ~70. **DoD**: §DoD-1.
-- [ ] **T-S0-09** [P] Author `docs/adr/ADR-0004-jwt-rs256-with-local-user-store.md`.
+- [X] **T-S0-09** [P] Author `docs/adr/ADR-0004-jwt-rs256-with-local-user-store.md`.
   **Dep**: none. **LOC**: ~70. **DoD**: §DoD-1.
-- [ ] **T-S0-10** [P] Author `docs/adr/ADR-0005-litestream-for-continuous-backup.md`.
+- [X] **T-S0-10** [P] Author `docs/adr/ADR-0005-litestream-for-continuous-backup.md`.
   **Dep**: none. **LOC**: ~60. **DoD**: §DoD-1.
-- [ ] **T-S0-11** [P] Author `docs/adr/ADR-0006-api-surface-extensions.md` from
+- [X] **T-S0-11** [P] Author `docs/adr/ADR-0006-api-surface-extensions.md` from
   the draft in [`research.md § 8`](./research.md). Required because
   `contracts/openapi.yaml` introduces endpoints beyond
   `02-architecture.md § 6` (FR-022 / FR-025 / FR-026 / FR-027 / F-17).
   **Dep**: none. **LOC**: ~120. **DoD**: §DoD-1.
-- [ ] **T-S0-12** Add `.github/workflows/ci.yml` per
+- [X] **T-S0-12** Add `.github/workflows/ci.yml` per
   [`04-implementation-plan.md § 7`](../04-implementation-plan.md): `windows-2022`,
   `dotnet workload install maui`, `dotnet format --verify-no-changes`,
   `dotnet build /p:TreatWarningsAsErrors=true`,
