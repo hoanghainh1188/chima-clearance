@@ -27,6 +27,8 @@ public static class MauiProgram
         builder.Services.AddSingleton<ConnectivityService>();
         builder.Services.AddSingleton<IToastService, ToastService>();
         builder.Services.AddSingleton<IModalService, ModalService>();
+        builder.Services.AddSingleton<ISessionCorrelationService, SessionCorrelationService>();
+        builder.Services.AddTransient<CorrelationCaptureHandler>();
 
         var refitSettings = new RefitSettings
         {
@@ -41,7 +43,8 @@ public static class MauiProgram
         builder.Services.AddSingleton<AuthTokenHandler>();
         builder.Services.AddRefitClient<IB2Api>(refitSettings)
             .ConfigureHttpClient(c => c.BaseAddress = new Uri(apiBase))
-            .AddHttpMessageHandler<AuthTokenHandler>();
+            .AddHttpMessageHandler<AuthTokenHandler>()
+            .AddHttpMessageHandler<CorrelationCaptureHandler>();
 
         builder.Services.AddSingleton<IMainShellFactory, MainShellFactory>();
 
