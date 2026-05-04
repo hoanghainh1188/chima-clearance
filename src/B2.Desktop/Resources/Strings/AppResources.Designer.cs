@@ -162,6 +162,16 @@ public static class AppResources
     public static string TopBar_Badge_Offline => ResourceManager.GetString(nameof(TopBar_Badge_Offline), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string TopBar_Badge_Online => ResourceManager.GetString(nameof(TopBar_Badge_Online), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string TopBar_Badge_Polling => ResourceManager.GetString(nameof(TopBar_Badge_Polling), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Connectivity_Detail_Offline => ResourceManager.GetString(nameof(Connectivity_Detail_Offline), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Connectivity_Detail_Online => ResourceManager.GetString(nameof(Connectivity_Detail_Online), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Connectivity_Detail_Polling => ResourceManager.GetString(nameof(Connectivity_Detail_Polling), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Connectivity_Detail_Title => ResourceManager.GetString(nameof(Connectivity_Detail_Title), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Sidebar_Item_Entry => ResourceManager.GetString(nameof(Sidebar_Item_Entry), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Sidebar_Item_Exit => ResourceManager.GetString(nameof(Sidebar_Item_Exit), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Sidebar_Item_Kvgs => ResourceManager.GetString(nameof(Sidebar_Item_Kvgs), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Sidebar_Item_Ledger => ResourceManager.GetString(nameof(Sidebar_Item_Ledger), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Sidebar_Item_MasterData => ResourceManager.GetString(nameof(Sidebar_Item_MasterData), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Sidebar_Item_Users => ResourceManager.GetString(nameof(Sidebar_Item_Users), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string UserMenu_ChangePassword => ResourceManager.GetString(nameof(UserMenu_ChangePassword), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string UserMenu_Suffix => ResourceManager.GetString(nameof(UserMenu_Suffix), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
 }
