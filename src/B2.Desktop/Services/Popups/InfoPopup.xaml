@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<toolkit:Popup x:Class="B2.Desktop.Services.Popups.InfoPopup"
+               xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+               xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+               xmlns:toolkit="http://schemas.microsoft.com/dotnet/2022/maui/toolkit"
+               x:Name="PopupRoot"
+               CanBeDismissedByTappingOutsideOfPopup="True"
+               Color="Transparent">
+  <Border Padding="{StaticResource SpacingL}"
+          BackgroundColor="{StaticResource ColorSurface}"
+          StrokeThickness="1"
+          Stroke="{StaticResource ColorBorder}"
+          MinimumWidthRequest="360">
+    <VerticalStackLayout Spacing="{StaticResource SpacingM}">
+      <Label x:Name="TitleLabel"
+             FontAttributes="Bold"
+             FontSize="{StaticResource FontSizeXL}"
+             TextColor="{StaticResource ColorPrimary}" />
+      <Label x:Name="MessageLabel"
+             FontSize="{StaticResource FontSizeM}"
+             TextColor="{StaticResource ColorOnSurface}"
+             LineBreakMode="WordWrap" />
+      <Button x:Name="CloseButton"
+              BackgroundColor="{StaticResource ColorPrimary}"
+              TextColor="White"
+              HorizontalOptions="End"
+              Clicked="OnCloseClicked" />
+    </VerticalStackLayout>
+  </Border>
+</toolkit:Popup>
