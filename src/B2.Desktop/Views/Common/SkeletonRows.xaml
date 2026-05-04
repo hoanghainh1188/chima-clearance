@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentView x:Class="B2.Desktop.Views.Common.SkeletonRows"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
+  <!-- Wireframe § 8: loading state shows 5 grey bar rows in place of an
+       ActivityIndicator. Constitution VIII: shared by every list page. -->
+  <VerticalStackLayout Spacing="{StaticResource SpacingS}"
+                       Padding="0,4">
+    <Border BackgroundColor="{StaticResource ColorSidebarBg}"
+            HeightRequest="32"
+            StrokeThickness="0" />
+    <Border BackgroundColor="{StaticResource ColorSidebarBg}"
+            HeightRequest="32"
+            StrokeThickness="0"
+            Opacity="0.85" />
+    <Border BackgroundColor="{StaticResource ColorSidebarBg}"
+            HeightRequest="32"
+            StrokeThickness="0"
+            Opacity="0.7" />
+    <Border BackgroundColor="{StaticResource ColorSidebarBg}"
+            HeightRequest="32"
+            StrokeThickness="0"
+            Opacity="0.55" />
+    <Border BackgroundColor="{StaticResource ColorSidebarBg}"
+            HeightRequest="32"
+            StrokeThickness="0"
+            Opacity="0.4" />
+  </VerticalStackLayout>
+</ContentView>

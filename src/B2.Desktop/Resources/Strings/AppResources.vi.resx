@@ -105,6 +105,9 @@
   <data name="Common_EmDash" xml:space="preserve">
     <value>—</value>
   </data>
+  <data name="Common_ErrorCode_Prefix" xml:space="preserve">
+    <value>Mã lỗi:</value>
+  </data>
   <data name="Connectivity_OfflineBanner" xml:space="preserve">
     <value>Không kết nối được máy chủ. Các thao tác ghi bị từ chối cho đến khi khôi phục.</value>
   </data>

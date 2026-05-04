@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentView x:Class="B2.Desktop.Views.Common.ErrorCodeBanner"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:s="clr-namespace:B2.Desktop.Resources.Strings"
+             xmlns:svc="clr-namespace:B2.Desktop.Services">
+  <!-- Wireframe § 8 error banner: shows the most recent X-Correlation-Id
+       so support can quote it. The hosting page binds the
+       BindingContext property to its VM's Correlation. Hides itself
+       when the correlationId is null/empty. -->
+  <HorizontalStackLayout Spacing="4"
+                         IsVisible="{Binding CurrentCorrelationId, Converter={StaticResource IsStringNotNullOrEmptyConverter}}">
+    <Label Text="{x:Static s:AppResources.Common_ErrorCode_Prefix}"
+           TextColor="{StaticResource ColorOnSurfaceMuted}"
+           FontSize="{StaticResource FontSizeS}" />
+    <Label Text="{Binding CurrentCorrelationId}"
+           TextColor="{StaticResource ColorOnSurfaceMuted}"
+           FontSize="{StaticResource FontSizeS}" />
+  </HorizontalStackLayout>
+</ContentView>

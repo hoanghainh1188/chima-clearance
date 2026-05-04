@@ -41,10 +41,14 @@ public partial class ExitViewModel : ObservableObject, IDisposable
 
     public ObservableCollection<VehicleSearchResultDto> Results { get; } = new();
 
-    public ExitViewModel(IB2Api api, IToastService toast)
+    /// <summary>Wireframe § 8 error banner correlationId binding.</summary>
+    public ISessionCorrelationService Correlation { get; }
+
+    public ExitViewModel(IB2Api api, IToastService toast, ISessionCorrelationService correlation)
     {
         _api = api;
         _toast = toast;
+        Correlation = correlation;
     }
 
     partial void OnSuffixChanged(string value) => _ = DebouncedSearchAsync();

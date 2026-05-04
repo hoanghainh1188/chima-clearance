@@ -6,6 +6,7 @@
              xmlns:vm="clr-namespace:B2.Desktop.ViewModels"
              xmlns:s="clr-namespace:B2.Desktop.Resources.Strings"
              xmlns:decl="clr-namespace:B2.Shared.Contracts.Declarations;assembly=B2.Shared.Contracts"
+             xmlns:common="clr-namespace:B2.Desktop.Views.Common"
              x:DataType="vm:LedgerViewModel"
              BackgroundColor="{StaticResource ColorSurface}">
   <Grid ColumnDefinitions="*,Auto">
@@ -37,15 +38,14 @@
     <Grid Grid.Row="3"
           RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*"
           RowSpacing="{StaticResource SpacingS}">
-      <ActivityIndicator Grid.Row="0"
-                         IsRunning="{Binding IsLoading}"
-                         IsVisible="{Binding IsLoading}"
-                         HorizontalOptions="Center" />
+      <common:SkeletonRows Grid.Row="0"
+                           IsVisible="{Binding IsLoading}" />
       <VerticalStackLayout Grid.Row="1"
                            Spacing="{StaticResource SpacingS}"
                            IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}">
         <Label Text="{Binding ErrorMessage}"
                TextColor="{StaticResource ColorError}" />
+        <common:ErrorCodeBanner BindingContext="{Binding Correlation}" />
         <Button Text="{x:Static s:AppResources.Common_Retry}"
                 Command="{Binding RefreshCommand}" />
       </VerticalStackLayout>

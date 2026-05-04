@@ -5,6 +5,7 @@
              xmlns:vm="clr-namespace:B2.Desktop.ViewModels.Admin"
              xmlns:s="clr-namespace:B2.Desktop.Resources.Strings"
              xmlns:contracts="clr-namespace:B2.Shared.Contracts.Users;assembly=B2.Shared.Contracts"
+             xmlns:common="clr-namespace:B2.Desktop.Views.Common"
              x:DataType="vm:UsersViewModel"
              BackgroundColor="{StaticResource ColorSurface}">
   <Grid Padding="{StaticResource SpacingM}" RowDefinitions="Auto,*">
@@ -13,14 +14,14 @@
            FontSize="{StaticResource FontSizeXL}"
            TextColor="{StaticResource ColorPrimary}" />
     <Grid Grid.Row="1">
-      <ActivityIndicator IsRunning="{Binding IsLoading}"
-                         IsVisible="{Binding IsLoading}"
-                         VerticalOptions="Center" />
+      <common:SkeletonRows IsVisible="{Binding IsLoading}"
+                           VerticalOptions="Start" />
       <VerticalStackLayout Spacing="{StaticResource SpacingS}"
                            IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
         <Label Text="{Binding ErrorMessage}"
                TextColor="{StaticResource ColorError}"
                IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+        <common:ErrorCodeBanner BindingContext="{Binding Correlation}" />
         <CollectionView ItemsSource="{Binding Users}">
           <CollectionView.ItemTemplate>
             <DataTemplate x:DataType="contracts:UserDto">

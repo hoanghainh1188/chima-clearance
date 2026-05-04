@@ -26,11 +26,19 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
     private bool _disposed;
     private bool _filterEventsEnabled = true;
 
-    public LedgerViewModel(IB2Api api, ConnectivityService connectivity)
+    /// <summary>
+    /// Surfaced for XAML binding so the error banner (wireframe § 8) can
+    /// show "Mã lỗi: {CurrentCorrelationId}". Same singleton the status
+    /// bar binds to.
+    /// </summary>
+    public ISessionCorrelationService Correlation { get; }
+
+    public LedgerViewModel(IB2Api api, ConnectivityService connectivity, ISessionCorrelationService correlation)
     {
         _filterEventsEnabled = false;
         _api = api;
         _connectivity = connectivity;
+        Correlation = correlation;
         DatePresetOptions = new[]
         {
             AppResources.Ledger_Date_Today,
