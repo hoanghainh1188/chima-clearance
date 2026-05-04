@@ -101,11 +101,11 @@ Phase 1 ships in 6 × 2-week sprints (S0..S6) per
 
 | Sprint | Goal | Status |
 | --- | --- | --- |
-| **S0** | Bootstrap (scaffold, CI, ADRs 0001–0006) | ✅ done (this commit) |
-| S1 | Core domain + auth (F-01..F-04) | ⬜ not started |
-| S2 | Entry & exit happy path (F-05..F-08) | ⬜ |
-| S3 | KVGS + ledger + realtime (F-09, F-10) | ⬜ |
-| S4 | Background jobs + reports (F-11, F-12, F-14) | ⬜ |
+| **S0** | Bootstrap (scaffold, CI, ADRs 0001–0006) | ✅ done — PR #2 |
+| **S1** | Core domain + auth (F-01..F-04) | ✅ done — PR #4 |
+| **S2** | Entry & exit happy path (F-05..F-08) | ✅ done — PR #5 |
+| **S3** | KVGS + ledger + realtime (F-09, F-10) | 🟡 substantially shipped — PRs #6, #7, #8, #9 (audit follow-ups: FR-028 logging, modal/toast spec, wireframe § 5 sidebar + Alt+1..8 / F1). Round 3b/c/d/e remain (functional Cỡ chữ dropdown, KVGS animations, ledger drawer chi tiết, list-view skeletons). |
+| S4 | Background jobs + reports (F-11, F-12, F-14) | ⬜ not started |
 | S5 | Export, backup, audit (F-13, F-15, F-16, F-18) | ⬜ |
 | S6 | Hardening (F-17 simple v1 + a11y + runbook + UAT) | ⬜ |
 
