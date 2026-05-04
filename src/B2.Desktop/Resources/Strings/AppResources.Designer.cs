@@ -162,5 +162,6 @@ public static class AppResources
     public static string TopBar_Badge_Offline => ResourceManager.GetString(nameof(TopBar_Badge_Offline), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string TopBar_Badge_Online => ResourceManager.GetString(nameof(TopBar_Badge_Online), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string TopBar_Badge_Polling => ResourceManager.GetString(nameof(TopBar_Badge_Polling), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string UserMenu_ChangePassword => ResourceManager.GetString(nameof(UserMenu_ChangePassword), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string UserMenu_Suffix => ResourceManager.GetString(nameof(UserMenu_Suffix), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
 }

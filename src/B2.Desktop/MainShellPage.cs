@@ -21,6 +21,7 @@ public sealed class MainShellPage : ContentPage
     private readonly ISessionContext _session;
     private readonly ConnectivityService _connectivity;
     private readonly IModalService _modal;
+    private readonly IAppNavigator _navigator;
     private readonly UserRoleDto _role;
     private readonly ContentView _contentHost = new();
     private readonly List<TabEntry> _tabs = new();
@@ -35,6 +36,7 @@ public sealed class MainShellPage : ContentPage
         _session = services.GetRequiredService<ISessionContext>();
         _connectivity = services.GetRequiredService<ConnectivityService>();
         _modal = services.GetRequiredService<IModalService>();
+        _navigator = services.GetRequiredService<IAppNavigator>();
         _role = _session.Role;
 
         Title = AppResources.Shell_AppTitle;
@@ -321,11 +323,29 @@ public sealed class MainShellPage : ContentPage
             title: null,
             cancel: AppResources.Common_Cancel,
             destruction: null,
+            AppResources.UserMenu_ChangePassword,
             AppResources.Common_Logout).ConfigureAwait(true);
         if (string.Equals(choice, AppResources.Common_Logout, StringComparison.Ordinal))
         {
             await LogoutAsync().ConfigureAwait(false);
+            return;
         }
+
+        if (string.Equals(choice, AppResources.UserMenu_ChangePassword, StringComparison.Ordinal))
+        {
+            await PushChangePasswordModalAsync().ConfigureAwait(true);
+        }
+    }
+
+    private async Task PushChangePasswordModalAsync()
+    {
+        var page = _services.GetRequiredService<Views.ChangePasswordPage>();
+        if (page.BindingContext is ViewModels.ChangePasswordViewModel vm)
+        {
+            vm.CanCancel = true;
+        }
+
+        await Navigation.PushModalAsync(page).ConfigureAwait(true);
     }
 
     private async void OnShortcutsTapped(object? sender, TappedEventArgs e)
@@ -342,10 +362,7 @@ public sealed class MainShellPage : ContentPage
         await _connectivity.StopAsync().ConfigureAwait(false);
         _auth.AccessToken = null;
         _session.Clear();
-        await MainThread.InvokeOnMainThreadAsync(() =>
-        {
-            Application.Current!.MainPage = _services.GetRequiredService<AppShell>();
-        }).ConfigureAwait(false);
+        await _navigator.NavigateToLoginAsync().ConfigureAwait(false);
     }
 
     private sealed record TabEntry(Button Button, ContentView View);

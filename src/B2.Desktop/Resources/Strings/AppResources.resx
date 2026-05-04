@@ -502,6 +502,9 @@
   <data name="TopBar_Badge_Offline" xml:space="preserve">
     <value>🔴 Mất kết nối</value>
   </data>
+  <data name="UserMenu_ChangePassword" xml:space="preserve">
+    <value>Đổi mật khẩu</value>
+  </data>
   <data name="UserMenu_Suffix" xml:space="preserve">
     <value> ▾</value>
   </data>
