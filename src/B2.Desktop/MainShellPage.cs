@@ -1,6 +1,7 @@
 using B2.Desktop.Resources.Strings;
 using B2.Desktop.Services;
 using B2.Desktop.Services.Api;
+using B2.Desktop.Services.UserSettings;
 using B2.Desktop.Views;
 using B2.Desktop.Views.Admin;
 using B2.Shared.Contracts.Users;
@@ -27,6 +28,8 @@ public sealed class MainShellPage : ContentPage
     private readonly ConnectivityService _connectivity;
     private readonly IModalService _modal;
     private readonly IAppNavigator _navigator;
+    private readonly IToastService _toast;
+    private readonly IUserSettingsService _userSettings;
     private readonly UserRoleDto _role;
     private readonly ContentView _contentHost = new();
     private readonly List<TabEntry> _tabs = new();
@@ -42,6 +45,8 @@ public sealed class MainShellPage : ContentPage
         _connectivity = services.GetRequiredService<ConnectivityService>();
         _modal = services.GetRequiredService<IModalService>();
         _navigator = services.GetRequiredService<IAppNavigator>();
+        _toast = services.GetRequiredService<IToastService>();
+        _userSettings = services.GetRequiredService<IUserSettingsService>();
         _role = _session.Role;
 
         Title = AppResources.Shell_AppTitle;
@@ -382,15 +387,7 @@ public sealed class MainShellPage : ContentPage
 
         var muted = (Color)Application.Current.Resources["ColorOnSurfaceMuted"];
 
-        var fontSize = new Label
-        {
-            Text = string.Concat(
-                AppResources.Status_FontSize_Label,
-                " ",
-                AppResources.Status_FontSize_Normal),
-            VerticalOptions = LayoutOptions.Center,
-            TextColor = muted,
-        };
+        var fontSize = BuildFontSizePicker(muted);
         Grid.SetColumn(fontSize, 0);
         bar.Children.Add(fontSize);
 
@@ -468,6 +465,65 @@ public sealed class MainShellPage : ContentPage
                 _connectivityLabel.Text = AppResources.TopBar_Badge_Offline;
                 break;
         }
+    }
+
+    private HorizontalStackLayout BuildFontSizePicker(Color textColor)
+    {
+        var layout = new HorizontalStackLayout
+        {
+            Spacing = 6,
+            VerticalOptions = LayoutOptions.Center,
+        };
+
+        var label = new Label
+        {
+            Text = AppResources.Status_FontSize_Label,
+            VerticalOptions = LayoutOptions.Center,
+            TextColor = textColor,
+        };
+        layout.Children.Add(label);
+
+        var picker = new Picker
+        {
+            VerticalOptions = LayoutOptions.Center,
+            TextColor = textColor,
+            BackgroundColor = Colors.Transparent,
+        };
+        picker.Items.Add(AppResources.Status_FontSize_Normal);
+        picker.Items.Add(AppResources.Status_FontSize_Large);
+        picker.Items.Add(AppResources.Status_FontSize_ExtraLarge);
+
+        picker.SelectedIndex = (int)_userSettings.GetFontScale();
+        picker.SelectedIndexChanged += OnFontScalePickerChanged;
+        layout.Children.Add(picker);
+
+        return layout;
+    }
+
+    private async void OnFontScalePickerChanged(object? sender, EventArgs e)
+    {
+        if (sender is not Picker picker)
+        {
+            return;
+        }
+
+        var index = picker.SelectedIndex;
+        if (index < 0 || index > (int)FontScaleMode.ExtraLarge)
+        {
+            return;
+        }
+
+        var newMode = (FontScaleMode)index;
+        var current = _userSettings.GetFontScale();
+        if (newMode == current)
+        {
+            return;
+        }
+
+        _userSettings.SetFontScale(newMode);
+        await _toast.ShowAsync(
+            AppResources.Status_FontSize_RestartHint,
+            ToastSeverity.Warning).ConfigureAwait(true);
     }
 
     private async void OnConnectivityBadgeTapped(object? sender, TappedEventArgs e)
