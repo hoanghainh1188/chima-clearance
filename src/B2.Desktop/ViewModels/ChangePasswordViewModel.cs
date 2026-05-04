@@ -1,5 +1,6 @@
 using System.Net;
 using B2.Desktop.Resources.Strings;
+using B2.Desktop.Services;
 using B2.Desktop.Services.Api;
 using B2.Shared.Contracts.Auth;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -12,6 +13,7 @@ public partial class ChangePasswordViewModel : ObservableObject
 {
     private readonly IB2Api _api;
     private readonly AuthTokenHandler _auth;
+    private readonly IAppNavigator _navigator;
 
     [ObservableProperty]
     private string _currentPassword = string.Empty;
@@ -31,10 +33,20 @@ public partial class ChangePasswordViewModel : ObservableObject
     [ObservableProperty]
     private bool _isBusy;
 
-    public ChangePasswordViewModel(IB2Api api, AuthTokenHandler auth)
+    /// <summary>
+    /// True when the page was opened from the post-login user menu (modal mode).
+    /// In that case the user can dismiss without changing the password. The
+    /// pre-login force-rotate flow leaves this <c>false</c> so the prompt
+    /// cannot be skipped.
+    /// </summary>
+    [ObservableProperty]
+    private bool _canCancel;
+
+    public ChangePasswordViewModel(IB2Api api, AuthTokenHandler auth, IAppNavigator navigator)
     {
         _api = api;
         _auth = auth;
+        _navigator = navigator;
     }
 
     [RelayCommand]
@@ -63,7 +75,7 @@ public partial class ChangePasswordViewModel : ObservableObject
             CurrentPassword = string.Empty;
             NewPassword = string.Empty;
             ConfirmPassword = string.Empty;
-            await Shell.Current.GoToAsync("//login");
+            await _navigator.NavigateToLoginAsync().ConfigureAwait(false);
         }
         catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
         {
@@ -82,6 +94,21 @@ public partial class ChangePasswordViewModel : ObservableObject
         finally
         {
             IsBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task CancelAsync()
+    {
+        if (!CanCancel)
+        {
+            return;
+        }
+
+        var page = Application.Current?.MainPage;
+        if (page is not null)
+        {
+            await page.Navigation.PopModalAsync().ConfigureAwait(false);
         }
     }
 }

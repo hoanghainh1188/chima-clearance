@@ -99,6 +99,150 @@
   <data name="Common_Cancel" xml:space="preserve">
     <value>Hủy</value>
   </data>
+  <data name="Common_Retry" xml:space="preserve">
+    <value>Thử lại</value>
+  </data>
+  <data name="Common_EmDash" xml:space="preserve">
+    <value>—</value>
+  </data>
+  <data name="Connectivity_OfflineBanner" xml:space="preserve">
+    <value>Không kết nối được máy chủ. Các thao tác ghi bị từ chối cho đến khi khôi phục.</value>
+  </data>
+  <data name="Connectivity_PollingBanner" xml:space="preserve">
+    <value>Đang làm mới danh sách theo chu kỳ (khoảng 3 giây) vì kênh trực tiếp tạm ngắt.</value>
+  </data>
+  <data name="Connectivity_Online" xml:space="preserve">
+    <value>Trực tiếp (SignalR)</value>
+  </data>
+  <data name="Connectivity_Polling" xml:space="preserve">
+    <value>Đang thử lại (HTTP)</value>
+  </data>
+  <data name="Connectivity_Offline" xml:space="preserve">
+    <value>Mất kết nối</value>
+  </data>
+  <data name="Kvgs_ConfirmButton" xml:space="preserve">
+    <value>Xác nhận KVGS</value>
+  </data>
+  <data name="Kvgs_ConfirmMessage_Format" xml:space="preserve">
+    <value>Xác nhận KVGS cho tờ khai {0}?</value>
+  </data>
+  <data name="Kvgs_ConfirmTitle" xml:space="preserve">
+    <value>Xác nhận KVGS</value>
+  </data>
+  <data name="Kvgs_Empty" xml:space="preserve">
+    <value>Chưa có tờ khai nào chờ KVGS.</value>
+  </data>
+  <data name="Kvgs_Error_Confirm_Format" xml:space="preserve">
+    <value>Xác nhận không thành công (mã {0}).</value>
+  </data>
+  <data name="Kvgs_PageTitle" xml:space="preserve">
+    <value>Xác nhận KVGS</value>
+  </data>
+  <data name="Kvgs_Refresh" xml:space="preserve">
+    <value>Làm mới</value>
+  </data>
+  <data name="Kvgs_Toast_Confirmed_Format" xml:space="preserve">
+    <value>Đã xác nhận KVGS cho tờ khai {0}.</value>
+  </data>
+  <data name="Ledger_ConnectivityPrefix" xml:space="preserve">
+    <value>Kết nối:</value>
+  </data>
+  <data name="Ledger_Empty" xml:space="preserve">
+    <value>Không có bản ghi trên trang này.</value>
+  </data>
+  <data name="Ledger_Error_Load_Format" xml:space="preserve">
+    <value>Không tải được sổ B2 (mã {0}).</value>
+  </data>
+  <data name="Ledger_Error_Network" xml:space="preserve">
+    <value>Không tải được sổ B2 (lỗi mạng).</value>
+  </data>
+  <data name="Ledger_NextPage" xml:space="preserve">
+    <value>Trang sau</value>
+  </data>
+  <data name="Ledger_PageSummary_Format" xml:space="preserve">
+    <value>Trang {0}/{1}</value>
+  </data>
+  <data name="Ledger_PlateTrailer_Format" xml:space="preserve">
+    <value>{0} / {1}</value>
+  </data>
+  <data name="Ledger_PageTitle" xml:space="preserve">
+    <value>Sổ B2</value>
+  </data>
+  <data name="Ledger_PrevPage" xml:space="preserve">
+    <value>Trang trước</value>
+  </data>
+  <data name="Ledger_Status_AllExited" xml:space="preserve">
+    <value>Đã ra hết</value>
+  </data>
+  <data name="Ledger_Status_Cancelled" xml:space="preserve">
+    <value>Đã hủy</value>
+  </data>
+  <data name="Ledger_Status_KvgsConfirmed" xml:space="preserve">
+    <value>Đã KVGS</value>
+  </data>
+  <data name="Ledger_Status_Open" xml:space="preserve">
+    <value>Đang mở</value>
+  </data>
+  <data name="Ledger_YardCode_Format" xml:space="preserve">
+    <value>Bãi {0}</value>
+  </data>
+  <data name="Ledger_DailyHeader_Format" xml:space="preserve">
+    <value>📋 {0} — Trực chính: {1}</value>
+  </data>
+  <data name="Ledger_Date_Last30Days" xml:space="preserve">
+    <value>30 ngày</value>
+  </data>
+  <data name="Ledger_Date_Last7Days" xml:space="preserve">
+    <value>7 ngày</value>
+  </data>
+  <data name="Ledger_Date_Today" xml:space="preserve">
+    <value>Hôm nay</value>
+  </data>
+  <data name="Ledger_DisplayRange_Format" xml:space="preserve">
+    <value>Hiển thị {0}–{1} của {2}</value>
+  </data>
+  <data name="Ledger_Filter_DateLabel" xml:space="preserve">
+    <value>Ngày</value>
+  </data>
+  <data name="Ledger_Filter_StatusLabel" xml:space="preserve">
+    <value>Trạng thái</value>
+  </data>
+  <data name="Ledger_Filter_Status_All" xml:space="preserve">
+    <value>Tất cả</value>
+  </data>
+  <data name="Ledger_Filter_Status_AllExited" xml:space="preserve">
+    <value>Đã ra hết</value>
+  </data>
+  <data name="Ledger_Filter_Status_Cancelled" xml:space="preserve">
+    <value>Đã hủy</value>
+  </data>
+  <data name="Ledger_Filter_Status_KvgsConfirmed" xml:space="preserve">
+    <value>Đã KVGS</value>
+  </data>
+  <data name="Ledger_Filter_Status_Open" xml:space="preserve">
+    <value>Đang mở</value>
+  </data>
+  <data name="Ledger_Filter_YardLabel" xml:space="preserve">
+    <value>Bãi</value>
+  </data>
+  <data name="Ledger_ResetFilters" xml:space="preserve">
+    <value>Đặt lại</value>
+  </data>
+  <data name="Ledger_Search_Button" xml:space="preserve">
+    <value>Tìm</value>
+  </data>
+  <data name="Ledger_Search_Label" xml:space="preserve">
+    <value>Tìm (biển / số tờ khai)</value>
+  </data>
+  <data name="Ledger_Subtitle_Format" xml:space="preserve">
+    <value>Sổ B2 — {0}</value>
+  </data>
+  <data name="Ledger_UnexitedOnly" xml:space="preserve">
+    <value>Chỉ tờ còn xe trong cổng</value>
+  </data>
+  <data name="Ledger_YardFilter_All" xml:space="preserve">
+    <value>Tất cả bãi</value>
+  </data>
   <data name="Entry_PageTitle" xml:space="preserve">
     <value>Nhập xe vào</value>
   </data>
@@ -284,5 +428,54 @@
   </data>
   <data name="Supervisor_HomeBody" xml:space="preserve">
     <value>Tài khoản giám sát không có quyền nhập xe hay xác nhận xe ra. Vui lòng dùng các chức năng khác (sổ B2, KVGS…) khi được triển khai.</value>
+  </data>
+  <data name="Status_FontSize_Label" xml:space="preserve">
+    <value>Cỡ chữ:</value>
+  </data>
+  <data name="Status_FontSize_Normal" xml:space="preserve">
+    <value>Bình thường</value>
+  </data>
+  <data name="Status_Shortcuts_F1" xml:space="preserve">
+    <value>Phím tắt: F1</value>
+  </data>
+  <data name="Status_Session_Label" xml:space="preserve">
+    <value>Mã phiên:</value>
+  </data>
+  <data name="Status_Session_None" xml:space="preserve">
+    <value>—</value>
+  </data>
+  <data name="Status_AppVersion" xml:space="preserve">
+    <value>v1.0.0</value>
+  </data>
+  <data name="TopBar_Badge_Online" xml:space="preserve">
+    <value>🟢 Online</value>
+  </data>
+  <data name="TopBar_Badge_Polling" xml:space="preserve">
+    <value>🟡 Đang thử lại</value>
+  </data>
+  <data name="TopBar_Badge_Offline" xml:space="preserve">
+    <value>🔴 Mất kết nối</value>
+  </data>
+  <data name="UserMenu_ChangePassword" xml:space="preserve">
+    <value>Đổi mật khẩu</value>
+  </data>
+  <data name="UserMenu_Suffix" xml:space="preserve">
+    <value> ▾</value>
+  </data>
+  <data name="Common_Close" xml:space="preserve">
+    <value>Đóng</value>
+  </data>
+  <data name="Shortcuts_Title" xml:space="preserve">
+    <value>Phím tắt</value>
+  </data>
+  <data name="Shortcuts_Body" xml:space="preserve">
+    <value>F1 — Mở danh sách phím tắt
+F5 — Làm mới danh sách
+/ — Đặt con trỏ vào ô tìm kiếm
+Enter — Tìm / mở chi tiết / xác nhận
+Esc — Đóng modal / xóa tìm kiếm
+Alt+1 … Alt+8 — Chuyển nhanh giữa các tab
+
+(Các phím tắt chưa kích hoạt sẽ được bổ sung ở phiên bản tiếp theo.)</value>
   </data>
 </root>

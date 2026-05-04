@@ -1,6 +1,7 @@
 using System.Text.Json;
 using B2.Application.Abstractions;
 using B2.Application.Common;
+using B2.Application.DomainEvents;
 using B2.Domain;
 using B2.Domain.Audit;
 using B2.Domain.Declarations;
@@ -18,6 +19,7 @@ public sealed class CreateDeclarationCommandHandler
     private readonly IClock _clock;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditContext _audit;
+    private readonly ISignalRDomainEventDispatcher _realtime;
 
     public CreateDeclarationCommandHandler(
         IProcessorRepository processors,
@@ -25,7 +27,8 @@ public sealed class CreateDeclarationCommandHandler
         IDeclarationRepository declarations,
         IClock clock,
         IUnitOfWork unitOfWork,
-        IAuditContext audit)
+        IAuditContext audit,
+        ISignalRDomainEventDispatcher realtime)
     {
         _processors = processors;
         _yards = yards;
@@ -33,6 +36,7 @@ public sealed class CreateDeclarationCommandHandler
         _clock = clock;
         _unitOfWork = unitOfWork;
         _audit = audit;
+        _realtime = realtime;
     }
 
     public async Task<DeclarationDto> HandleAsync(DeclarationCreateRequest request, Guid enteredByUserId, CancellationToken cancellationToken)
@@ -80,6 +84,7 @@ public sealed class CreateDeclarationCommandHandler
 
         var after = JsonSerializer.Serialize(new { declaration.DeclarationNumber, declaration.Status });
         _audit.Set(new AuditEnvelope(enteredByUserId, AuditAction.Create, nameof(Declaration), declaration.Id, null, after, null));
+        await _realtime.PublishDeclarationLedgerChangedAsync(declaration.Id, cancellationToken);
 
         return new DeclarationDto(
             declaration.Id,

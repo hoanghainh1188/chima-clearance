@@ -1,4 +1,4 @@
-# Implementation Plan: Chima Customs B2 — Vehicle Clearance Log Replacement
+﻿# Implementation Plan: Chima Customs B2 — Vehicle Clearance Log Replacement
 
 **Branch**: `feat/001-b2-clearance` (logical feature `001-b2-clearance`) | **Date**: 2026-05-03
 **Spec**: [`spec.md`](./spec.md)
@@ -323,6 +323,18 @@ The plan introduces no library, layer, or pattern beyond the locked technology
 table (`01-overview.md § 6`) and the locked architecture (`02-architecture.md`).
 The single advisory item (ADR-0006 for API surface extensions) is a documentation
 artifact, not a technology change.
+
+---
+
+## Sprint S3 progress (2026-05-04)
+
+**Done (backend + API tests)**: `T-S3-01`–`T-S3-03` (KVGS), `T-S3-05`–`T-S3-08`
+(ledger list/detail, SignalR hub + dispatcher hooks, integration tests including
+SignalR over `WebApplicationFactory.Server`). `dotnet format` / `dotnet build` /
+`dotnet test` on `B2.NoMaui.slnf` are green on macOS CI subset.
+
+**Remaining for S3 exit**: `T-S3-04` (Kvgs MAUI page), `T-S3-09`–`T-S3-12`
+(SignalR client + connectivity, Ledger/AppShell, Toast/Modal services on Desktop).
 
 ---
 

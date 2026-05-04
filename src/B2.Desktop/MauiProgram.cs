@@ -22,6 +22,16 @@ public static class MauiProgram
             .UseMauiCommunityToolkit();
 
         const string apiBase = "http://127.0.0.1:5000/";
+        var apiUri = new Uri(apiBase);
+        builder.Services.AddSingleton(new DesktopRuntimeOptions(apiUri));
+        builder.Services.AddSingleton<ConnectivityService>();
+        builder.Services.AddSingleton<IToastService, ToastService>();
+        builder.Services.AddSingleton<IModalService, ModalService>();
+        builder.Services.AddSingleton<ISessionCorrelationService, SessionCorrelationService>();
+        builder.Services.AddSingleton<ISessionContext, SessionContext>();
+        builder.Services.AddSingleton<IAppNavigator, AppNavigator>();
+        builder.Services.AddTransient<CorrelationCaptureHandler>();
+
         var refitSettings = new RefitSettings
         {
             ContentSerializer = new SystemTextJsonContentSerializer(
@@ -35,7 +45,8 @@ public static class MauiProgram
         builder.Services.AddSingleton<AuthTokenHandler>();
         builder.Services.AddRefitClient<IB2Api>(refitSettings)
             .ConfigureHttpClient(c => c.BaseAddress = new Uri(apiBase))
-            .AddHttpMessageHandler<AuthTokenHandler>();
+            .AddHttpMessageHandler<AuthTokenHandler>()
+            .AddHttpMessageHandler<CorrelationCaptureHandler>();
 
         builder.Services.AddSingleton<IMainShellFactory, MainShellFactory>();
 
@@ -51,7 +62,10 @@ public static class MauiProgram
         builder.Services.AddTransient<ExitPage>();
         builder.Services.AddTransient<MasterDataViewModel>();
         builder.Services.AddTransient<MasterDataPage>();
-        builder.Services.AddTransient<SupervisorHomePage>();
+        builder.Services.AddTransient<LedgerViewModel>();
+        builder.Services.AddTransient<LedgerPage>();
+        builder.Services.AddTransient<KvgsViewModel>();
+        builder.Services.AddTransient<KvgsPage>();
         builder.Services.AddTransient<AppShell>();
 
 #if DEBUG

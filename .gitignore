@@ -82,3 +82,5 @@ litestream.yml.local
 
 # Allow specific .claude files (CLAUDE.md, settings.json) but ignore local overrides
 .claude/settings.local.json
+.claude/scheduled_tasks.lock
+.claude/*.lock

@@ -6,8 +6,24 @@
   <Color x:Key="ColorPrimary">#1A3A6E</Color>
   <Color x:Key="ColorSurface">#FFFBFE</Color>
   <Color x:Key="ColorOnSurface">#1B1B1F</Color>
+  <Color x:Key="ColorOnSurfaceMuted">#5A5A66</Color>
   <Color x:Key="ColorError">#B3261E</Color>
+  <Color x:Key="ColorErrorBg">#FDECEC</Color>
   <Color x:Key="ColorBorder">#D6D6DD</Color>
   <Color x:Key="ColorWarning">#8C5000</Color>
   <Color x:Key="ColorWarningBanner">#FFF4E5</Color>
+  <Color x:Key="ColorLedgerStatusOpen">#B3261E</Color>
+  <Color x:Key="ColorLedgerStatusAllExited">#1B5E20</Color>
+  <Color x:Key="ColorLedgerStatusKvgsConfirmed">#0D47A1</Color>
+  <Color x:Key="ColorLedgerStatusCancelled">#5A5A66</Color>
+  <Color x:Key="ColorLedgerDailyHeaderBg">#F4F4F7</Color>
+  <!-- App-shell chrome (wireframe § 5). -->
+  <Color x:Key="ColorStatusBarBg">#F4F4F7</Color>
+  <Color x:Key="ColorTopBarBg">#FFFFFF</Color>
+  <Color x:Key="ColorBadgeOnlineBg">#E6F4EA</Color>
+  <Color x:Key="ColorBadgeOnlineText">#1B5E20</Color>
+  <Color x:Key="ColorBadgePollingBg">#FFF4E5</Color>
+  <Color x:Key="ColorBadgePollingText">#8C5000</Color>
+  <Color x:Key="ColorBadgeOfflineBg">#FDECEC</Color>
+  <Color x:Key="ColorBadgeOfflineText">#B3261E</Color>
 </ResourceDictionary>

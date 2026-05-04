@@ -1,5 +1,3 @@
-using B2.Shared.Contracts.Users;
-
 namespace B2.Desktop.Services;
 
 public sealed class MainShellFactory : IMainShellFactory
@@ -8,5 +6,5 @@ public sealed class MainShellFactory : IMainShellFactory
 
     public MainShellFactory(IServiceProvider services) => _services = services;
 
-    public Shell CreateMainShell(UserRoleDto role) => new MainShell(_services, role);
+    public Page CreateMainShell() => new MainShellPage(_services);
 }

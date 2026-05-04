@@ -1,4 +1,4 @@
-# Changelog
+﻿# Changelog
 
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/) and the project
@@ -17,6 +17,45 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 - `specs/001-b2-clearance/quickstart.md` § 7 — two new troubleshooting rows
   (UTF-8 BOM `error CHARSET` and the macOS-vs-CI Desktop analyzer divergence)
   with concrete remediation steps.
+- **Sprint S3 (T-S3-11)** — wireframe § 5 app-shell chrome on the desktop
+  client: `MainShellPage : ContentPage` + Grid layout (top bar / nav strip /
+  content host / status bar), tri-state connectivity badge, user menu with
+  Đổi mật khẩu / Đăng xuất, and an F1 cheat-sheet modal via `IModalService`.
+- **Sprint S3 (T-S3-11 / 1a)** — `ISessionCorrelationService` +
+  `CorrelationCaptureHandler` capture `X-Correlation-Id` from every API
+  response so the status bar can surface "Mã phiên: …".
+- `ISessionContext` — singleton identity holder populated on login, cleared
+  on logout, surfaced in the user-menu button label.
+- `IAppNavigator` — abstracts the "send the user back to login" navigation
+  so it works from both the pre-login `Shell.Current.GoToAsync("//login")`
+  path and the post-login `MainPage = AppShell` path.
+
+### Changed
+
+- **Sprint S3 (T-S3-12)** — Entry / Exit / MasterData ViewModels migrated
+  off direct `CommunityToolkit.Maui.Alerts.Toast.Make` and
+  `Application.Current.MainPage.DisplayAlert` to `IToastService` /
+  `IModalService.ConfirmAsync`, consolidating notification surfaces per
+  Constitution VIII.
+- Tab pages (Ledger / Entry / Exit / Kvgs / MasterData / Users) converted
+  from `ContentPage` to `ContentView` so they can be hosted inside the
+  `MainShellPage` grid; OnAppearing init logic moved to one-shot `Loaded`
+  handlers.
+- `IMainShellFactory.CreateMainShell` no longer takes a `UserRoleDto` —
+  role is now read from `ISessionContext`. `ChangePasswordViewModel` uses
+  `IAppNavigator` so the post-login voluntary password change works
+  outside `Shell.Current`.
+
+### Fixed
+
+- **Sprint S3 (backend slice)**: `GET /api/declarations` reads query parameters
+  via `HttpRequest.Query` (avoids minimal-API binding returning HTTP 400 with an
+  empty body). `DeclarationRepository.ListDeclarationsAsync` avoids SQLite EF
+  limitations on `DateTimeOffset` in `ORDER BY` and on `since` / vehicle time
+  predicates (in-memory sort + `since` filter, plate filter via `IN` subquery).
+  SignalR integration test connects through `WebApplicationFactory.Server` with
+  `HttpMessageHandlerFactory` so negotiation uses the in-memory test server
+  instead of `localhost:80`.
 
 ### Changed
 

@@ -1,3 +1,5 @@
+using B2.Domain.Users;
+
 namespace B2.Domain.Declarations;
 
 public sealed class Declaration
@@ -85,6 +87,27 @@ public sealed class Declaration
 
         var allExited = Vehicles.TrueForAll(v => v.ExitMarked);
         Status = allExited ? DeclarationStatus.AllExited : DeclarationStatus.Open;
+    }
+
+    /// <summary>INV-6: only Supervisor or Admin may transition AllExited → KVGSConfirmed.</summary>
+    public void ConfirmKvgs(Role actorRole, Guid actorUserId, DateTimeOffset confirmedAtUtc)
+    {
+        if (actorRole is not Role.Admin and not Role.Supervisor)
+        {
+            throw new DomainException("FORBIDDEN", "Only Supervisor or Admin can confirm KVGS.", 403);
+        }
+
+        if (Status != DeclarationStatus.AllExited)
+        {
+            throw new DomainException(
+                "DECLARATION_NOT_READY_FOR_KVGS",
+                "Declaration must be AllExited before KVGS confirmation.",
+                409);
+        }
+
+        Status = DeclarationStatus.KVGSConfirmed;
+        KvgsConfirmedByUserId = actorUserId;
+        KvgsConfirmedAt = confirmedAtUtc;
     }
 
     private void EnsureCanAddVehicles()

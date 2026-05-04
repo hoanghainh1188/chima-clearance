@@ -1,4 +1,4 @@
-# chima-clearance Development Guidelines
+﻿# chima-clearance Development Guidelines
 
 Auto-generated from all feature plans. Last updated: 2026-05-04
 
@@ -217,6 +217,11 @@ Yellow / red banners stay persistent in their respective states (no toast spam).
 
 ## Recent Changes
 
+- **2026-05-04** — Sprint S3 **backend slice** (in progress): KVGS + ledger REST +
+  SignalR hub and `ListDeclarations` repository fixes for SQLite / minimal-API
+  query binding; `T-S3-01`..`T-S3-03` and `T-S3-05`..`T-S3-08` marked complete in
+  `specs/001-b2-clearance/tasks.md`. MAUI tasks `T-S3-04`, `T-S3-09`..`T-S3-12`
+  remain.
 - **2026-05-04** — Sprint S2 merged via PR #5 (`de24ec5`): Entry, Exit, Master
   Data backend + MAUI desktop pages. All 22 S2 tasks (`T-S2-01..T-S2-22`)
   complete. Post-mortem captured as the new `Pre-push gates` section above

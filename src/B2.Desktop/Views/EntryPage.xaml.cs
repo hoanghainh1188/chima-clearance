@@ -2,17 +2,18 @@ using B2.Desktop.ViewModels;
 
 namespace B2.Desktop.Views;
 
-public partial class EntryPage : ContentPage
+public partial class EntryPage : ContentView
 {
     public EntryPage(EntryViewModel model)
     {
         InitializeComponent();
         BindingContext = model;
+        Loaded += OnLoaded;
     }
 
-    protected override async void OnAppearing()
+    private async void OnLoaded(object? sender, EventArgs e)
     {
-        base.OnAppearing();
+        Loaded -= OnLoaded;
         if (BindingContext is EntryViewModel vm)
         {
             await vm.InitCommand.ExecuteAsync(null).ConfigureAwait(true);

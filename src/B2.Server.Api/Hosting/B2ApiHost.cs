@@ -1,11 +1,13 @@
 using System.Text.Json.Serialization;
 using B2.Application.DependencyInjection;
+using B2.Application.DomainEvents;
 using B2.Infrastructure.Auth;
 using B2.Infrastructure.DependencyInjection;
 using B2.Server.Api.Audit;
 using B2.Server.Api.Endpoints;
 using B2.Server.Api.Auth;
 using B2.Server.Api.Middleware;
+using B2.Server.Api.Realtime;
 using B2.Application.Abstractions;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -69,12 +71,30 @@ public static class B2ApiHost
                     RoleClaimType = "role",
                     NameClaimType = JwtRegisteredClaimNames.Sub,
                 };
+                options.Events = new JwtBearerEvents
+                {
+                    OnMessageReceived = context =>
+                    {
+                        var accessToken = context.Request.Query["access_token"];
+                        var path = context.HttpContext.Request.Path;
+                        if (!string.IsNullOrEmpty(accessToken) && path.StartsWithSegments("/hubs/events"))
+                        {
+                            context.Token = accessToken;
+                        }
+
+                        return Task.CompletedTask;
+                    },
+                };
             });
+
+        builder.Services.AddSignalR();
+        builder.Services.AddSingleton<ISignalRDomainEventDispatcher, SignalRLedgerDispatcher>();
 
         builder.Services.AddAuthorization(o =>
         {
             o.AddPolicy(B2Policies.AdminOnly, p => p.RequireRole("Admin"));
             o.AddPolicy(B2Policies.GateOperator, p => p.RequireRole("Admin", "Operator"));
+            o.AddPolicy(B2Policies.SupervisorOrAbove, p => p.RequireRole("Admin", "Supervisor"));
             o.AddPolicy(B2Policies.MasterRead, p => p.RequireRole("Admin", "Operator", "Supervisor"));
             o.AddPolicy(B2Policies.AnyAuthenticated, p => p.RequireAuthenticatedUser());
         });
@@ -113,5 +133,6 @@ public static class B2ApiHost
         app.MapMasterDataEndpoints();
         app.MapDeclarationEndpoints();
         app.MapVehiclesEndpoints();
+        app.MapHub<EventsHub>("/hubs/events").RequireAuthorization();
     }
 }
