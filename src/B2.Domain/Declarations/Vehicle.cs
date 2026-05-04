@@ -8,7 +8,7 @@ public sealed class Vehicle
     }
 #pragma warning restore CS8618
 
-    public Vehicle(
+    internal Vehicle(
         Guid id,
         Guid declarationId,
         string plateNumber,
@@ -25,19 +25,53 @@ public sealed class Vehicle
         TrailerOrContainerNumber = trailerOrContainerNumber;
         Note = note;
         ExitMarked = false;
+        RowVersion = new byte[8];
     }
 
-    public Guid Id { get; set; }
-    public Guid DeclarationId { get; set; }
-    public Declaration Declaration { get; set; } = null!;
-    public string PlateNumber { get; set; } = null!;
-    public string? PlateLast4 { get; set; }
-    public string? TrailerOrContainerNumber { get; set; }
-    public DateTimeOffset EntryTime { get; set; }
-    public bool ExitMarked { get; set; }
-    public DateTimeOffset? ExitTime { get; set; }
-    public Guid? ExitConfirmedByUserId { get; set; }
-    public string? Note { get; set; }
-    public Guid EnteredByUserId { get; set; }
+    /// <summary>Wire parent navigation so EF Core tracks new vehicles as inserts on the declaration graph.</summary>
+    internal void AttachToDeclaration(Declaration declaration)
+    {
+        Declaration = declaration;
+    }
+
+    public Guid Id { get; private set; }
+    public Guid DeclarationId { get; private set; }
+    public Declaration Declaration { get; private set; } = null!;
+    public string PlateNumber { get; private set; } = null!;
+    public string? PlateLast4 { get; private set; }
+    public string? TrailerOrContainerNumber { get; private set; }
+    public DateTimeOffset EntryTime { get; private set; }
+    public bool ExitMarked { get; private set; }
+    public DateTimeOffset? ExitTime { get; private set; }
+    public Guid? ExitConfirmedByUserId { get; private set; }
+    public string? Note { get; private set; }
+    public Guid EnteredByUserId { get; private set; }
     public byte[] RowVersion { get; set; } = Array.Empty<byte>();
+
+    public void MarkExit(Guid confirmedByUserId, DateTimeOffset exitTime)
+    {
+        if (ExitMarked)
+        {
+            throw new DomainException(
+                "VEHICLE_ALREADY_EXITED",
+                "Vehicle is already marked as exited.",
+                409);
+        }
+
+        ExitMarked = true;
+        ExitTime = exitTime;
+        ExitConfirmedByUserId = confirmedByUserId;
+    }
+
+    public void UnExit()
+    {
+        if (!ExitMarked)
+        {
+            throw new DomainException("VEHICLE_NOT_EXITED", "Vehicle is not marked as exited.", 400);
+        }
+
+        ExitMarked = false;
+        ExitTime = null;
+        ExitConfirmedByUserId = null;
+    }
 }

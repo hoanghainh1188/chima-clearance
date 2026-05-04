@@ -1,7 +1,9 @@
-using B2.Application.Auth;
+﻿using B2.Application.Auth;
 using B2.Application.Declarations;
+using B2.Application.Declarations.Exit;
 using B2.Application.MasterData;
 using B2.Application.Users;
+using B2.Application.Vehicles;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -17,6 +19,10 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<UserCommandHandler>();
         services.AddScoped<MasterDataCommandHandler>();
         services.AddScoped<CreateDeclarationCommandHandler>();
+        services.AddScoped<AddVehicleCommandHandler>();
+        services.AddScoped<MarkVehicleExitCommandHandler>();
+        services.AddScoped<UnExitVehicleCommandHandler>();
+        services.AddScoped<SearchVehiclesBySuffixQueryHandler>();
         services.AddValidatorsFromAssemblyContaining<Auth.Validators.LoginRequestValidator>();
         return services;
     }

@@ -112,5 +112,6 @@ public static class B2ApiHost
         app.MapUsersEndpoints();
         app.MapMasterDataEndpoints();
         app.MapDeclarationEndpoints();
+        app.MapVehiclesEndpoints();
     }
 }

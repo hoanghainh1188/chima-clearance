@@ -5,6 +5,7 @@ using B2.Domain.MasterData;
 using B2.Domain.Users;
 using B2.Application.Abstractions;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace B2.Infrastructure.Persistence;
 
@@ -13,6 +14,36 @@ public sealed class B2DbContext : DbContext, IUnitOfWork
     public B2DbContext(DbContextOptions<B2DbContext> options)
         : base(options)
     {
+    }
+
+    public override async Task<int> SaveChangesAsync(
+        bool acceptAllChangesOnSuccess,
+        CancellationToken cancellationToken = default)
+    {
+        await FixMisclassifiedNewVehiclesAsync(cancellationToken).ConfigureAwait(false);
+        return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// EF Core sometimes marks brand-new <see cref="Vehicle"/> rows as <see cref="EntityState.Modified"/>
+    /// on the declaration graph (UPDATE with non-existent PK → concurrency failure). Force INSERT instead.
+    /// </summary>
+    private async Task FixMisclassifiedNewVehiclesAsync(CancellationToken cancellationToken)
+    {
+        foreach (var entry in ChangeTracker.Entries<Vehicle>())
+        {
+            if (entry.State != EntityState.Modified)
+            {
+                continue;
+            }
+
+            var id = entry.Entity.Id;
+            var exists = await Vehicles.AsNoTracking().AnyAsync(v => v.Id == id, cancellationToken).ConfigureAwait(false);
+            if (!exists)
+            {
+                entry.State = EntityState.Added;
+            }
+        }
     }
 
     public DbSet<User> Users => Set<User>();
@@ -69,7 +100,8 @@ public sealed class B2DbContext : DbContext, IUnitOfWork
             e.Property(x => x.GoodsName).HasMaxLength(200).IsRequired();
             e.Property(x => x.Status).HasConversion<string>().HasMaxLength(32);
             e.Property(x => x.CancellationReason).HasMaxLength(500);
-            e.Property(x => x.RowVersion).IsRowVersion().IsConcurrencyToken();
+            // Client-managed 8-byte token (SQLite has no auto rowversion); IsRowVersion() omits INSERT values.
+            e.Property(x => x.RowVersion).IsConcurrencyToken().ValueGeneratedNever();
             e.HasMany(x => x.Vehicles)
                 .WithOne(v => v.Declaration)
                 .HasForeignKey(v => v.DeclarationId)
@@ -91,7 +123,8 @@ public sealed class B2DbContext : DbContext, IUnitOfWork
                 .HasComputedColumnSql("substr(\"PlateNumber\", -4)", stored: true);
             e.Property(x => x.TrailerOrContainerNumber).HasMaxLength(20);
             e.Property(x => x.Note).HasMaxLength(500);
-            e.Property(x => x.RowVersion).IsRowVersion().IsConcurrencyToken();
+            // Persist client 8-byte token; omit concurrency here — SQLite + computed PlateLast4 caused spurious UPDATEs on sibling inserts.
+            e.Property(x => x.RowVersion).IsRequired().ValueGeneratedNever();
         });
 
         modelBuilder.Entity<DailyHeader>(e =>

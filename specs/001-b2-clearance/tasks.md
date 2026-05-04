@@ -335,19 +335,19 @@ auto-promotes to `AllExited`.
 
 ### F-03 / F-04 master-data implementation (deferred from S1 per note above)
 
-- [ ] **T-S2-01** [P] [F-03] Implement `Processor` aggregate + repository in
+- [x] **T-S2-01** [P] [F-03] Implement `Processor` aggregate + repository in
   `src/B2.Domain/MasterData/Processor.cs` and
   `src/B2.Infrastructure/Persistence/Repositories/ProcessorRepository.cs`. EF
   configuration enforces `FullName` UK + `IsActive` default. **Dep**: T-S1-06.
   **LOC**: ~120.
-- [ ] **T-S2-02** [F-03] Wire `/api/master/processors` GET / POST / PUT / DELETE
+- [x] **T-S2-02** [F-03] Wire `/api/master/processors` GET / POST / PUT / DELETE
   in `src/B2.Server.Api/Endpoints/ProcessorsEndpoints.cs`. Make
   T-S1-21 processor-tests green. **Dep**: T-S2-01. **LOC**: ~140.
-- [ ] **T-S2-03** [P] [F-04] Implement `Yard` aggregate + repository in
+- [x] **T-S2-03** [P] [F-04] Implement `Yard` aggregate + repository in
   `src/B2.Domain/MasterData/Yard.cs` and
   `src/B2.Infrastructure/Persistence/Repositories/YardRepository.cs`. EF
   enforces `Code` UK regex `^[A-Z0-9]{1,20}$`. **Dep**: T-S1-06. **LOC**: ~120.
-- [ ] **T-S2-04** [F-04] Wire `/api/master/yards` GET / POST / PUT / DELETE in
+- [x] **T-S2-04** [F-04] Wire `/api/master/yards` GET / POST / PUT / DELETE in
   `src/B2.Server.Api/Endpoints/YardsEndpoints.cs`. Make T-S1-21 yard-tests
   green. **Dep**: T-S2-03. **LOC**: ~140.
 - [ ] **T-S2-05** [F-03] [F-04] Implement `Admin/MasterDataPage.xaml`
@@ -359,11 +359,11 @@ auto-promotes to `AllExited`.
 
 ### F-05 Vehicle Entry
 
-- [ ] **T-S2-06** [P] [F-05] Write Gherkin tests for F-05 in
+- [x] **T-S2-06** [P] [F-05] Write Gherkin tests for F-05 in
   `tests/B2.Server.Api.Tests/Declarations/CreateDeclarationEndpointTests.cs`
   verbatim from `spec.md` F-05 (happy path, duplicate, 12-digit, server
   timestamp). Tag `[Trait("Feature","F-05")]`. **Dep**: T-S1-09. **LOC**: ~280.
-- [ ] **T-S2-07** [F-05] Implement `Declaration` aggregate root +
+- [x] **T-S2-07** [F-05] Implement `Declaration` aggregate root +
   `DeclarationNumber`, `PlateNumber`, `ContainerNumber` value objects in
   `src/B2.Domain/Declarations/`. Implement `Declaration.RecomputeStatus()`,
   `Vehicle` child entity (private constructor — only `Declaration` creates).
@@ -372,16 +372,16 @@ auto-promotes to `AllExited`.
   `ContainerNumber.cs`, `DeclarationStatus.cs`. Unit tests in
   `tests/B2.Domain.Tests/Declarations/` covering all five invariants.
   **Dep**: T-S0-04. **LOC**: ~400.
-- [ ] **T-S2-08** [F-05] Implement `DeclarationRepository` in
+- [x] **T-S2-08** [F-05] Implement `DeclarationRepository` in
   `src/B2.Infrastructure/Persistence/Repositories/DeclarationRepository.cs`
   with EF Core mapping respecting `RowVersion BLOB(8)` concurrency token. EF
   configuration in `Persistence/Configurations/DeclarationConfiguration.cs`
   and `VehicleConfiguration.cs`. **Dep**: T-S2-07, T-S1-06. **LOC**: ~250.
-- [ ] **T-S2-09** [F-05] Implement `CreateDeclarationCommandHandler` +
+- [x] **T-S2-09** [F-05] Implement `CreateDeclarationCommandHandler` +
   validator in `src/B2.Application/Declarations/CreateDeclaration/`. Validator
   enforces INV-1 (12 digits unique) and INV-7 (Processor / Yard active at
   write time). **Dep**: T-S2-07, T-S2-01, T-S2-03. **LOC**: ~250.
-- [ ] **T-S2-10** [F-05] Wire `POST /api/declarations` endpoint in
+- [x] **T-S2-10** [F-05] Wire `POST /api/declarations` endpoint in
   `src/B2.Server.Api/Endpoints/DeclarationsEndpoints.cs` with
   `OperatorOrAbove` policy + `Idempotency-Key` middleware. Make T-S2-06 green.
   **Dep**: T-S2-09, T-S1-08. **LOC**: ~150.
@@ -398,16 +398,16 @@ auto-promotes to `AllExited`.
 
 ### F-06 Add Child Vehicle
 
-- [ ] **T-S2-13** [P] [F-06] Write Gherkin tests in
+- [x] **T-S2-13** [P] [F-06] Write Gherkin tests in
   `tests/B2.Server.Api.Tests/Declarations/AddVehicleEndpointTests.cs` verbatim
   from `spec.md` F-06 (add-second, can-not-add-to-KVGS-confirmed,
   can-not-add-to-Cancelled per FR-022). Tag `[Trait("Feature","F-06")]`.
   **Dep**: T-S1-09. **LOC**: ~200.
-- [ ] **T-S2-14** [F-06] Implement `AddVehicleCommandHandler` in
+- [x] **T-S2-14** [F-06] Implement `AddVehicleCommandHandler` in
   `src/B2.Application/Declarations/AddVehicle/` calling
   `Declaration.AddVehicle(...)` aggregate method (which guards locked statuses).
   **Dep**: T-S2-07, T-S2-09. **LOC**: ~180.
-- [ ] **T-S2-15** [F-06] Wire `POST /api/declarations/{id}/vehicles` endpoint
+- [x] **T-S2-15** [F-06] Wire `POST /api/declarations/{id}/vehicles` endpoint
   in `DeclarationsEndpoints.cs`. Make T-S2-13 green. **Dep**: T-S2-14. **LOC**: ~80.
 - [ ] **T-S2-16** [F-06] Extend `EntryPage.xaml` with the read-only
   "Tờ khai 1234...12 — [Đổi tờ khai]" banner activated when the page is opened
@@ -416,12 +416,12 @@ auto-promotes to `AllExited`.
 
 ### F-07 Suffix Search
 
-- [ ] **T-S2-17** [P] [F-07] Write Gherkin tests in
+- [x] **T-S2-17** [P] [F-07] Write Gherkin tests in
   `tests/B2.Server.Api.Tests/Vehicles/SearchEndpointTests.cs` verbatim from
   `spec.md` F-07 (un-exited only, 3 or 4 digits, multiple matches, performance
   benchmark on 50k seeded rows). Tag `[Trait("Feature","F-07")]`. **Dep**:
   T-S1-09. **LOC**: ~280.
-- [ ] **T-S2-18** [F-07] Implement `SearchVehiclesQueryHandler` in
+- [x] **T-S2-18** [F-07] Implement `SearchVehiclesQueryHandler` in
   `src/B2.Application/Vehicles/Search/` using `IX_Vehicle_PlateLast4` index
   (per [`data-model.md § 2.5`](./data-model.md)). Order by `EntryTime` asc.
   Wire `GET /api/vehicles/search` in `VehiclesEndpoints.cs`. **Dep**: T-S2-08.
@@ -429,20 +429,20 @@ auto-promotes to `AllExited`.
 
 ### F-08 Mark Vehicle Exit (incl. FR-019 idempotency, FR-024 cross-client race)
 
-- [ ] **T-S2-19** [P] [F-08] Write Gherkin tests in
+- [x] **T-S2-19** [P] [F-08] Write Gherkin tests in
   `tests/B2.Server.Api.Tests/Vehicles/ExitEndpointTests.cs` verbatim from
   `spec.md` F-08 (mark exit, auto-promote AllExited, idempotent retry,
   Operator-cannot-un-exit, Admin un-exit override). Add FR-024 cross-client
   race test (two different Idempotency-Keys → first commits, second gets
   `VEHICLE_ALREADY_EXITED` 409 with winner username + ExitTime). Tag
   `[Trait("Feature","F-08")]`. **Dep**: T-S1-09. **LOC**: ~350.
-- [ ] **T-S2-20** [F-08] Implement `MarkVehicleExitCommandHandler` and
+- [x] **T-S2-20** [F-08] Implement `MarkVehicleExitCommandHandler` and
   `UnExitVehicleCommandHandler` in `src/B2.Application/Vehicles/Exit/` calling
   `Vehicle.MarkExit(clock)` / `Vehicle.UnExit(reason)` aggregate methods +
   `Declaration.RecomputeStatus()`. The handler returns the
   `AlreadyExitedProblem` body with winner + ExitTime on 409. **Dep**: T-S2-07,
   T-S2-08. **LOC**: ~250.
-- [ ] **T-S2-21** [F-08] Wire `POST /api/vehicles/{id}/exit` (Operator+) and
+- [x] **T-S2-21** [F-08] Wire `POST /api/vehicles/{id}/exit` (Operator+) and
   `POST /api/vehicles/{id}/un-exit` (Admin) in `VehiclesEndpoints.cs`. Make
   T-S2-19 green. **Dep**: T-S2-20, T-S1-08. **LOC**: ~120.
 - [ ] **T-S2-22** [F-08] [F-07] Implement `ExitPage.xaml` +
