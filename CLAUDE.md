@@ -19,12 +19,15 @@ Auto-generated from all feature plans. Last updated: 2026-05-04
 Active phase: **Sprint S3 wrapping up** — F-09 confirmation, F-10 always-on
 ledger with SignalR push, FR-027 role matrix, FR-028 tri-state connectivity,
 the wireframe § 5 desktop chrome (sidebar + accelerators + functional Cỡ
-chữ dropdown), and the wireframe § 6.5 KVGS animations + self-monitoring
-counter are all on `main` after PRs #6, #7, #8, #9, #11, #12 (plus the
-#13 CI fix). Sprint S4 (Quartz + reports + officer-name edit) starts once
-the remaining Round 3d/e polish items (ledger drawer chi tiết +
-child-vehicle expand/collapse, list-view skeletons across pages) are
-either shipped or formally deferred.
+chữ dropdown), wireframe § 6.5 KVGS animations + self-monitoring counter,
+the wireframe § 6.2 ledger drawer chi tiết + in-list shortcuts, and the
+wireframe § 8 list-view skeletons + correlationId on error banners are
+all on `main` after PRs #6, #7, #8, #9, #11, #12, #15, #16 (plus the
+#13 CI fix). Sprint S4 (Quartz + reports + officer-name edit) starts now
+unless the remaining low-priority polish items (child-vehicle
+expand/collapse, right-click context menu, 300/400 ms animations on
+SignalR push, sidebar collapse toggle, focus-ring style sweep,
+⚙️ quick-settings menu, top-right toast position) get prioritised.
 
 **Done**: S0 (scaffold, ADRs 0001–0006), S1 (F-01/F-02/F-03/F-04 — auth,
 users, master data, force-rotate password), S2 (F-05/F-06/F-07/F-08 —
@@ -244,6 +247,20 @@ Yellow / red banners stay persistent in their respective states (no toast spam).
 
 ## Recent Changes
 
+- **2026-05-04** — Sprint S3 **Round 3e** merged via PR #16: list-view
+  skeletons (`Views/Common/SkeletonRows`) + correlationId on every
+  error banner (`Views/Common/ErrorCodeBanner`) across Ledger / Kvgs /
+  Users / MasterData / Exit. 5 VMs now take `ISessionCorrelationService`
+  and expose it as a `Correlation` property; pages bind via
+  `BindingContext="{Binding Correlation}"`. Closes wireframe § 8 list-
+  view-states promise.
+- **2026-05-04** — Sprint S3 **Round 3d** merged via PR #15 (`14c39b2`):
+  ledger drawer chi tiết (420 px right-side panel; double-tap row →
+  `GET /api/declarations/{id}`) and the in-list Windows accelerators
+  `F5` (refresh), `/` (focus search), `Esc` (close drawer / clear
+  search). Advances T-S3-10 by closing the wireframe § 6.2 drawer +
+  in-list shortcuts items; child-vehicle expand/collapse, context
+  menu, and SignalR push animations remain.
 - **2026-05-04** — **CI workflow fix** merged via PR #13 (`2068373`):
   pinned every Windows job's dotnet step to `shell: bash` to defeat the
   recurring `setup-dotnet@v5` PATH flake on `windows-2022` pwsh
