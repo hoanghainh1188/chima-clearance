@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using System.Text.RegularExpressions;
 using B2.Desktop.Resources.Strings;
 using B2.Desktop.Services.Api;
@@ -14,6 +16,7 @@ public partial class EntryViewModel : ObservableObject
 {
     private static readonly Regex DeclNumber = new("^[0-9]{12}$", RegexOptions.Compiled);
     private static readonly Regex Plate = new("^[0-9]{2}[A-Za-z]{1,2}[0-9]{4,5}$", RegexOptions.Compiled);
+    private static readonly CompositeFormat AddChildBannerFormat = CompositeFormat.Parse(AppResources.Entry_AddChildBanner_Format);
 
     private readonly IB2Api _api;
 
@@ -182,7 +185,7 @@ public partial class EntryViewModel : ObservableObject
             {
                 IsAddChildMode = true;
                 ActiveDeclarationId = dto.Id;
-                AddChildBannerDeclarationLabel = string.Format(AppResources.Entry_AddChildBanner_Format, MaskDeclaration(decl));
+                AddChildBannerDeclarationLabel = string.Format(CultureInfo.CurrentCulture, AddChildBannerFormat, MaskDeclaration(decl));
                 ClearVehicleFields();
             }
             else

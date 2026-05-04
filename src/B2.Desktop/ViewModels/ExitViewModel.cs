@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
+using System.Text;
 using B2.Desktop.Resources.Strings;
 using B2.Desktop.Services.Api;
 using B2.Shared.Contracts.Declarations;
@@ -9,13 +11,17 @@ using Refit;
 
 namespace B2.Desktop.ViewModels;
 
-public partial class ExitViewModel : ObservableObject
+public partial class ExitViewModel : ObservableObject, IDisposable
 {
     private const int DebounceMs = 500;
     private const int TooManyThreshold = 5;
 
+    private static readonly CompositeFormat ExitErrorNoMatchFormat = CompositeFormat.Parse(AppResources.Exit_Error_NoMatch_Format);
+    private static readonly CompositeFormat ExitToastExitMarkedFormat = CompositeFormat.Parse(AppResources.Exit_Toast_ExitMarked_Format);
+
     private readonly IB2Api _api;
     private CancellationTokenSource? _debounceCts;
+    private bool _disposed;
 
     [ObservableProperty]
     private bool _isSearching;
@@ -88,7 +94,7 @@ public partial class ExitViewModel : ObservableObject
 
             if (list.Count == 0)
             {
-                ErrorMessage = string.Format(AppResources.Exit_Error_NoMatch_Format, q);
+                ErrorMessage = string.Format(CultureInfo.CurrentCulture, ExitErrorNoMatchFormat, q);
             }
             else if (list.Count > TooManyThreshold)
             {
@@ -124,7 +130,7 @@ public partial class ExitViewModel : ObservableObject
         {
             var key = Guid.NewGuid().ToString("N");
             var response = await _api.MarkVehicleExitAsync(target.VehicleId, key).ConfigureAwait(false);
-            var toast = string.Format(AppResources.Exit_Toast_ExitMarked_Format, target.PlateNumber);
+            var toast = string.Format(CultureInfo.CurrentCulture, ExitToastExitMarkedFormat, target.PlateNumber);
             await Toast.Make(toast).Show().ConfigureAwait(false);
 
             if (string.Equals(response.DeclarationStatus, "AllExited", StringComparison.OrdinalIgnoreCase))
@@ -144,5 +150,19 @@ public partial class ExitViewModel : ObservableObject
         {
             ErrorMessage = AppResources.Exit_Error_MarkExit;
         }
+    }
+
+    public void Dispose()
+    {
+        if (_disposed)
+        {
+            return;
+        }
+
+        _debounceCts?.Cancel();
+        _debounceCts?.Dispose();
+        _debounceCts = null;
+        _disposed = true;
+        GC.SuppressFinalize(this);
     }
 }
