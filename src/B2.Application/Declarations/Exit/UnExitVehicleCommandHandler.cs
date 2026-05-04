@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using B2.Application.Abstractions;
 using B2.Domain;
 using B2.Domain.Audit;
@@ -24,11 +24,11 @@ public sealed class UnExitVehicleCommandHandler
         switch (result)
         {
             case UnExitVehicleApplied a:
-            {
-                var after = JsonSerializer.Serialize(new { a.DeclarationStatus, ExitMarked = false });
-                _audit.Set(new AuditEnvelope(actorUserId, AuditAction.UnExit, nameof(Vehicle), a.VehicleId, null, after, reason));
-                return;
-            }
+                {
+                    var after = JsonSerializer.Serialize(new { a.DeclarationStatus, ExitMarked = false });
+                    _audit.Set(new AuditEnvelope(actorUserId, AuditAction.UnExit, nameof(Vehicle), a.VehicleId, null, after, reason));
+                    return;
+                }
 
             case UnExitVehicleNotFound:
                 throw new DomainException("VEHICLE_NOT_FOUND", "Vehicle not found.", 404);

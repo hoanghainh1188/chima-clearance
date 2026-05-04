@@ -1,4 +1,4 @@
-﻿using System.Globalization;
+using System.Globalization;
 using System.Text.Json;
 using B2.Application.Abstractions;
 using B2.Domain;
@@ -32,25 +32,25 @@ public sealed class MarkVehicleExitCommandHandler
         switch (result)
         {
             case MarkVehicleExitApplied a:
-            {
-                var after = JsonSerializer.Serialize(new { a.ExitTime, DeclarationStatus = a.DeclarationStatus });
-                _audit.Set(new AuditEnvelope(actorUserId, AuditAction.Update, nameof(Vehicle), a.VehicleId, null, after, null));
-                return new VehicleExitResponse(a.VehicleId, a.ExitTime, a.DeclarationId, a.DeclarationStatus);
-            }
+                {
+                    var after = JsonSerializer.Serialize(new { a.ExitTime, DeclarationStatus = a.DeclarationStatus });
+                    _audit.Set(new AuditEnvelope(actorUserId, AuditAction.Update, nameof(Vehicle), a.VehicleId, null, after, null));
+                    return new VehicleExitResponse(a.VehicleId, a.ExitTime, a.DeclarationId, a.DeclarationStatus);
+                }
 
             case MarkVehicleExitConflict c:
-            {
-                var extensions = new Dictionary<string, string>(StringComparer.Ordinal)
                 {
-                    ["winnerUsername"] = c.WinnerDisplayName,
-                    ["exitTime"] = c.ExitTime.ToString("o", CultureInfo.InvariantCulture),
-                };
-                throw new DomainException(
-                    "VEHICLE_ALREADY_EXITED",
-                    "Vehicle was already marked exited by another operator.",
-                    409,
-                    extensions);
-            }
+                    var extensions = new Dictionary<string, string>(StringComparer.Ordinal)
+                    {
+                        ["winnerUsername"] = c.WinnerDisplayName,
+                        ["exitTime"] = c.ExitTime.ToString("o", CultureInfo.InvariantCulture),
+                    };
+                    throw new DomainException(
+                        "VEHICLE_ALREADY_EXITED",
+                        "Vehicle was already marked exited by another operator.",
+                        409,
+                        extensions);
+                }
 
             case MarkVehicleExitNotFound:
                 throw new DomainException("VEHICLE_NOT_FOUND", "Vehicle not found.", 404);

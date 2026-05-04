@@ -1,4 +1,4 @@
-﻿using B2.Application.Declarations.Exit;
+using B2.Application.Declarations.Exit;
 using B2.Domain.Declarations;
 
 namespace B2.Application.Abstractions;

@@ -1,4 +1,4 @@
-﻿using B2.Shared.Contracts.Declarations;
+using B2.Shared.Contracts.Declarations;
 using FluentValidation;
 
 namespace B2.Application.Declarations.Validators;

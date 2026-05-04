@@ -1,4 +1,4 @@
-﻿namespace B2.Application.Declarations.Exit;
+namespace B2.Application.Declarations.Exit;
 
 public abstract record UnExitVehicleResult;
 
