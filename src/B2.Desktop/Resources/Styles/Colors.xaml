@@ -20,6 +20,9 @@
   <!-- App-shell chrome (wireframe § 5). -->
   <Color x:Key="ColorStatusBarBg">#F4F4F7</Color>
   <Color x:Key="ColorTopBarBg">#FFFFFF</Color>
+  <Color x:Key="ColorSidebarBg">#FAFAFC</Color>
+  <!-- Focus indicator (wireframe § 9 — 2 px outline on every interactive control). -->
+  <Color x:Key="ColorBorderFocus">#1A73E8</Color>
   <Color x:Key="ColorBadgeOnlineBg">#E6F4EA</Color>
   <Color x:Key="ColorBadgeOnlineText">#1B5E20</Color>
   <Color x:Key="ColorBadgePollingBg">#FFF4E5</Color>

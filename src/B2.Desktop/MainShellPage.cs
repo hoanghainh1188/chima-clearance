@@ -9,10 +9,15 @@ namespace B2.Desktop;
 
 /// <summary>
 /// Post-login shell. ContentPage + Grid layout per wireframe § 5: top bar
-/// (title + tri-state connectivity badge + user menu), nav strip, content
-/// host, status bar. Identity and role come from <see cref="ISessionContext"/>;
-/// the connectivity badge tracks <see cref="ConnectivityService.Mode"/>; the
+/// (title + tri-state badge + user menu), vertical sidebar (220 px) on the
+/// left, content host on the right, status bar across the bottom.
+///
+/// Identity and role come from <see cref="ISessionContext"/>; the
+/// connectivity badge tracks <see cref="ConnectivityService.Mode"/>; the
 /// status bar binds to <see cref="ISessionCorrelationService.CurrentCorrelationId"/>.
+/// Platform-specific code (Windows accelerators) calls
+/// <see cref="ActivateTabByIndex(int)"/> and <see cref="ShowShortcutsAsync"/>
+/// to wire <c>Alt+1..8</c> and <c>F1</c> respectively.
 /// </summary>
 public sealed class MainShellPage : ContentPage
 {
@@ -53,31 +58,44 @@ public sealed class MainShellPage : ContentPage
             VerticalOptions = LayoutOptions.Center,
         };
         _connectivityBadge.Content = _connectivityLabel;
+        var badgeTap = new TapGestureRecognizer();
+        badgeTap.Tapped += OnConnectivityBadgeTapped;
+        _connectivityBadge.GestureRecognizers.Add(badgeTap);
 
         var grid = new Grid
         {
             RowDefinitions =
             {
                 new RowDefinition { Height = new GridLength(56) },
-                new RowDefinition { Height = GridLength.Auto },
                 new RowDefinition { Height = GridLength.Star },
                 new RowDefinition { Height = new GridLength(32) },
+            },
+            ColumnDefinitions =
+            {
+                new ColumnDefinition { Width = new GridLength(220) },
+                new ColumnDefinition { Width = GridLength.Star },
             },
         };
 
         var topBar = BuildTopBar();
         Grid.SetRow(topBar, 0);
+        Grid.SetColumn(topBar, 0);
+        Grid.SetColumnSpan(topBar, 2);
         grid.Children.Add(topBar);
 
-        var navStrip = BuildNavStrip();
-        Grid.SetRow(navStrip, 1);
-        grid.Children.Add(navStrip);
+        var sidebar = BuildSidebar();
+        Grid.SetRow(sidebar, 1);
+        Grid.SetColumn(sidebar, 0);
+        grid.Children.Add(sidebar);
 
-        Grid.SetRow(_contentHost, 2);
+        Grid.SetRow(_contentHost, 1);
+        Grid.SetColumn(_contentHost, 1);
         grid.Children.Add(_contentHost);
 
         var statusBar = BuildStatusBar(services.GetRequiredService<ISessionCorrelationService>());
-        Grid.SetRow(statusBar, 3);
+        Grid.SetRow(statusBar, 2);
+        Grid.SetColumn(statusBar, 0);
+        Grid.SetColumnSpan(statusBar, 2);
         grid.Children.Add(statusBar);
 
         Content = grid;
@@ -90,6 +108,91 @@ public sealed class MainShellPage : ContentPage
         {
             ActivateTab(_tabs[0]);
         }
+
+        Loaded += OnLoaded;
+    }
+
+    private void OnLoaded(object? sender, EventArgs e)
+    {
+        Loaded -= OnLoaded;
+        RegisterWindowsAccelerators();
+    }
+
+    /// <summary>
+    /// Wire the <c>F1</c> and <c>Alt+1..Alt+8</c> Windows keyboard
+    /// accelerators per wireframe § 5. Invoked on first <c>Loaded</c> when
+    /// the page handler has been mounted on a <c>Microsoft.UI.Xaml.UIElement</c>.
+    /// </summary>
+    private void RegisterWindowsAccelerators()
+    {
+        if (Handler?.PlatformView is not Microsoft.UI.Xaml.UIElement element)
+        {
+            return;
+        }
+
+        AttachAccelerator(
+            element,
+            Windows.System.VirtualKey.F1,
+            Microsoft.UI.Xaml.Input.VirtualKeyModifiers.None,
+            () => _ = ShowShortcutsAsync());
+
+        for (var i = 1; i <= 8; i++)
+        {
+            var captured = i;
+            var key = (Windows.System.VirtualKey)((int)Windows.System.VirtualKey.Number0 + captured);
+            AttachAccelerator(
+                element,
+                key,
+                Microsoft.UI.Xaml.Input.VirtualKeyModifiers.Menu,
+                () => ActivateTabByIndex(captured));
+        }
+    }
+
+    private static void AttachAccelerator(
+        Microsoft.UI.Xaml.UIElement element,
+        Windows.System.VirtualKey key,
+        Microsoft.UI.Xaml.Input.VirtualKeyModifiers modifiers,
+        Action invoke)
+    {
+        var accelerator = new Microsoft.UI.Xaml.Input.KeyboardAccelerator
+        {
+            Key = key,
+            Modifiers = modifiers,
+        };
+        accelerator.Invoked += (_, args) =>
+        {
+            invoke();
+            args.Handled = true;
+        };
+        element.KeyboardAccelerators.Add(accelerator);
+    }
+
+    /// <summary>
+    /// Activate the sidebar item at <paramref name="oneBasedIndex"/>. Used by
+    /// Windows <c>Alt+N</c> accelerators registered in <c>Platforms/Windows</c>.
+    /// Out-of-range indices are no-ops.
+    /// </summary>
+    public void ActivateTabByIndex(int oneBasedIndex)
+    {
+        var idx = oneBasedIndex - 1;
+        if (idx < 0 || idx >= _tabs.Count)
+        {
+            return;
+        }
+
+        ActivateTab(_tabs[idx]);
+    }
+
+    /// <summary>
+    /// Open the F1 cheat-sheet modal. Public so platform-specific accelerator
+    /// code can invoke it on the keypress.
+    /// </summary>
+    public Task ShowShortcutsAsync()
+    {
+        return _modal.ShowAsync(
+            AppResources.Shortcuts_Title,
+            AppResources.Shortcuts_Body,
+            AppResources.Common_Close);
     }
 
     private Grid BuildTopBar()
@@ -147,67 +250,115 @@ public sealed class MainShellPage : ContentPage
         return bar;
     }
 
-    private HorizontalStackLayout BuildNavStrip()
+    private Grid BuildSidebar()
     {
-        var strip = new HorizontalStackLayout
+        var container = new Grid
         {
-            BackgroundColor = (Color)Application.Current!.Resources["ColorTopBarBg"],
-            Spacing = 4,
-            Padding = new Thickness(8, 4),
+            BackgroundColor = (Color)Application.Current!.Resources["ColorSidebarBg"],
+            RowDefinitions =
+            {
+                new RowDefinition { Height = GridLength.Auto },
+            },
+            Padding = new Thickness(0, 8),
         };
 
-        AddTab(strip, AppResources.Ledger_PageTitle, _services.GetRequiredService<LedgerPage>());
+        var stack = new VerticalStackLayout { Spacing = 2 };
+
+        AddSidebarItem(
+            stack,
+            AppResources.Sidebar_Item_Ledger,
+            _services.GetRequiredService<LedgerPage>());
 
         if (_role is UserRoleDto.Admin or UserRoleDto.Operator)
         {
-            AddTab(strip, AppResources.Entry_PageTitle, _services.GetRequiredService<EntryPage>());
-            AddTab(strip, AppResources.Exit_PageTitle, _services.GetRequiredService<ExitPage>());
+            AddSidebarItem(
+                stack,
+                AppResources.Sidebar_Item_Entry,
+                _services.GetRequiredService<EntryPage>());
+            AddSidebarItem(
+                stack,
+                AppResources.Sidebar_Item_Exit,
+                _services.GetRequiredService<ExitPage>());
         }
 
         if (_role is UserRoleDto.Admin or UserRoleDto.Supervisor)
         {
-            AddTab(strip, AppResources.Kvgs_PageTitle, _services.GetRequiredService<KvgsPage>());
+            AddSidebarItem(
+                stack,
+                AppResources.Sidebar_Item_Kvgs,
+                _services.GetRequiredService<KvgsPage>());
         }
 
         if (_role == UserRoleDto.Admin)
         {
-            AddTab(strip, AppResources.MasterData_PageTitle, _services.GetRequiredService<MasterDataPage>());
-            AddTab(strip, AppResources.Users_PageTitle, _services.GetRequiredService<UsersPage>());
+            AddSidebarItem(
+                stack,
+                AppResources.Sidebar_Item_MasterData,
+                _services.GetRequiredService<MasterDataPage>());
+            AddSidebarItem(
+                stack,
+                AppResources.Sidebar_Item_Users,
+                _services.GetRequiredService<UsersPage>());
         }
 
-        return strip;
+        container.Children.Add(stack);
+        return container;
     }
 
-    private void AddTab(HorizontalStackLayout host, string title, ContentView view)
+    private void AddSidebarItem(VerticalStackLayout host, string label, ContentView view)
     {
-        var button = new Button
+        var item = new Grid
         {
-            Text = title,
+            ColumnDefinitions =
+            {
+                new ColumnDefinition { Width = new GridLength(4) },
+                new ColumnDefinition { Width = GridLength.Star },
+            },
+            HeightRequest = 44,
             BackgroundColor = Colors.Transparent,
-            TextColor = (Color)Application.Current!.Resources["ColorOnSurface"],
         };
-        var entry = new TabEntry(button, view);
-        button.Clicked += (_, _) => ActivateTab(entry);
-        host.Children.Add(button);
+
+        var leftBar = new BoxView
+        {
+            Color = (Color)Application.Current!.Resources["ColorPrimary"],
+            IsVisible = false,
+        };
+        Grid.SetColumn(leftBar, 0);
+        item.Children.Add(leftBar);
+
+        var titleLabel = new Label
+        {
+            Text = label,
+            VerticalOptions = LayoutOptions.Center,
+            Padding = new Thickness(12, 0, 12, 0),
+            TextColor = (Color)Application.Current.Resources["ColorOnSurface"],
+        };
+        Grid.SetColumn(titleLabel, 1);
+        item.Children.Add(titleLabel);
+
+        var entry = new TabEntry(item, leftBar, titleLabel, view);
+        var tap = new TapGestureRecognizer();
+        tap.Tapped += (_, _) => ActivateTab(entry);
+        item.GestureRecognizers.Add(tap);
+
+        host.Children.Add(item);
         _tabs.Add(entry);
     }
 
     private void ActivateTab(TabEntry tab)
     {
-        if (_active is not null && ReferenceEquals(_active.Button, tab.Button))
+        if (_active is not null && ReferenceEquals(_active.Container, tab.Container))
         {
             return;
         }
 
         _contentHost.Content = tab.View;
 
-        var primary = (Color)Application.Current!.Resources["ColorPrimary"];
-        var muted = (Color)Application.Current.Resources["ColorOnSurface"];
         foreach (var entry in _tabs)
         {
-            var isActive = ReferenceEquals(entry.Button, tab.Button);
-            entry.Button.TextColor = isActive ? primary : muted;
-            entry.Button.FontAttributes = isActive ? FontAttributes.Bold : FontAttributes.None;
+            var isActive = ReferenceEquals(entry.Container, tab.Container);
+            entry.LeftBar.IsVisible = isActive;
+            entry.TitleLabel.FontAttributes = isActive ? FontAttributes.Bold : FontAttributes.None;
         }
 
         _active = tab;
@@ -319,6 +470,21 @@ public sealed class MainShellPage : ContentPage
         }
     }
 
+    private async void OnConnectivityBadgeTapped(object? sender, TappedEventArgs e)
+    {
+        var detail = _connectivity.Mode switch
+        {
+            ConnectivityMode.Online => AppResources.Connectivity_Detail_Online,
+            ConnectivityMode.PollingFallback => AppResources.Connectivity_Detail_Polling,
+            _ => AppResources.Connectivity_Detail_Offline,
+        };
+
+        await _modal.ShowAsync(
+            AppResources.Connectivity_Detail_Title,
+            detail,
+            AppResources.Common_Close).ConfigureAwait(true);
+    }
+
     private async void OnUserMenuClicked(object? sender, EventArgs e)
     {
         var choice = await DisplayActionSheet(
@@ -352,10 +518,7 @@ public sealed class MainShellPage : ContentPage
 
     private async void OnShortcutsTapped(object? sender, TappedEventArgs e)
     {
-        await _modal.ShowAsync(
-            AppResources.Shortcuts_Title,
-            AppResources.Shortcuts_Body,
-            AppResources.Common_Close).ConfigureAwait(true);
+        await ShowShortcutsAsync().ConfigureAwait(true);
     }
 
     private async Task LogoutAsync()
@@ -367,5 +530,5 @@ public sealed class MainShellPage : ContentPage
         await _navigator.NavigateToLoginAsync().ConfigureAwait(false);
     }
 
-    private sealed record TabEntry(Button Button, ContentView View);
+    private sealed record TabEntry(Grid Container, BoxView LeftBar, Label TitleLabel, ContentView View);
 }

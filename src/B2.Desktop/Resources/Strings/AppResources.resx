@@ -502,6 +502,36 @@
   <data name="TopBar_Badge_Offline" xml:space="preserve">
     <value>🔴 Mất kết nối</value>
   </data>
+  <data name="Sidebar_Item_Ledger" xml:space="preserve">
+    <value>📋 Sổ B2</value>
+  </data>
+  <data name="Sidebar_Item_Entry" xml:space="preserve">
+    <value>➕ Nhập</value>
+  </data>
+  <data name="Sidebar_Item_Exit" xml:space="preserve">
+    <value>🔍 Xe ra</value>
+  </data>
+  <data name="Sidebar_Item_Kvgs" xml:space="preserve">
+    <value>✅ KVGS</value>
+  </data>
+  <data name="Sidebar_Item_MasterData" xml:space="preserve">
+    <value>🗂️ Danh mục</value>
+  </data>
+  <data name="Sidebar_Item_Users" xml:space="preserve">
+    <value>👥 Người dùng</value>
+  </data>
+  <data name="Connectivity_Detail_Title" xml:space="preserve">
+    <value>Trạng thái kết nối</value>
+  </data>
+  <data name="Connectivity_Detail_Online" xml:space="preserve">
+    <value>Kênh trực tiếp với máy chủ đang hoạt động.</value>
+  </data>
+  <data name="Connectivity_Detail_Polling" xml:space="preserve">
+    <value>Kênh trực tiếp tạm ngắt — đang đồng bộ qua HTTP mỗi ~3 giây. Vẫn có thể nhập / xác nhận; các máy khác hội tụ trong tối đa 3 giây.</value>
+  </data>
+  <data name="Connectivity_Detail_Offline" xml:space="preserve">
+    <value>Không kết nối được máy chủ. Các thao tác ghi tạm ngừng cho đến khi khôi phục.</value>
+  </data>
   <data name="UserMenu_ChangePassword" xml:space="preserve">
     <value>Đổi mật khẩu</value>
   </data>
