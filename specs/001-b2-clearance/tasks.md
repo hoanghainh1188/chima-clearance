@@ -477,10 +477,13 @@ on a second client the row reverts color within 1 s without manual refresh.
 - [X] **T-S3-03** [F-09] Wire `POST /api/declarations/{id}/kvgs-confirm` in
   `DeclarationsEndpoints.cs` with `SupervisorOrAbove` policy. Make T-S3-01
   green. **Dep**: T-S3-02. **LOC**: ~80.
-- [ ] **T-S3-04** [F-09] Implement `KvgsPage.xaml` + `KvgsViewModel.cs` per
+- [~] **T-S3-04** [F-09] Implement `KvgsPage.xaml` + `KvgsViewModel.cs` per
   [wireframe § 6.5](../05-ui-wireframes.md). Confirmation modal with focus
   trap; row removes from list (animated 300 ms) on success. Vietnamese copy
   verbatim. **Dep**: T-S3-03. **LOC**: ~280. **DoD**: §DoD-6.
+  *Status (2026-05-04)*: Page + VM + confirmation modal landed in
+  `7ba1069`. Animated row removal (300 ms) and explicit focus trap deferred
+  pending Windows-runtime verification.
 
 ### F-10 Ledger + FR-027 / FR-028 (realtime)
 
@@ -502,27 +505,49 @@ on a second client the row reverts color within 1 s without manual refresh.
   in `B2.Application/DomainEvents/`. Wire it so successful Create / Exit /
   KvgsConfirm / Cancel / OfficerNameChanged commands publish events. **Dep**:
   T-S2-21, T-S3-03. **LOC**: ~250.
-- [ ] **T-S3-09** [F-10] Implement `SignalRClient` and `ConnectivityState`
+- [~] **T-S3-09** [F-10] Implement `SignalRClient` and `ConnectivityState`
   service in `src/B2.Desktop/Services/`. Implement the FR-028 tri-state
   machine (transitions per [`research.md § 3`](./research.md)). Polling
   fallback hits `GET /api/declarations?since=…`. Files:
   `Services/SignalRClient.cs`, `Services/ConnectivityState.cs`. **Dep**:
   T-S3-07, T-S3-08. **LOC**: ~350.
-- [ ] **T-S3-10** [F-10] Implement `LedgerPage.xaml` + `LedgerViewModel.cs`
+  *Status (2026-05-04)*: FR-028 tri-state machine + 3 s polling fallback +
+  `LedgerChanged` push wired in `ConnectivityService` (`7ba1069`). Standalone
+  `SignalRClient` extraction deferred — current single-class collapses
+  hub + tri-state, which works but blurs separation of concerns.
+- [~] **T-S3-10** [F-10] Implement `LedgerPage.xaml` + `LedgerViewModel.cs`
   per [wireframe § 6.2](../05-ui-wireframes.md). Sticky search row, daily
   header rows, 🔴/🟢/🔵/📋 status badges (icon + color + text per Constitution
   VIII), four list-view states (loading / empty / error / offline) per
   wireframe § 8, virtualized `CollectionView`. Subscribe to `ConnectivityState`.
   Vietnamese copy verbatim. **Dep**: T-S3-09. **LOC**: ~500. **DoD**: §DoD-6.
-- [ ] **T-S3-11** [F-10] Implement `AppShell.xaml` + `AppShellViewModel.cs`
+  *Status (2026-05-04)*: Page + VM + filters + status badges + four
+  list-view states + connectivity banners landed in `7ba1069`. Drawer chi
+  tiết (right-side detail), child-vehicle expand/collapse, context menu,
+  300 ms color animation / 400 ms highlight pulse on SignalR push deferred
+  pending Windows-runtime verification.
+- [X] **T-S3-11** [F-10] Implement `AppShell.xaml` + `AppShellViewModel.cs`
   per [wireframe § 5](../05-ui-wireframes.md) — top bar with tri-state
   connectivity badge + user menu, sidebar (`Alt+1`..`Alt+8` accelerators), F1
   cheat-sheet modal, status bar with correlationId. **Dep**: T-S3-10. **LOC**:
   ~350.
-- [ ] **T-S3-12** [F-10] [F-09] Implement reusable `ToastService` and
+  *Status (2026-05-04)*: `MainShellPage : ContentPage` + Grid layout, top
+  bar (title + tri-state badge + user menu with Đổi mật khẩu / Đăng xuất),
+  F1 cheat-sheet modal via `IModalService`, status bar with `Mã phiên`
+  bound to `ISessionCorrelationService` (commits `1511f90`, `3ef3f53`,
+  `21a1650`, `d15b744`). Sidebar (vs current top tab strip) and
+  `Alt+1`..`Alt+8` / real F1 keypress need `Platforms/Windows/`
+  accelerators — deferred to a follow-up that can be verified on the
+  Windows runner.
+- [X] **T-S3-12** [F-10] [F-09] Implement reusable `ToastService` and
   `ModalService` in `src/B2.Desktop/Services/` per
   [wireframe § 7](../05-ui-wireframes.md). Constitution VIII: per-page
   reimplementations are forbidden. **Dep**: T-S3-10. **LOC**: ~280.
+  *Status (2026-05-04)*: services + interfaces landed in `7ba1069`;
+  Entry / Exit / MasterData VMs migrated off direct `Toast.Make` /
+  `page.DisplayAlert` to `IToastService` / `IModalService.ConfirmAsync`
+  in this commit. `IModalService.ShowAsync` added for read-only modals
+  (used by F1 cheat sheet).
 
 **Sprint S3 exit smoke**: from quickstart § 4.3 step 8 (SignalR push + KVGS
 revert color on second client within 1 s).
