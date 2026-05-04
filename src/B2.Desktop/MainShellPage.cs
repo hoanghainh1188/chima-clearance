@@ -270,9 +270,11 @@ public sealed class MainShellPage : ContentPage
             new Binding(
                 nameof(ISessionCorrelationService.CurrentCorrelationId),
                 source: correlation,
-                stringFormat: AppResources.Status_Session_Label + " {0}",
-                fallbackValue: fallback,
-                targetNullValue: fallback));
+                stringFormat: AppResources.Status_Session_Label + " {0}")
+            {
+                FallbackValue = fallback,
+                TargetNullValue = fallback,
+            });
         Grid.SetColumn(session, 2);
         bar.Children.Add(session);
 

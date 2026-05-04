@@ -95,10 +95,7 @@ public sealed class ConnectivityService : IDisposable
         }
 
         cts?.Cancel();
-        if (timer is not null)
-        {
-            await timer.DisposeAsync().ConfigureAwait(false);
-        }
+        timer?.Dispose();
 
         if (hub is not null)
         {
@@ -139,7 +136,7 @@ public sealed class ConnectivityService : IDisposable
                     _options.HubUri,
                     options =>
                     {
-                        options.AccessTokenProvider = () => Task.FromResult(_auth.AccessToken ?? string.Empty);
+                        options.AccessTokenProvider = () => Task.FromResult<string?>(_auth.AccessToken);
                     })
                 .WithAutomaticReconnect()
                 .Build();
