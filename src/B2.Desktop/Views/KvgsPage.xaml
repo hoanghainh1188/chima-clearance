@@ -31,10 +31,18 @@
              FontAttributes="Bold"
              TextColor="{StaticResource ColorOnSurface}" />
     </HorizontalStackLayout>
-    <Button Grid.Row="3"
-            Text="{x:Static s:AppResources.Kvgs_Refresh}"
-            Command="{Binding RefreshCommand}"
-            HorizontalOptions="Start" />
+    <Grid Grid.Row="3"
+          ColumnDefinitions="Auto,*,Auto"
+          ColumnSpacing="{StaticResource SpacingM}">
+      <Button Grid.Column="0"
+              Text="{x:Static s:AppResources.Kvgs_Refresh}"
+              Command="{Binding RefreshCommand}"
+              HorizontalOptions="Start" />
+      <Label Grid.Column="2"
+             Text="{Binding ConfirmedTodayLabel}"
+             VerticalOptions="Center"
+             TextColor="{StaticResource ColorOnSurfaceMuted}" />
+    </Grid>
     <ScrollView Grid.Row="4">
       <VerticalStackLayout Spacing="{StaticResource SpacingM}">
         <ActivityIndicator IsRunning="{Binding IsLoading}"
@@ -59,7 +67,8 @@
               <DataTemplate x:DataType="vm:LedgerRowViewModel">
                 <Grid Padding="{StaticResource SpacingS}"
                       ColumnDefinitions="*,Auto"
-                      ColumnSpacing="{StaticResource SpacingM}">
+                      ColumnSpacing="{StaticResource SpacingM}"
+                      Opacity="{Binding Opacity}">
                   <VerticalStackLayout Grid.Column="0">
                     <Label Text="{Binding DeclarationMasked}"
                            FontAttributes="Bold" />

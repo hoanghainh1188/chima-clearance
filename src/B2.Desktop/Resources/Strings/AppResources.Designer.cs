@@ -93,6 +93,7 @@ public static class AppResources
     public static string Kvgs_Error_Confirm_Format => ResourceManager.GetString(nameof(Kvgs_Error_Confirm_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Kvgs_PageTitle => ResourceManager.GetString(nameof(Kvgs_PageTitle), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Kvgs_Refresh => ResourceManager.GetString(nameof(Kvgs_Refresh), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Kvgs_ConfirmedToday_Format => ResourceManager.GetString(nameof(Kvgs_ConfirmedToday_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Kvgs_Toast_Confirmed_Format => ResourceManager.GetString(nameof(Kvgs_Toast_Confirmed_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_ConnectivityPrefix => ResourceManager.GetString(nameof(Ledger_ConnectivityPrefix), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_DailyHeader_Format => ResourceManager.GetString(nameof(Ledger_DailyHeader_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
