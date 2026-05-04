@@ -136,11 +136,11 @@ public partial class ExitViewModel : ObservableObject, IDisposable
             var key = Guid.NewGuid().ToString("N");
             var response = await _api.MarkVehicleExitAsync(target.VehicleId, key).ConfigureAwait(false);
             var toast = string.Format(CultureInfo.CurrentCulture, ExitToastExitMarkedFormat, target.PlateNumber);
-            await _toast.ShowAsync(toast).ConfigureAwait(false);
+            await _toast.ShowAsync(toast, ToastSeverity.Success).ConfigureAwait(false);
 
             if (string.Equals(response.DeclarationStatus, "AllExited", StringComparison.OrdinalIgnoreCase))
             {
-                await _toast.ShowAsync(AppResources.Exit_Toast_DeclarationAllExited).ConfigureAwait(false);
+                await _toast.ShowAsync(AppResources.Exit_Toast_DeclarationAllExited, ToastSeverity.Success).ConfigureAwait(false);
             }
 
             Suffix = string.Empty;
