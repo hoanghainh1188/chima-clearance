@@ -8,5 +8,5 @@ public sealed class MainShellFactory : IMainShellFactory
 
     public MainShellFactory(IServiceProvider services) => _services = services;
 
-    public Shell CreateMainShell(UserRoleDto role) => new MainShell(_services, role);
+    public Page CreateMainShell(UserRoleDto role) => new MainShellPage(_services, role);
 }

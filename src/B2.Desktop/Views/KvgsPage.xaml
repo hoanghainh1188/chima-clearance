@@ -1,12 +1,11 @@
 ﻿<?xml version="1.0" encoding="UTF-8" ?>
-<ContentPage x:Class="B2.Desktop.Views.KvgsPage"
+<ContentView x:Class="B2.Desktop.Views.KvgsPage"
              x:Name="KvgsRoot"
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:B2.Desktop.ViewModels"
              xmlns:s="clr-namespace:B2.Desktop.Resources.Strings"
              x:DataType="vm:KvgsViewModel"
-             Title="{x:Static s:AppResources.Kvgs_PageTitle}"
              BackgroundColor="{StaticResource ColorSurface}">
   <Grid Padding="{StaticResource SpacingM}"
         RowDefinitions="Auto,Auto,Auto,Auto,*"
@@ -84,4 +83,4 @@
       </VerticalStackLayout>
     </ScrollView>
   </Grid>
-</ContentPage>
+</ContentView>

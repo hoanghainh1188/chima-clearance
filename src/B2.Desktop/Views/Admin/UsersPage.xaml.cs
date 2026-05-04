@@ -2,20 +2,21 @@ using B2.Desktop.ViewModels.Admin;
 
 namespace B2.Desktop.Views.Admin;
 
-public partial class UsersPage : ContentPage
+public partial class UsersPage : ContentView
 {
     public UsersPage(UsersViewModel model)
     {
         InitializeComponent();
         BindingContext = model;
+        Loaded += OnLoaded;
     }
 
-    protected override async void OnAppearing()
+    private async void OnLoaded(object? sender, EventArgs e)
     {
-        base.OnAppearing();
+        Loaded -= OnLoaded;
         if (BindingContext is UsersViewModel vm)
         {
-            await vm.LoadCommand.ExecuteAsync(null);
+            await vm.LoadCommand.ExecuteAsync(null).ConfigureAwait(true);
         }
     }
 }

@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" ?>
-<ContentPage x:Class="B2.Desktop.Views.Admin.MasterDataPage"
+<ContentView x:Class="B2.Desktop.Views.Admin.MasterDataPage"
              x:Name="PageRoot"
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
@@ -7,7 +7,6 @@
              xmlns:s="clr-namespace:B2.Desktop.Resources.Strings"
              xmlns:md="clr-namespace:B2.Shared.Contracts.MasterData;assembly=B2.Shared.Contracts"
              x:DataType="vm:MasterDataViewModel"
-             Title="{x:Static s:AppResources.MasterData_PageTitle}"
              BackgroundColor="{StaticResource ColorSurface}">
   <Grid Padding="{StaticResource SpacingM}" RowDefinitions="Auto,Auto,Auto,*">
     <HorizontalStackLayout Grid.Row="0" Spacing="{StaticResource SpacingS}">
@@ -97,4 +96,4 @@
       </VerticalStackLayout>
     </Grid>
   </Grid>
-</ContentPage>
+</ContentView>

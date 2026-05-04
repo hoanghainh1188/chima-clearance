@@ -148,6 +148,12 @@ public static class AppResources
     public static string MasterData_ToggleActive => ResourceManager.GetString(nameof(MasterData_ToggleActive), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string MasterData_YardCodePrompt => ResourceManager.GetString(nameof(MasterData_YardCodePrompt), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string MasterData_YardNamePrompt => ResourceManager.GetString(nameof(MasterData_YardNamePrompt), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Status_AppVersion => ResourceManager.GetString(nameof(Status_AppVersion), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Status_FontSize_Label => ResourceManager.GetString(nameof(Status_FontSize_Label), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Status_FontSize_Normal => ResourceManager.GetString(nameof(Status_FontSize_Normal), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Status_Session_Label => ResourceManager.GetString(nameof(Status_Session_Label), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Status_Session_None => ResourceManager.GetString(nameof(Status_Session_None), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Status_Shortcuts_F1 => ResourceManager.GetString(nameof(Status_Shortcuts_F1), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Supervisor_HomeBody => ResourceManager.GetString(nameof(Supervisor_HomeBody), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Supervisor_HomeTitle => ResourceManager.GetString(nameof(Supervisor_HomeTitle), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
 }

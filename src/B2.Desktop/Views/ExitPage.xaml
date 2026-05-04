@@ -1,5 +1,5 @@
 ﻿<?xml version="1.0" encoding="UTF-8" ?>
-<ContentPage x:Class="B2.Desktop.Views.ExitPage"
+<ContentView x:Class="B2.Desktop.Views.ExitPage"
              x:Name="PageRoot"
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
@@ -7,7 +7,6 @@
              xmlns:s="clr-namespace:B2.Desktop.Resources.Strings"
              xmlns:decl="clr-namespace:B2.Shared.Contracts.Declarations;assembly=B2.Shared.Contracts"
              x:DataType="vm:ExitViewModel"
-             Title="{x:Static s:AppResources.Exit_PageTitle}"
              BackgroundColor="{StaticResource ColorSurface}">
   <Grid Padding="{StaticResource SpacingM}" RowDefinitions="Auto,Auto,Auto,Auto,*,Auto">
     <Label Grid.Row="0"
@@ -75,4 +74,4 @@
            TextColor="{StaticResource ColorOnSurface}"
            FontSize="{StaticResource FontSizeM}" />
   </Grid>
-</ContentPage>
+</ContentView>

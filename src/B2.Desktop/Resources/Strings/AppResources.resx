@@ -475,4 +475,22 @@
   <data name="Supervisor_HomeBody" xml:space="preserve">
     <value>Tài khoản giám sát không có quyền nhập xe hay xác nhận xe ra. Vui lòng dùng các chức năng khác (sổ B2, KVGS…) khi được triển khai.</value>
   </data>
+  <data name="Status_FontSize_Label" xml:space="preserve">
+    <value>Cỡ chữ:</value>
+  </data>
+  <data name="Status_FontSize_Normal" xml:space="preserve">
+    <value>Bình thường</value>
+  </data>
+  <data name="Status_Shortcuts_F1" xml:space="preserve">
+    <value>Phím tắt: F1</value>
+  </data>
+  <data name="Status_Session_Label" xml:space="preserve">
+    <value>Mã phiên:</value>
+  </data>
+  <data name="Status_Session_None" xml:space="preserve">
+    <value>—</value>
+  </data>
+  <data name="Status_AppVersion" xml:space="preserve">
+    <value>v1.0.0</value>
+  </data>
 </root>
