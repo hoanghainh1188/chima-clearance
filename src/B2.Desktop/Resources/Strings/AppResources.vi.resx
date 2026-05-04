@@ -204,6 +204,48 @@
   <data name="Ledger_DisplayRange_Format" xml:space="preserve">
     <value>Hiển thị {0}–{1} của {2}</value>
   </data>
+  <data name="Ledger_Drawer_Title" xml:space="preserve">
+    <value>Chi tiết tờ khai</value>
+  </data>
+  <data name="Ledger_Drawer_DeclarationLabel" xml:space="preserve">
+    <value>Tờ khai:</value>
+  </data>
+  <data name="Ledger_Drawer_StatusLabel" xml:space="preserve">
+    <value>Trạng thái:</value>
+  </data>
+  <data name="Ledger_Drawer_ProcessorLabel" xml:space="preserve">
+    <value>Người làm:</value>
+  </data>
+  <data name="Ledger_Drawer_YardLabel" xml:space="preserve">
+    <value>Bãi:</value>
+  </data>
+  <data name="Ledger_Drawer_CompanyLabel" xml:space="preserve">
+    <value>Công ty:</value>
+  </data>
+  <data name="Ledger_Drawer_GoodsLabel" xml:space="preserve">
+    <value>Hàng hóa:</value>
+  </data>
+  <data name="Ledger_Drawer_EntryTimeLabel" xml:space="preserve">
+    <value>Vào lúc:</value>
+  </data>
+  <data name="Ledger_Drawer_VehiclesHeading_Format" xml:space="preserve">
+    <value>Xe ({0})</value>
+  </data>
+  <data name="Ledger_Drawer_VehicleEntry_Format" xml:space="preserve">
+    <value>Vào: {0}</value>
+  </data>
+  <data name="Ledger_Drawer_VehicleExit_Format" xml:space="preserve">
+    <value>Ra: {0}</value>
+  </data>
+  <data name="Ledger_Drawer_VehicleInside" xml:space="preserve">
+    <value>Trong cổng</value>
+  </data>
+  <data name="Ledger_Drawer_VehicleExited" xml:space="preserve">
+    <value>Đã ra</value>
+  </data>
+  <data name="Ledger_Drawer_LoadError" xml:space="preserve">
+    <value>Không tải được chi tiết tờ khai.</value>
+  </data>
   <data name="Ledger_Filter_DateLabel" xml:space="preserve">
     <value>Ngày</value>
   </data>
