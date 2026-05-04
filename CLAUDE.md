@@ -1,6 +1,6 @@
 # chima-clearance Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-05-03
+Auto-generated from all feature plans. Last updated: 2026-05-04
 
 > **For AI coding agents (Claude Code, Cursor, Spec Kit)**: this file is the
 > short-form briefing. Authoritative sources are `specs/01-overview.md`,
@@ -16,7 +16,11 @@ Auto-generated from all feature plans. Last updated: 2026-05-03
 | --- | --- | --- | --- |
 | `001-b2-clearance` — Customs Gate B2 vehicle clearance log replacement | [spec.md](specs/001-b2-clearance/spec.md) | [plan.md](specs/001-b2-clearance/plan.md) | [v1.1.0](.specify/memory/constitution.md) |
 
-Active phase: **Sprint S0 (Bootstrap)** — solution scaffold + CI + ADRs 0001–0006.
+Active phase: **Sprint S3 (KVGS + ledger + realtime)** — F-09 confirmation +
+F-10 always-on ledger with SignalR push. **Done**: S0 (scaffold, ADRs 0001–
+0006), S1 (F-01/F-02/F-03/F-04 — auth, users, master data, force-rotate
+password), S2 (F-05/F-06/F-07/F-08 — declaration entry, add child vehicle,
+suffix search, mark exit). All merged to `main`.
 
 ---
 
@@ -107,6 +111,43 @@ PR title MUST cite the Feature ID(s).
 
 ---
 
+## Pre-push gates (run locally before `git push`)
+
+Catches what we already know will block CI, without burning a Windows runner:
+
+```bash
+dotnet format B2.NoMaui.slnf --verify-no-changes --no-restore           # CHARSET (BOM) + WHITESPACE
+dotnet build  B2.NoMaui.slnf -c Release /p:TreatWarningsAsErrors=true   # warnings-as-errors on libraries + API
+dotnet test   B2.NoMaui.slnf -c Release --no-build                      # endpoint + domain tests
+```
+
+> **macOS analyzer trap (Constitution III + VI)**: `B2.Desktop` targets
+> `net8.0-windows10.0.19041.0` and requires the `maui-tizen` workload that
+> does **not** install on macOS, so its `dotnet build` cannot run locally and
+> its analyzers (CA1305, CA1863, CA1001, …) only fire on the Windows CI
+> runner. When editing `src/B2.Desktop/**/*.cs`, follow these rules so the
+> trip to CI is not wasted:
+>
+> - **CA1305 + CA1863** — never call `string.Format(literal, args)` directly.
+>   Cache a `static readonly CompositeFormat` and pass `CultureInfo.CurrentCulture`:
+>
+>   ```csharp
+>   private static readonly CompositeFormat ToastFormat =
+>       CompositeFormat.Parse(AppResources.Exit_Toast_ExitMarked_Format);
+>   // ...
+>   var toast = string.Format(CultureInfo.CurrentCulture, ToastFormat, plate);
+>   ```
+>
+> - **CA1001** — any class owning a `CancellationTokenSource` (or other
+>   `IDisposable`) field MUST implement `IDisposable` and dispose the field.
+>
+> - **CHARSET** — new `.cs` / `.xaml.cs` files MUST be UTF-8 **without BOM**
+>   (`.editorconfig` `charset = utf-8`). Configure your editor to omit the
+>   BOM, or strip it after creation:
+>   `perl -i -pe 'BEGIN{$f=1} s/^\xef\xbb\xbf// if $f; $f=0' <file>`.
+
+---
+
 ## Code Style (Constitution III — non-negotiable)
 
 - `<Nullable>enable</Nullable>` and `<TreatWarningsAsErrors>true</TreatWarningsAsErrors>`
@@ -176,6 +217,18 @@ Yellow / red banners stay persistent in their respective states (no toast spam).
 
 ## Recent Changes
 
+- **2026-05-04** — Sprint S2 merged via PR #5 (`de24ec5`): Entry, Exit, Master
+  Data backend + MAUI desktop pages. All 22 S2 tasks (`T-S2-01..T-S2-22`)
+  complete. Post-mortem captured as the new `Pre-push gates` section above
+  (macOS cannot install the MAUI workload, so `B2.Desktop` analyzers only run
+  on the Windows CI runner).
+- **2026-05-04** — Sprint S1 merged via PR #4 (`3407a5c`): F-01 login, F-02
+  user admin, FR-017 force-rotate-password (`RequirePasswordChangeMiddleware`
+  + `ChangePasswordPage`), seed admin bootstrap.
+- **2026-05-03** — Sprint S0 merged via PR #2 (`fab8c55`): solution scaffold,
+  Constitution III gates wired (`Directory.Build.props`, `.editorconfig`,
+  `B2.NoMaui.slnf`), CI workflow with `windows-2022` + `ubuntu-latest` jobs,
+  ADRs 0001–0006.
 - **2026-05-03** — `001-b2-clearance`: Sprint S0 plan committed
   (`specs/001-b2-clearance/plan.md`). Tech stack + repo layout locked. Six ADRs
   scheduled for S0 (0001–0006).

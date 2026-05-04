@@ -178,6 +178,8 @@ tagging a release. Reproduced verbatim from `04-implementation-plan.md § 8`:
 | Symptom | First check |
 | --- | --- |
 | Build fails with "MAUI workload not installed" | `dotnet workload install maui` |
+| `dotnet format` reports `error CHARSET: Fix file encoding` | New file was saved as UTF-8 **with** BOM. Re-save without BOM, or strip it: `perl -i -pe 'BEGIN{$f=1} s/^\xef\xbb\xbf// if $f; $f=0' <file>`. |
+| `B2.Desktop` builds green on macOS but CI is red with `CA1305` / `CA1863` / `CA1001` | macOS cannot install the MAUI workload, so the `B2.Desktop` analyzers only run on the Windows CI runner. Apply the patterns in `CLAUDE.md` § "macOS analyzer trap" (cached `CompositeFormat`, `CultureInfo.CurrentCulture`, `IDisposable` for `CancellationTokenSource`). Run `dotnet format B2.NoMaui.slnf --verify-no-changes --no-restore` before push. |
 | `TreatWarningsAsErrors` blocks build | Fix the warning. Do not flip the property — Constitution III is non-negotiable. |
 | Test fails with "Should_<criterion>" naming convention | Either the test's `[Trait("Feature","F-XX")]` tag is wrong or the corresponding Gherkin AC moved — re-read `spec.md`. |
 | Desktop shows 🔴 "Mất kết nối" | Service may not be running on `:5001`; firewall may be blocking; cert may not be trusted. See `docs/runbook.md` (S6) for the operator-facing version. |
