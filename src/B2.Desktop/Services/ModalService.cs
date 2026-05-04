@@ -29,7 +29,7 @@ public sealed class ModalService : IModalService
 
         var popup = new ConfirmPopup(title, message, accept, cancel, destructive);
         var result = await page.ShowPopupAsync(popup, token: cancellationToken).ConfigureAwait(true);
-        return result?.Result as bool? ?? false;
+        return result is true;
     }
 
     public async Task ShowAsync(
