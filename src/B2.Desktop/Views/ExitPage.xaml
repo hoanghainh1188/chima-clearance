@@ -6,6 +6,7 @@
              xmlns:vm="clr-namespace:B2.Desktop.ViewModels"
              xmlns:s="clr-namespace:B2.Desktop.Resources.Strings"
              xmlns:decl="clr-namespace:B2.Shared.Contracts.Declarations;assembly=B2.Shared.Contracts"
+             xmlns:common="clr-namespace:B2.Desktop.Views.Common"
              x:DataType="vm:ExitViewModel"
              BackgroundColor="{StaticResource ColorSurface}">
   <Grid Padding="{StaticResource SpacingM}" RowDefinitions="Auto,Auto,Auto,Auto,*,Auto">
@@ -22,14 +23,14 @@
               Command="{Binding SearchCommand}"
               SemanticProperties.Hint="{x:Static s:AppResources.Exit_SearchButton}" />
     </HorizontalStackLayout>
-    <ActivityIndicator Grid.Row="2"
-                       IsRunning="{Binding IsSearching}"
-                       IsVisible="{Binding IsSearching}"
-                       HorizontalOptions="Center" />
+    <common:SkeletonRows Grid.Row="2"
+                         IsVisible="{Binding IsSearching}" />
     <VerticalStackLayout Grid.Row="3" Spacing="{StaticResource SpacingS}">
       <Label Text="{Binding ErrorMessage}"
              TextColor="{StaticResource ColorError}"
              IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+      <common:ErrorCodeBanner BindingContext="{Binding Correlation}"
+                              IsVisible="{Binding Source={x:Reference PageRoot}, Path=BindingContext.ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
       <Label Text="{Binding WarningMessage}"
              TextColor="{StaticResource ColorWarning}"
              IsVisible="{Binding WarningMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />

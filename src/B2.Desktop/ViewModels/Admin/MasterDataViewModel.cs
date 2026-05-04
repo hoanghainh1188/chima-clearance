@@ -28,10 +28,14 @@ public partial class MasterDataViewModel : ObservableObject
     [ObservableProperty]
     private IReadOnlyList<YardDto> _yards = Array.Empty<YardDto>();
 
-    public MasterDataViewModel(IB2Api api, IModalService modal)
+    /// <summary>Wireframe § 8 error banner correlationId binding.</summary>
+    public ISessionCorrelationService Correlation { get; }
+
+    public MasterDataViewModel(IB2Api api, IModalService modal, ISessionCorrelationService correlation)
     {
         _api = api;
         _modal = modal;
+        Correlation = correlation;
     }
 
     [RelayCommand]

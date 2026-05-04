@@ -5,6 +5,7 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:B2.Desktop.ViewModels"
              xmlns:s="clr-namespace:B2.Desktop.Resources.Strings"
+             xmlns:common="clr-namespace:B2.Desktop.Views.Common"
              x:DataType="vm:KvgsViewModel"
              BackgroundColor="{StaticResource ColorSurface}">
   <Grid Padding="{StaticResource SpacingM}"
@@ -45,14 +46,14 @@
     </Grid>
     <ScrollView Grid.Row="4">
       <VerticalStackLayout Spacing="{StaticResource SpacingM}">
-        <ActivityIndicator IsRunning="{Binding IsLoading}"
-                           IsVisible="{Binding IsLoading}"
-                           HorizontalOptions="Center" />
+        <common:SkeletonRows IsVisible="{Binding IsLoading}" />
         <VerticalStackLayout Spacing="{StaticResource SpacingS}"
                              IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
           <Label Text="{Binding ErrorMessage}"
                  TextColor="{StaticResource ColorError}"
                  IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+          <common:ErrorCodeBanner BindingContext="{Binding Correlation}"
+                                  IsVisible="{Binding Source={x:Reference KvgsRoot}, Path=BindingContext.ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
           <Button Text="{x:Static s:AppResources.Common_Retry}"
                   Command="{Binding RefreshCommand}"
                   IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />

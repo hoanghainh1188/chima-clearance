@@ -27,12 +27,21 @@ public sealed partial class KvgsViewModel : ObservableObject, IDisposable
     private readonly IToastService _toast;
     private bool _disposed;
 
-    public KvgsViewModel(IB2Api api, ConnectivityService connectivity, IModalService modal, IToastService toast)
+    /// <summary>Wireframe § 8 error banner correlationId binding.</summary>
+    public ISessionCorrelationService Correlation { get; }
+
+    public KvgsViewModel(
+        IB2Api api,
+        ConnectivityService connectivity,
+        IModalService modal,
+        IToastService toast,
+        ISessionCorrelationService correlation)
     {
         _api = api;
         _connectivity = connectivity;
         _modal = modal;
         _toast = toast;
+        Correlation = correlation;
         _connectivity.SuggestedListRefresh += OnSuggestedRefresh;
         _connectivity.DeclarationLedgerChanged += OnLedgerPush;
         _connectivity.ModeChanged += OnConnectivityChanged;

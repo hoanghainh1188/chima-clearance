@@ -6,6 +6,7 @@
              xmlns:vm="clr-namespace:B2.Desktop.ViewModels.Admin"
              xmlns:s="clr-namespace:B2.Desktop.Resources.Strings"
              xmlns:md="clr-namespace:B2.Shared.Contracts.MasterData;assembly=B2.Shared.Contracts"
+             xmlns:common="clr-namespace:B2.Desktop.Views.Common"
              x:DataType="vm:MasterDataViewModel"
              BackgroundColor="{StaticResource ColorSurface}">
   <Grid Padding="{StaticResource SpacingM}" RowDefinitions="Auto,Auto,Auto,*">
@@ -17,10 +18,13 @@
               Command="{Binding SelectYardsTabCommand}"
               SemanticProperties.Hint="{x:Static s:AppResources.MasterData_Tab_Yards}" />
     </HorizontalStackLayout>
-    <Label Grid.Row="1"
-           Text="{Binding ErrorMessage}"
-           TextColor="{StaticResource ColorError}"
-           IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+    <VerticalStackLayout Grid.Row="1" Spacing="2">
+      <Label Text="{Binding ErrorMessage}"
+             TextColor="{StaticResource ColorError}"
+             IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+      <common:ErrorCodeBanner BindingContext="{Binding Correlation}"
+                              IsVisible="{Binding Source={x:Reference PageRoot}, Path=BindingContext.ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+    </VerticalStackLayout>
     <Label Grid.Row="2"
            Text="{x:Static s:AppResources.MasterData_FooterNote}"
            TextColor="{StaticResource ColorWarning}"
@@ -31,9 +35,7 @@
                 Command="{Binding AddProcessorCommand}"
                 HorizontalOptions="Start"
                 SemanticProperties.Hint="{x:Static s:AppResources.MasterData_AddProcessor}" />
-        <ActivityIndicator IsRunning="{Binding IsLoading}"
-                           IsVisible="{Binding IsLoading}"
-                           HorizontalOptions="Center" />
+        <common:SkeletonRows IsVisible="{Binding IsLoading}" />
         <CollectionView ItemsSource="{Binding Processors}"
                         IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
           <CollectionView.ItemTemplate>
@@ -65,9 +67,7 @@
                 Command="{Binding AddYardCommand}"
                 HorizontalOptions="Start"
                 SemanticProperties.Hint="{x:Static s:AppResources.MasterData_AddYard}" />
-        <ActivityIndicator IsRunning="{Binding IsLoading}"
-                           IsVisible="{Binding IsLoading}"
-                           HorizontalOptions="Center" />
+        <common:SkeletonRows IsVisible="{Binding IsLoading}" />
         <CollectionView ItemsSource="{Binding Yards}"
                         IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
           <CollectionView.ItemTemplate>

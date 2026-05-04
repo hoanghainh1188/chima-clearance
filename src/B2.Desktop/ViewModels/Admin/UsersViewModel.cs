@@ -1,5 +1,6 @@
-using B2.Shared.Contracts.Users;
 using B2.Desktop.Resources.Strings;
+using B2.Desktop.Services;
+using B2.Shared.Contracts.Users;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
@@ -18,7 +19,14 @@ public partial class UsersViewModel : ObservableObject
     [ObservableProperty]
     private IReadOnlyList<UserDto> _users = Array.Empty<UserDto>();
 
-    public UsersViewModel(Services.Api.IB2Api api) => _api = api;
+    /// <summary>Wireframe § 8 error banner correlationId binding.</summary>
+    public ISessionCorrelationService Correlation { get; }
+
+    public UsersViewModel(Services.Api.IB2Api api, ISessionCorrelationService correlation)
+    {
+        _api = api;
+        Correlation = correlation;
+    }
 
     [RelayCommand]
     public async Task LoadAsync()

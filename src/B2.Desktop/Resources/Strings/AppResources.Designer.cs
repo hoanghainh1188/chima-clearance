@@ -39,6 +39,7 @@ public static class AppResources
     public static string Common_Cancel => ResourceManager.GetString(nameof(Common_Cancel), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Common_Close => ResourceManager.GetString(nameof(Common_Close), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Common_EmDash => ResourceManager.GetString(nameof(Common_EmDash), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Common_ErrorCode_Prefix => ResourceManager.GetString(nameof(Common_ErrorCode_Prefix), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Common_Logout => ResourceManager.GetString(nameof(Common_Logout), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Common_No => ResourceManager.GetString(nameof(Common_No), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Common_Retry => ResourceManager.GetString(nameof(Common_Retry), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
