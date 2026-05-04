@@ -20,4 +20,10 @@
   <!-- App-shell chrome (wireframe § 5). -->
   <Color x:Key="ColorStatusBarBg">#F4F4F7</Color>
   <Color x:Key="ColorTopBarBg">#FFFFFF</Color>
+  <Color x:Key="ColorBadgeOnlineBg">#E6F4EA</Color>
+  <Color x:Key="ColorBadgeOnlineText">#1B5E20</Color>
+  <Color x:Key="ColorBadgePollingBg">#FFF4E5</Color>
+  <Color x:Key="ColorBadgePollingText">#8C5000</Color>
+  <Color x:Key="ColorBadgeOfflineBg">#FDECEC</Color>
+  <Color x:Key="ColorBadgeOfflineText">#B3261E</Color>
 </ResourceDictionary>

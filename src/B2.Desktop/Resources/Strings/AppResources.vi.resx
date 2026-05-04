@@ -447,4 +447,16 @@
   <data name="Status_AppVersion" xml:space="preserve">
     <value>v1.0.0</value>
   </data>
+  <data name="TopBar_Badge_Online" xml:space="preserve">
+    <value>🟢 Online</value>
+  </data>
+  <data name="TopBar_Badge_Polling" xml:space="preserve">
+    <value>🟡 Đang thử lại</value>
+  </data>
+  <data name="TopBar_Badge_Offline" xml:space="preserve">
+    <value>🔴 Mất kết nối</value>
+  </data>
+  <data name="UserMenu_Suffix" xml:space="preserve">
+    <value> ▾</value>
+  </data>
 </root>

@@ -156,4 +156,8 @@ public static class AppResources
     public static string Status_Shortcuts_F1 => ResourceManager.GetString(nameof(Status_Shortcuts_F1), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Supervisor_HomeBody => ResourceManager.GetString(nameof(Supervisor_HomeBody), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Supervisor_HomeTitle => ResourceManager.GetString(nameof(Supervisor_HomeTitle), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string TopBar_Badge_Offline => ResourceManager.GetString(nameof(TopBar_Badge_Offline), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string TopBar_Badge_Online => ResourceManager.GetString(nameof(TopBar_Badge_Online), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string TopBar_Badge_Polling => ResourceManager.GetString(nameof(TopBar_Badge_Polling), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string UserMenu_Suffix => ResourceManager.GetString(nameof(UserMenu_Suffix), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
 }

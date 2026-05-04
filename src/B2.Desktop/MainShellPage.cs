@@ -9,27 +9,46 @@ namespace B2.Desktop;
 
 /// <summary>
 /// Post-login shell. ContentPage + Grid layout per wireframe § 5: top bar
-/// (commit #2 placeholder for now), nav strip, content host, status bar.
-/// Status bar surfaces <see cref="ISessionCorrelationService.CurrentCorrelationId"/>
-/// as "Mã phiên" so operators can quote it to support.
+/// (title + tri-state connectivity badge + user menu), nav strip, content
+/// host, status bar. Identity and role come from <see cref="ISessionContext"/>;
+/// the connectivity badge tracks <see cref="ConnectivityService.Mode"/>; the
+/// status bar binds to <see cref="ISessionCorrelationService.CurrentCorrelationId"/>.
 /// </summary>
 public sealed class MainShellPage : ContentPage
 {
     private readonly IServiceProvider _services;
     private readonly AuthTokenHandler _auth;
+    private readonly ISessionContext _session;
+    private readonly ConnectivityService _connectivity;
     private readonly UserRoleDto _role;
     private readonly ContentView _contentHost = new();
     private readonly List<TabEntry> _tabs = new();
+    private readonly Border _connectivityBadge;
+    private readonly Label _connectivityLabel;
     private TabEntry? _active;
 
-    public MainShellPage(IServiceProvider services, UserRoleDto role)
+    public MainShellPage(IServiceProvider services)
     {
         _services = services;
         _auth = services.GetRequiredService<AuthTokenHandler>();
-        _role = role;
+        _session = services.GetRequiredService<ISessionContext>();
+        _connectivity = services.GetRequiredService<ConnectivityService>();
+        _role = _session.Role;
 
         Title = AppResources.Shell_AppTitle;
         BackgroundColor = (Color)Application.Current!.Resources["ColorSurface"];
+
+        _connectivityBadge = new Border
+        {
+            StrokeThickness = 0,
+            Padding = new Thickness(10, 4),
+            VerticalOptions = LayoutOptions.Center,
+        };
+        _connectivityLabel = new Label
+        {
+            VerticalOptions = LayoutOptions.Center,
+        };
+        _connectivityBadge.Content = _connectivityLabel;
 
         var grid = new Grid
         {
@@ -42,11 +61,7 @@ public sealed class MainShellPage : ContentPage
             },
         };
 
-        var topBar = new Border
-        {
-            BackgroundColor = (Color)Application.Current.Resources["ColorTopBarBg"],
-            StrokeThickness = 0,
-        };
+        var topBar = BuildTopBar();
         Grid.SetRow(topBar, 0);
         grid.Children.Add(topBar);
 
@@ -63,7 +78,9 @@ public sealed class MainShellPage : ContentPage
 
         Content = grid;
 
-        services.GetRequiredService<ConnectivityService>().Start();
+        _connectivity.ModeChanged += OnConnectivityModeChanged;
+        UpdateConnectivityBadge(_connectivity.Mode);
+        _connectivity.Start();
 
         if (_tabs.Count > 0)
         {
@@ -71,51 +88,88 @@ public sealed class MainShellPage : ContentPage
         }
     }
 
-    private View BuildNavStrip()
+    private View BuildTopBar()
     {
-        var strip = new Grid
+        var bar = new Grid
         {
             BackgroundColor = (Color)Application.Current!.Resources["ColorTopBarBg"],
             ColumnDefinitions =
             {
                 new ColumnDefinition { Width = GridLength.Star },
                 new ColumnDefinition { Width = GridLength.Auto },
+                new ColumnDefinition { Width = GridLength.Auto },
             },
+            ColumnSpacing = 16,
+            Padding = new Thickness(16, 8),
+        };
+
+        var titleLabel = new Label
+        {
+            Text = AppResources.Shell_AppTitle,
+            FontAttributes = FontAttributes.Bold,
+            TextColor = (Color)Application.Current.Resources["ColorPrimary"],
+            VerticalOptions = LayoutOptions.Center,
+        };
+        var titleTap = new TapGestureRecognizer();
+        titleTap.Tapped += (_, _) =>
+        {
+            if (_tabs.Count > 0)
+            {
+                ActivateTab(_tabs[0]);
+            }
+        };
+        titleLabel.GestureRecognizers.Add(titleTap);
+        Grid.SetColumn(titleLabel, 0);
+        bar.Children.Add(titleLabel);
+
+        Grid.SetColumn(_connectivityBadge, 1);
+        bar.Children.Add(_connectivityBadge);
+
+        var userMenu = new Button
+        {
+            BackgroundColor = Colors.Transparent,
+            TextColor = (Color)Application.Current.Resources["ColorOnSurface"],
+        };
+        userMenu.SetBinding(
+            Button.TextProperty,
+            new Binding(
+                nameof(ISessionContext.FullName),
+                source: _session,
+                stringFormat: "{0}" + AppResources.UserMenu_Suffix));
+        userMenu.Clicked += OnUserMenuClicked;
+        Grid.SetColumn(userMenu, 2);
+        bar.Children.Add(userMenu);
+
+        return bar;
+    }
+
+    private View BuildNavStrip()
+    {
+        var strip = new HorizontalStackLayout
+        {
+            BackgroundColor = (Color)Application.Current!.Resources["ColorTopBarBg"],
+            Spacing = 4,
             Padding = new Thickness(8, 4),
         };
 
-        var tabs = new HorizontalStackLayout { Spacing = 4 };
-        Grid.SetColumn(tabs, 0);
-        strip.Children.Add(tabs);
-
-        AddTab(tabs, AppResources.Ledger_PageTitle, _services.GetRequiredService<LedgerPage>());
+        AddTab(strip, AppResources.Ledger_PageTitle, _services.GetRequiredService<LedgerPage>());
 
         if (_role is UserRoleDto.Admin or UserRoleDto.Operator)
         {
-            AddTab(tabs, AppResources.Entry_PageTitle, _services.GetRequiredService<EntryPage>());
-            AddTab(tabs, AppResources.Exit_PageTitle, _services.GetRequiredService<ExitPage>());
+            AddTab(strip, AppResources.Entry_PageTitle, _services.GetRequiredService<EntryPage>());
+            AddTab(strip, AppResources.Exit_PageTitle, _services.GetRequiredService<ExitPage>());
         }
 
         if (_role is UserRoleDto.Admin or UserRoleDto.Supervisor)
         {
-            AddTab(tabs, AppResources.Kvgs_PageTitle, _services.GetRequiredService<KvgsPage>());
+            AddTab(strip, AppResources.Kvgs_PageTitle, _services.GetRequiredService<KvgsPage>());
         }
 
         if (_role == UserRoleDto.Admin)
         {
-            AddTab(tabs, AppResources.MasterData_PageTitle, _services.GetRequiredService<MasterDataPage>());
-            AddTab(tabs, AppResources.Users_PageTitle, _services.GetRequiredService<UsersPage>());
+            AddTab(strip, AppResources.MasterData_PageTitle, _services.GetRequiredService<MasterDataPage>());
+            AddTab(strip, AppResources.Users_PageTitle, _services.GetRequiredService<UsersPage>());
         }
-
-        var logout = new Button
-        {
-            Text = AppResources.Common_Logout,
-            BackgroundColor = Colors.Transparent,
-            TextColor = (Color)Application.Current.Resources["ColorOnSurface"],
-        };
-        logout.Clicked += OnLogoutClicked;
-        Grid.SetColumn(logout, 1);
-        strip.Children.Add(logout);
 
         return strip;
     }
@@ -226,11 +280,54 @@ public sealed class MainShellPage : ContentPage
         return bar;
     }
 
-    private async void OnLogoutClicked(object? sender, EventArgs e)
+    private void OnConnectivityModeChanged(object? sender, EventArgs e)
     {
-        var connectivity = _services.GetRequiredService<ConnectivityService>();
-        await connectivity.StopAsync().ConfigureAwait(false);
+        var mode = _connectivity.Mode;
+        MainThread.BeginInvokeOnMainThread(() => UpdateConnectivityBadge(mode));
+    }
+
+    private void UpdateConnectivityBadge(ConnectivityMode mode)
+    {
+        var resources = Application.Current!.Resources;
+        switch (mode)
+        {
+            case ConnectivityMode.Online:
+                _connectivityBadge.BackgroundColor = (Color)resources["ColorBadgeOnlineBg"];
+                _connectivityLabel.TextColor = (Color)resources["ColorBadgeOnlineText"];
+                _connectivityLabel.Text = AppResources.TopBar_Badge_Online;
+                break;
+            case ConnectivityMode.PollingFallback:
+                _connectivityBadge.BackgroundColor = (Color)resources["ColorBadgePollingBg"];
+                _connectivityLabel.TextColor = (Color)resources["ColorBadgePollingText"];
+                _connectivityLabel.Text = AppResources.TopBar_Badge_Polling;
+                break;
+            default:
+                _connectivityBadge.BackgroundColor = (Color)resources["ColorBadgeOfflineBg"];
+                _connectivityLabel.TextColor = (Color)resources["ColorBadgeOfflineText"];
+                _connectivityLabel.Text = AppResources.TopBar_Badge_Offline;
+                break;
+        }
+    }
+
+    private async void OnUserMenuClicked(object? sender, EventArgs e)
+    {
+        var choice = await DisplayActionSheet(
+            title: null,
+            cancel: AppResources.Common_Cancel,
+            destruction: null,
+            AppResources.Common_Logout).ConfigureAwait(true);
+        if (string.Equals(choice, AppResources.Common_Logout, StringComparison.Ordinal))
+        {
+            await LogoutAsync().ConfigureAwait(false);
+        }
+    }
+
+    private async Task LogoutAsync()
+    {
+        _connectivity.ModeChanged -= OnConnectivityModeChanged;
+        await _connectivity.StopAsync().ConfigureAwait(false);
         _auth.AccessToken = null;
+        _session.Clear();
         await MainThread.InvokeOnMainThreadAsync(() =>
         {
             Application.Current!.MainPage = _services.GetRequiredService<AppShell>();

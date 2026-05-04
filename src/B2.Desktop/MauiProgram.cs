@@ -28,6 +28,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IToastService, ToastService>();
         builder.Services.AddSingleton<IModalService, ModalService>();
         builder.Services.AddSingleton<ISessionCorrelationService, SessionCorrelationService>();
+        builder.Services.AddSingleton<ISessionContext, SessionContext>();
         builder.Services.AddTransient<CorrelationCaptureHandler>();
 
         var refitSettings = new RefitSettings

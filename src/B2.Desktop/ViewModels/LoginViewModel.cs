@@ -14,6 +14,7 @@ public partial class LoginViewModel : ObservableObject
     private readonly IB2Api _api;
     private readonly AuthTokenHandler _auth;
     private readonly IMainShellFactory _mainShellFactory;
+    private readonly ISessionContext _session;
 
     [ObservableProperty]
     private string _username = string.Empty;
@@ -27,11 +28,16 @@ public partial class LoginViewModel : ObservableObject
     [ObservableProperty]
     private bool _isBusy;
 
-    public LoginViewModel(IB2Api api, AuthTokenHandler auth, IMainShellFactory mainShellFactory)
+    public LoginViewModel(
+        IB2Api api,
+        AuthTokenHandler auth,
+        IMainShellFactory mainShellFactory,
+        ISessionContext session)
     {
         _api = api;
         _auth = auth;
         _mainShellFactory = mainShellFactory;
+        _session = session;
     }
 
     [RelayCommand]
@@ -55,7 +61,8 @@ public partial class LoginViewModel : ObservableObject
                 return;
             }
 
-            Application.Current!.MainPage = _mainShellFactory.CreateMainShell(response.Role);
+            _session.Set(response);
+            Application.Current!.MainPage = _mainShellFactory.CreateMainShell();
         }
         catch (ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
