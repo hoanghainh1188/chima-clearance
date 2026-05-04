@@ -107,6 +107,33 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
     [ObservableProperty]
     private int _pageSize = 50;
 
+    /// <summary>
+    /// Wireframe § 6.2 right-side detail drawer. Populated by
+    /// <see cref="OpenDetailCommand"/> on a row double-tap and cleared by
+    /// <see cref="CloseDetailCommand"/> (also bound to the desktop Esc shortcut).
+    /// </summary>
+    [ObservableProperty]
+    private DeclarationDetailResponse? _selectedDeclarationDetail;
+
+    [ObservableProperty]
+    private bool _isDrawerOpen;
+
+    [ObservableProperty]
+    private bool _isDrawerLoading;
+
+    [ObservableProperty]
+    private string? _drawerErrorMessage;
+
+    public bool HasDrawerData =>
+        !IsDrawerLoading && string.IsNullOrEmpty(DrawerErrorMessage) && SelectedDeclarationDetail is not null;
+
+    partial void OnSelectedDeclarationDetailChanged(DeclarationDetailResponse? value) =>
+        OnPropertyChanged(nameof(HasDrawerData));
+
+    partial void OnIsDrawerLoadingChanged(bool value) => OnPropertyChanged(nameof(HasDrawerData));
+
+    partial void OnDrawerErrorMessageChanged(string? value) => OnPropertyChanged(nameof(HasDrawerData));
+
     public string PageSummary =>
         string.Format(
             CultureInfo.CurrentCulture,
@@ -263,6 +290,47 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
 
         Page--;
         await LoadAsync(useSince: false).ConfigureAwait(true);
+    }
+
+    [RelayCommand]
+    private async Task OpenDetailAsync(LedgerRowViewModel? row)
+    {
+        if (row is null)
+        {
+            return;
+        }
+
+        DrawerErrorMessage = null;
+        IsDrawerOpen = true;
+        IsDrawerLoading = true;
+        SelectedDeclarationDetail = null;
+
+        try
+        {
+            SelectedDeclarationDetail = await _api
+                .GetDeclarationDetailAsync(row.Dto.Id)
+                .ConfigureAwait(true);
+        }
+        catch (ApiException)
+        {
+            DrawerErrorMessage = AppResources.Ledger_Drawer_LoadError;
+        }
+        catch (HttpRequestException)
+        {
+            DrawerErrorMessage = AppResources.Ledger_Drawer_LoadError;
+        }
+        finally
+        {
+            IsDrawerLoading = false;
+        }
+    }
+
+    [RelayCommand]
+    private void CloseDetail()
+    {
+        IsDrawerOpen = false;
+        SelectedDeclarationDetail = null;
+        DrawerErrorMessage = null;
     }
 
     partial void OnDatePresetIndexChanged(int value) => _ = FilterPresetChangedAsync();

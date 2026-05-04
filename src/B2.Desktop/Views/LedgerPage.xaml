@@ -1,14 +1,18 @@
 ﻿<?xml version="1.0" encoding="UTF-8" ?>
 <ContentView x:Class="B2.Desktop.Views.LedgerPage"
+             x:Name="LedgerRoot"
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:B2.Desktop.ViewModels"
              xmlns:s="clr-namespace:B2.Desktop.Resources.Strings"
+             xmlns:decl="clr-namespace:B2.Shared.Contracts.Declarations;assembly=B2.Shared.Contracts"
              x:DataType="vm:LedgerViewModel"
              BackgroundColor="{StaticResource ColorSurface}">
-  <Grid Padding="{StaticResource SpacingM}"
-        RowDefinitions="Auto,Auto,Auto,*"
-        RowSpacing="{StaticResource SpacingS}">
+  <Grid ColumnDefinitions="*,Auto">
+    <Grid Grid.Column="0"
+          Padding="{StaticResource SpacingM}"
+          RowDefinitions="Auto,Auto,Auto,*"
+          RowSpacing="{StaticResource SpacingS}">
     <Border Grid.Row="0"
             Padding="{StaticResource SpacingS}"
             BackgroundColor="{StaticResource ColorErrorBg}"
@@ -56,7 +60,8 @@
         <Label Text="{x:Static s:AppResources.Ledger_Search_Label}"
                TextColor="{StaticResource ColorOnSurfaceMuted}" />
         <HorizontalStackLayout Spacing="{StaticResource SpacingS}">
-          <Entry Text="{Binding PlateSearch}"
+          <Entry x:Name="PlateSearchEntry"
+                 Text="{Binding PlateSearch}"
                  HorizontalOptions="FillAndExpand"
                  ReturnType="Search"
                  ReturnCommand="{Binding SearchFromFilterCommand}" />
@@ -127,6 +132,11 @@
                       Padding="{StaticResource SpacingS}"
                       ColumnDefinitions="Auto,Auto,*,*,*,*,*,Auto"
                       ColumnSpacing="6">
+                  <Grid.GestureRecognizers>
+                    <TapGestureRecognizer NumberOfTapsRequired="2"
+                                          Command="{Binding Source={x:Reference LedgerRoot}, Path=BindingContext.OpenDetailCommand}"
+                                          CommandParameter="{Binding Row}" />
+                  </Grid.GestureRecognizers>
                   <Label Grid.Column="0"
                          Text="{Binding Row.RowOrdinal}"
                          VerticalOptions="Center"
@@ -218,5 +228,118 @@
                 Command="{Binding NextPageCommand}" />
       </HorizontalStackLayout>
     </Grid>
+    <Border Grid.Column="1"
+            IsVisible="{Binding IsDrawerOpen}"
+            WidthRequest="420"
+            BackgroundColor="{StaticResource ColorSidebarBg}"
+            Stroke="{StaticResource ColorBorder}"
+            StrokeThickness="1,0,0,0"
+            Padding="{StaticResource SpacingM}">
+      <ScrollView>
+        <VerticalStackLayout Spacing="{StaticResource SpacingM}">
+          <Grid ColumnDefinitions="*,Auto">
+            <Label Grid.Column="0"
+                   Text="{x:Static s:AppResources.Ledger_Drawer_Title}"
+                   FontAttributes="Bold"
+                   FontSize="{StaticResource FontSizeXL}"
+                   TextColor="{StaticResource ColorPrimary}"
+                   VerticalOptions="Center" />
+            <Button Grid.Column="1"
+                    Text="{x:Static s:AppResources.Common_Close}"
+                    Command="{Binding CloseDetailCommand}"
+                    BackgroundColor="Transparent"
+                    TextColor="{StaticResource ColorOnSurface}" />
+          </Grid>
+          <ActivityIndicator IsRunning="{Binding IsDrawerLoading}"
+                             IsVisible="{Binding IsDrawerLoading}"
+                             HorizontalOptions="Center" />
+          <Label Text="{Binding DrawerErrorMessage}"
+                 TextColor="{StaticResource ColorError}"
+                 IsVisible="{Binding DrawerErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+          <VerticalStackLayout Spacing="{StaticResource SpacingS}"
+                               IsVisible="{Binding HasDrawerData}">
+            <HorizontalStackLayout Spacing="{StaticResource SpacingS}">
+              <Label Text="{x:Static s:AppResources.Ledger_Drawer_DeclarationLabel}"
+                     TextColor="{StaticResource ColorOnSurfaceMuted}" />
+              <Label Text="{Binding SelectedDeclarationDetail.Declaration.DeclarationNumber}"
+                     FontAttributes="Bold"
+                     TextColor="{StaticResource ColorOnSurface}" />
+            </HorizontalStackLayout>
+            <HorizontalStackLayout Spacing="{StaticResource SpacingS}">
+              <Label Text="{x:Static s:AppResources.Ledger_Drawer_StatusLabel}"
+                     TextColor="{StaticResource ColorOnSurfaceMuted}" />
+              <Label Text="{Binding SelectedDeclarationDetail.Declaration.Status}"
+                     FontAttributes="Bold"
+                     TextColor="{StaticResource ColorOnSurface}" />
+            </HorizontalStackLayout>
+            <HorizontalStackLayout Spacing="{StaticResource SpacingS}">
+              <Label Text="{x:Static s:AppResources.Ledger_Drawer_ProcessorLabel}"
+                     TextColor="{StaticResource ColorOnSurfaceMuted}" />
+              <Label Text="{Binding SelectedDeclarationDetail.Declaration.Processor.FullName}"
+                     TextColor="{StaticResource ColorOnSurface}" />
+            </HorizontalStackLayout>
+            <HorizontalStackLayout Spacing="{StaticResource SpacingS}">
+              <Label Text="{x:Static s:AppResources.Ledger_Drawer_YardLabel}"
+                     TextColor="{StaticResource ColorOnSurfaceMuted}" />
+              <Label Text="{Binding SelectedDeclarationDetail.Declaration.Yard.Name}"
+                     TextColor="{StaticResource ColorOnSurface}" />
+            </HorizontalStackLayout>
+            <HorizontalStackLayout Spacing="{StaticResource SpacingS}">
+              <Label Text="{x:Static s:AppResources.Ledger_Drawer_CompanyLabel}"
+                     TextColor="{StaticResource ColorOnSurfaceMuted}" />
+              <Label Text="{Binding SelectedDeclarationDetail.Declaration.CompanyName}"
+                     TextColor="{StaticResource ColorOnSurface}"
+                     LineBreakMode="WordWrap" />
+            </HorizontalStackLayout>
+            <HorizontalStackLayout Spacing="{StaticResource SpacingS}">
+              <Label Text="{x:Static s:AppResources.Ledger_Drawer_GoodsLabel}"
+                     TextColor="{StaticResource ColorOnSurfaceMuted}" />
+              <Label Text="{Binding SelectedDeclarationDetail.Declaration.GoodsName}"
+                     TextColor="{StaticResource ColorOnSurface}"
+                     LineBreakMode="WordWrap" />
+            </HorizontalStackLayout>
+            <Label Text="{x:Static s:AppResources.Ledger_Drawer_Title}"
+                   FontAttributes="Bold"
+                   FontSize="{StaticResource FontSizeL}"
+                   TextColor="{StaticResource ColorPrimary}"
+                   Margin="0,8,0,0" />
+            <CollectionView ItemsSource="{Binding SelectedDeclarationDetail.Vehicles}"
+                            SelectionMode="None">
+              <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="decl:VehicleDetailDto">
+                  <Border Padding="{StaticResource SpacingS}"
+                          Stroke="{StaticResource ColorBorder}"
+                          StrokeThickness="0,0,0,1">
+                    <VerticalStackLayout Spacing="2">
+                      <HorizontalStackLayout Spacing="{StaticResource SpacingS}">
+                        <Label Text="{Binding PlateNumber}"
+                               FontAttributes="Bold"
+                               TextColor="{StaticResource ColorOnSurface}" />
+                        <Label Text="{Binding TrailerOrContainerNumber}"
+                               TextColor="{StaticResource ColorOnSurfaceMuted}"
+                               IsVisible="{Binding TrailerOrContainerNumber, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+                      </HorizontalStackLayout>
+                      <Label TextColor="{StaticResource ColorOnSurfaceMuted}"
+                             FontSize="{StaticResource FontSizeS}"
+                             Text="{Binding EntryTime}" />
+                      <Label TextColor="{StaticResource ColorLedgerStatusOpen}"
+                             FontSize="{StaticResource FontSizeS}"
+                             FontAttributes="Bold"
+                             IsVisible="{Binding ExitMarked, Converter={StaticResource InvertedBoolConverter}}"
+                             Text="{x:Static s:AppResources.Ledger_Drawer_VehicleInside}" />
+                      <Label TextColor="{StaticResource ColorLedgerStatusAllExited}"
+                             FontSize="{StaticResource FontSizeS}"
+                             FontAttributes="Bold"
+                             IsVisible="{Binding ExitMarked}"
+                             Text="{x:Static s:AppResources.Ledger_Drawer_VehicleExited}" />
+                    </VerticalStackLayout>
+                  </Border>
+                </DataTemplate>
+              </CollectionView.ItemTemplate>
+            </CollectionView>
+          </VerticalStackLayout>
+        </VerticalStackLayout>
+      </ScrollView>
+    </Border>
   </Grid>
 </ContentView>
