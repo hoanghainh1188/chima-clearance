@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Text;
 using B2.Desktop.Resources.Strings;
 using B2.Desktop.Services;
 using B2.Desktop.Services.Api;
@@ -13,6 +14,12 @@ namespace B2.Desktop.ViewModels;
 
 public sealed partial class LedgerViewModel : ObservableObject, IDisposable
 {
+    private static readonly CompositeFormat PageSummaryFormat = CompositeFormat.Parse(AppResources.Ledger_PageSummary_Format);
+    private static readonly CompositeFormat DisplayRangeFormat = CompositeFormat.Parse(AppResources.Ledger_DisplayRange_Format);
+    private static readonly CompositeFormat SubtitleFormat = CompositeFormat.Parse(AppResources.Ledger_Subtitle_Format);
+    private static readonly CompositeFormat DailyHeaderFormat = CompositeFormat.Parse(AppResources.Ledger_DailyHeader_Format);
+    private static readonly CompositeFormat ErrorLoadFormat = CompositeFormat.Parse(AppResources.Ledger_Error_Load_Format);
+
     private readonly IB2Api _api;
     private readonly ConnectivityService _connectivity;
     private DateTimeOffset _sinceWatermark = DateTimeOffset.UtcNow.AddMinutes(-30);
@@ -103,7 +110,7 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
     public string PageSummary =>
         string.Format(
             CultureInfo.CurrentCulture,
-            AppResources.Ledger_PageSummary_Format,
+            PageSummaryFormat,
             Page,
             Math.Max(1, (int)Math.Ceiling(TotalCount / (double)Math.Max(1, PageSize))));
 
@@ -118,7 +125,7 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
 
             var start = (Page - 1) * PageSize + 1;
             var end = Math.Min(Page * PageSize, TotalCount);
-            return string.Format(CultureInfo.CurrentCulture, AppResources.Ledger_DisplayRange_Format, start, end, TotalCount);
+            return string.Format(CultureInfo.CurrentCulture, DisplayRangeFormat, start, end, TotalCount);
         }
     }
 
@@ -288,7 +295,7 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
         var culture = CultureInfo.GetCultureInfo("vi-VN");
         LedgerSubtitle = string.Format(
             CultureInfo.CurrentCulture,
-            AppResources.Ledger_Subtitle_Format,
+            SubtitleFormat,
             VietnamToday().ToString("dd/MM/yyyy", culture));
     }
 
@@ -379,7 +386,7 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
             var culture = CultureInfo.GetCultureInfo("vi-VN");
             var dateStr = g.Key.ToString("dd/MM/yyyy", culture);
             var officer = g.OrderBy(x => x.EnteredAt).First().ProcessorName;
-            var header = string.Format(CultureInfo.CurrentCulture, AppResources.Ledger_DailyHeader_Format, dateStr, officer);
+            var header = string.Format(CultureInfo.CurrentCulture, DailyHeaderFormat, dateStr, officer);
             target.Add(LedgerUiItem.ForHeader(header));
             foreach (var dto in g.OrderByDescending(x => x.EnteredAt))
             {
@@ -435,7 +442,7 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
         }
         catch (ApiException ex)
         {
-            ErrorMessage = string.Format(CultureInfo.CurrentCulture, AppResources.Ledger_Error_Load_Format, (int)ex.StatusCode);
+            ErrorMessage = string.Format(CultureInfo.CurrentCulture, ErrorLoadFormat, (int)ex.StatusCode);
             NotifyViewStates();
         }
         catch (HttpRequestException)

@@ -92,7 +92,7 @@ public sealed class MainShellPage : ContentPage
         }
     }
 
-    private View BuildTopBar()
+    private Grid BuildTopBar()
     {
         var bar = new Grid
         {
@@ -147,7 +147,7 @@ public sealed class MainShellPage : ContentPage
         return bar;
     }
 
-    private View BuildNavStrip()
+    private HorizontalStackLayout BuildNavStrip()
     {
         var strip = new HorizontalStackLayout
         {
@@ -213,7 +213,7 @@ public sealed class MainShellPage : ContentPage
         _active = tab;
     }
 
-    private View BuildStatusBar(ISessionCorrelationService correlation)
+    private Grid BuildStatusBar(ISessionCorrelationService correlation)
     {
         var bar = new Grid
         {

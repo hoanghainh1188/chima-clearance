@@ -13,6 +13,9 @@ namespace B2.Desktop.ViewModels;
 public sealed partial class KvgsViewModel : ObservableObject, IDisposable
 {
     private static readonly CompositeFormat KvgsToastFormat = CompositeFormat.Parse(AppResources.Kvgs_Toast_Confirmed_Format);
+    private static readonly CompositeFormat KvgsConfirmMessageFormat = CompositeFormat.Parse(AppResources.Kvgs_ConfirmMessage_Format);
+    private static readonly CompositeFormat KvgsErrorConfirmFormat = CompositeFormat.Parse(AppResources.Kvgs_Error_Confirm_Format);
+    private static readonly CompositeFormat KvgsLedgerErrorLoadFormat = CompositeFormat.Parse(AppResources.Ledger_Error_Load_Format);
 
     private readonly IB2Api _api;
     private readonly ConnectivityService _connectivity;
@@ -106,7 +109,7 @@ public sealed partial class KvgsViewModel : ObservableObject, IDisposable
         var ok = await _modal
             .ConfirmAsync(
                 AppResources.Kvgs_ConfirmTitle,
-                string.Format(CultureInfo.CurrentCulture, AppResources.Kvgs_ConfirmMessage_Format, row.DeclarationMasked),
+                string.Format(CultureInfo.CurrentCulture, KvgsConfirmMessageFormat, row.DeclarationMasked),
                 AppResources.Common_Yes,
                 AppResources.Common_No)
             .ConfigureAwait(true);
@@ -124,7 +127,7 @@ public sealed partial class KvgsViewModel : ObservableObject, IDisposable
         }
         catch (ApiException ex)
         {
-            ErrorMessage = string.Format(CultureInfo.CurrentCulture, AppResources.Kvgs_Error_Confirm_Format, (int)ex.StatusCode);
+            ErrorMessage = string.Format(CultureInfo.CurrentCulture, KvgsErrorConfirmFormat, (int)ex.StatusCode);
             NotifyViewStates();
         }
         catch (HttpRequestException)
@@ -167,7 +170,7 @@ public sealed partial class KvgsViewModel : ObservableObject, IDisposable
         }
         catch (ApiException ex)
         {
-            ErrorMessage = string.Format(CultureInfo.CurrentCulture, AppResources.Ledger_Error_Load_Format, (int)ex.StatusCode);
+            ErrorMessage = string.Format(CultureInfo.CurrentCulture, KvgsLedgerErrorLoadFormat, (int)ex.StatusCode);
             NotifyViewStates();
         }
         catch (HttpRequestException)

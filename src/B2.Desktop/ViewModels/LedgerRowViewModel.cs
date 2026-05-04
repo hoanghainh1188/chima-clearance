@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using B2.Desktop.Resources.Strings;
 using B2.Shared.Contracts.Declarations;
 
@@ -6,6 +7,9 @@ namespace B2.Desktop.ViewModels;
 
 public sealed class LedgerRowViewModel
 {
+    private static readonly CompositeFormat YardCodeFormat = CompositeFormat.Parse(AppResources.Ledger_YardCode_Format);
+    private static readonly CompositeFormat PlateTrailerFormat = CompositeFormat.Parse(AppResources.Ledger_PlateTrailer_Format);
+
     private LedgerRowViewModel(
         DeclarationSummaryDto dto,
         int rowOrdinal,
@@ -38,7 +42,7 @@ public sealed class LedgerRowViewModel
 
     public string ProcessorName => Dto.ProcessorName;
 
-    public string YardLabel => string.Format(CultureInfo.CurrentCulture, AppResources.Ledger_YardCode_Format, Dto.YardCode);
+    public string YardLabel => string.Format(CultureInfo.CurrentCulture, YardCodeFormat, Dto.YardCode);
 
     public string PrimaryPlateDisplay =>
         string.IsNullOrWhiteSpace(Dto.PrimaryPlateNumber) ? AppResources.Common_EmDash : Dto.PrimaryPlateNumber;
@@ -51,7 +55,7 @@ public sealed class LedgerRowViewModel
     public string PlateAndTrailerLine =>
         string.IsNullOrWhiteSpace(Dto.PrimaryTrailerOrContainer)
             ? PrimaryPlateDisplay
-            : string.Format(CultureInfo.CurrentCulture, AppResources.Ledger_PlateTrailer_Format, PrimaryPlateDisplay, Dto.PrimaryTrailerOrContainer);
+            : string.Format(CultureInfo.CurrentCulture, PlateTrailerFormat, PrimaryPlateDisplay, Dto.PrimaryTrailerOrContainer);
 
     public static LedgerRowViewModel FromDto(DeclarationSummaryDto dto, int rowOrdinal)
     {
