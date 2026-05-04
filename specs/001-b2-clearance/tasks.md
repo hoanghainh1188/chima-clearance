@@ -477,16 +477,17 @@ on a second client the row reverts color within 1 s without manual refresh.
 - [X] **T-S3-03** [F-09] Wire `POST /api/declarations/{id}/kvgs-confirm` in
   `DeclarationsEndpoints.cs` with `SupervisorOrAbove` policy. Make T-S3-01
   green. **Dep**: T-S3-02. **LOC**: ~80.
-- [~] **T-S3-04** [F-09] Implement `KvgsPage.xaml` + `KvgsViewModel.cs` per
+- [X] **T-S3-04** [F-09] Implement `KvgsPage.xaml` + `KvgsViewModel.cs` per
   [wireframe § 6.5](../05-ui-wireframes.md). Confirmation modal with focus
   trap; row removes from list (animated 300 ms) on success. Vietnamese copy
   verbatim. **Dep**: T-S3-03. **LOC**: ~280. **DoD**: §DoD-6.
   *Status (2026-05-04)*: Page + VM + confirmation modal landed in `7ba1069`.
-  Confirmation modal **focus-trap is delivered by the new
-  `CommunityToolkit.Maui.Views.Popup`-backed `IModalService` (PR #8 /
-  `d41c607`)** — the KVGS path inherits it via `IModalService.ConfirmAsync`.
-  Animated row removal (300 ms) + the "Đã xác nhận hôm nay: X tờ khai"
-  self-monitoring widget remain — Round 3c.
+  Focus-trap was delivered by the `CommunityToolkit.Maui.Views.Popup`-backed
+  `IModalService` (PR #8 / `d41c607`) — KVGS inherits it via
+  `IModalService.ConfirmAsync`. PR #12 (`d0d47de`) added the 300 ms VM-tween
+  row fade-out + the "Đã xác nhận hôm nay: X tờ khai" self-monitoring
+  widget; `LedgerRowViewModel` was promoted to `ObservableObject` with a
+  bindable `Opacity` property to drive the fade.
 
 ### F-10 Ledger + FR-027 / FR-028 (realtime)
 
@@ -546,9 +547,14 @@ on a second client the row reverts color within 1 s without manual refresh.
   strip with the wireframe § 5 vertical sidebar (220 px), wired the real
   Windows `F1` and `Alt+1..Alt+8` accelerators via
   `Microsoft.UI.Xaml.Input.KeyboardAccelerator`, and made the connectivity
-  badge tap open a state-specific info popup. Sidebar collapse toggle
-  (220 ↔ 56), focus-ring style sweep, ⚙️ quick-settings menu, and the
-  functional `Cỡ chữ` dropdown remain — Round 3a/b.
+  badge tap open a state-specific info popup. PR #11 (`90d6b00`) made
+  the `Cỡ chữ` Picker functional — `IUserSettingsService` (MAUI
+  Preferences-backed) plus an App.xaml.cs startup mutation of the
+  `FontSize*` design tokens (Normal / Large +4 / ExtraLarge +8 across
+  the wireframe § 3 token set). Sidebar collapse toggle (220 ↔ 56),
+  focus-ring style sweep across controls, and the ⚙️ quick-settings
+  menu (which would also house the high-contrast toggle) are the
+  remaining sub-items — tracked separately as polish.
 - [X] **T-S3-12** [F-10] [F-09] Implement reusable `ToastService` and
   `ModalService` in `src/B2.Desktop/Services/` per
   [wireframe § 7](../05-ui-wireframes.md). Constitution VIII: per-page
