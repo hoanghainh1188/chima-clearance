@@ -14,7 +14,7 @@
            TextColor="{StaticResource ColorOnSurface}" />
     <HorizontalStackLayout Grid.Row="1" Spacing="{StaticResource SpacingS}">
       <Entry Text="{Binding Suffix}"
-             FontSize="24"
+             FontSize="{StaticResource FontSizeSearchInput}"
              HeightRequest="56"
              MinimumWidthRequest="200"
              SemanticProperties.Hint="{x:Static s:AppResources.Exit_SearchLabel}" />

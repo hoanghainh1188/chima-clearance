@@ -27,7 +27,7 @@
               <VerticalStackLayout Padding="8">
                 <Label Text="{Binding Username}" FontAttributes="Bold" />
                 <Label Text="{Binding FullName}" />
-                <Label Text="{Binding Role}" FontSize="12" TextColor="{StaticResource ColorOnSurface}" />
+                <Label Text="{Binding Role}" FontSize="{StaticResource FontSizeXS}" TextColor="{StaticResource ColorOnSurface}" />
               </VerticalStackLayout>
             </DataTemplate>
           </CollectionView.ItemTemplate>
