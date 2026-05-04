@@ -481,9 +481,12 @@ on a second client the row reverts color within 1 s without manual refresh.
   [wireframe § 6.5](../05-ui-wireframes.md). Confirmation modal with focus
   trap; row removes from list (animated 300 ms) on success. Vietnamese copy
   verbatim. **Dep**: T-S3-03. **LOC**: ~280. **DoD**: §DoD-6.
-  *Status (2026-05-04)*: Page + VM + confirmation modal landed in
-  `7ba1069`. Animated row removal (300 ms) and explicit focus trap deferred
-  pending Windows-runtime verification.
+  *Status (2026-05-04)*: Page + VM + confirmation modal landed in `7ba1069`.
+  Confirmation modal **focus-trap is delivered by the new
+  `CommunityToolkit.Maui.Views.Popup`-backed `IModalService` (PR #8 /
+  `d41c607`)** — the KVGS path inherits it via `IModalService.ConfirmAsync`.
+  Animated row removal (300 ms) + the "Đã xác nhận hôm nay: X tờ khai"
+  self-monitoring widget remain — Round 3c.
 
 ### F-10 Ledger + FR-027 / FR-028 (realtime)
 
@@ -512,9 +515,12 @@ on a second client the row reverts color within 1 s without manual refresh.
   `Services/SignalRClient.cs`, `Services/ConnectivityState.cs`. **Dep**:
   T-S3-07, T-S3-08. **LOC**: ~350.
   *Status (2026-05-04)*: FR-028 tri-state machine + 3 s polling fallback +
-  `LedgerChanged` push wired in `ConnectivityService` (`7ba1069`). Standalone
-  `SignalRClient` extraction deferred — current single-class collapses
-  hub + tri-state, which works but blurs separation of concerns.
+  `LedgerChanged` push wired in `ConnectivityService` (`7ba1069`). PR #7
+  (`797a987`) added the spec'd Serilog `Information` logging on every
+  state transition. F-10 Scenario 3 (writes-during-🟡) test landed in the
+  same PR. Standalone `SignalRClient` extraction deferred — current
+  single-class collapses hub + tri-state, which works but blurs
+  separation of concerns; tracked for Round 3c.
 - [~] **T-S3-10** [F-10] Implement `LedgerPage.xaml` + `LedgerViewModel.cs`
   per [wireframe § 6.2](../05-ui-wireframes.md). Sticky search row, daily
   header rows, 🔴/🟢/🔵/📋 status badges (icon + color + text per Constitution
@@ -524,8 +530,9 @@ on a second client the row reverts color within 1 s without manual refresh.
   *Status (2026-05-04)*: Page + VM + filters + status badges + four
   list-view states + connectivity banners landed in `7ba1069`. Drawer chi
   tiết (right-side detail), child-vehicle expand/collapse, context menu,
-  300 ms color animation / 400 ms highlight pulse on SignalR push deferred
-  pending Windows-runtime verification.
+  300 ms color animation / 400 ms highlight pulse on SignalR push remain
+  — Round 3d. Loading-state skeleton + empty-state action button + error
+  banner with correlationId across every list page is Round 3e.
 - [X] **T-S3-11** [F-10] Implement `AppShell.xaml` + `AppShellViewModel.cs`
   per [wireframe § 5](../05-ui-wireframes.md) — top bar with tri-state
   connectivity badge + user menu, sidebar (`Alt+1`..`Alt+8` accelerators), F1
@@ -535,10 +542,13 @@ on a second client the row reverts color within 1 s without manual refresh.
   bar (title + tri-state badge + user menu with Đổi mật khẩu / Đăng xuất),
   F1 cheat-sheet modal via `IModalService`, status bar with `Mã phiên`
   bound to `ISessionCorrelationService` (commits `1511f90`, `3ef3f53`,
-  `21a1650`, `d15b744`). Sidebar (vs current top tab strip) and
-  `Alt+1`..`Alt+8` / real F1 keypress need `Platforms/Windows/`
-  accelerators — deferred to a follow-up that can be verified on the
-  Windows runner.
+  `21a1650`, `d15b744`). PR #9 (`577d388`) replaced the temporary tab
+  strip with the wireframe § 5 vertical sidebar (220 px), wired the real
+  Windows `F1` and `Alt+1..Alt+8` accelerators via
+  `Microsoft.UI.Xaml.Input.KeyboardAccelerator`, and made the connectivity
+  badge tap open a state-specific info popup. Sidebar collapse toggle
+  (220 ↔ 56), focus-ring style sweep, ⚙️ quick-settings menu, and the
+  functional `Cỡ chữ` dropdown remain — Round 3a/b.
 - [X] **T-S3-12** [F-10] [F-09] Implement reusable `ToastService` and
   `ModalService` in `src/B2.Desktop/Services/` per
   [wireframe § 7](../05-ui-wireframes.md). Constitution VIII: per-page
@@ -547,7 +557,13 @@ on a second client the row reverts color within 1 s without manual refresh.
   Entry / Exit / MasterData VMs migrated off direct `Toast.Make` /
   `page.DisplayAlert` to `IToastService` / `IModalService.ConfirmAsync`
   in this commit. `IModalService.ShowAsync` added for read-only modals
-  (used by F1 cheat sheet).
+  (used by F1 cheat sheet). PR #8 (`d41c607`) replaced the
+  `DisplayAlert`-based `ModalService` with `CommunityToolkit.Maui.Views.Popup`
+  (focus trap + Esc / backdrop dismissal + return-focus per § 7) and
+  switched the `ToastService` to Snackbar with severity-based timing
+  (4 s success, 8 s warning, manual dismiss for error). Top-right
+  position + max-3 stack queue + aria-live polite/assertive routing
+  remain — Round 3 follow-up (custom toast overlay manager).
 
 **Sprint S3 exit smoke**: from quickstart § 4.3 step 8 (SignalR push + KVGS
 revert color on second client within 1 s).

@@ -16,11 +16,20 @@ Auto-generated from all feature plans. Last updated: 2026-05-04
 | --- | --- | --- | --- |
 | `001-b2-clearance` — Customs Gate B2 vehicle clearance log replacement | [spec.md](specs/001-b2-clearance/spec.md) | [plan.md](specs/001-b2-clearance/plan.md) | [v1.1.0](.specify/memory/constitution.md) |
 
-Active phase: **Sprint S3 (KVGS + ledger + realtime)** — F-09 confirmation +
-F-10 always-on ledger with SignalR push. **Done**: S0 (scaffold, ADRs 0001–
-0006), S1 (F-01/F-02/F-03/F-04 — auth, users, master data, force-rotate
-password), S2 (F-05/F-06/F-07/F-08 — declaration entry, add child vehicle,
-suffix search, mark exit). All merged to `main`.
+Active phase: **Sprint S3 wrapping up** — F-09 confirmation, F-10 always-on
+ledger with SignalR push, FR-027 role matrix, FR-028 tri-state connectivity,
+and the wireframe § 5 desktop chrome are all on `main` after PRs #6, #7, #8
+and #9. Sprint S4 (Quartz + reports + officer-name edit) starts once the
+remaining Round 3b/c/d/e polish items (functional `Cỡ chữ` dropdown, KVGS
+animations, ledger drawer chi tiết, list-view skeletons across pages) are
+either shipped or formally deferred.
+
+**Done**: S0 (scaffold, ADRs 0001–0006), S1 (F-01/F-02/F-03/F-04 — auth,
+users, master data, force-rotate password), S2 (F-05/F-06/F-07/F-08 —
+declaration entry, add child vehicle, suffix search, mark exit), S3 core
+(F-09 KVGS + F-10 ledger + SignalR realtime + wireframe § 5 sidebar shell
++ Modal popup focus-trap + Toast severity timing + FR-028 Serilog logging
++ Constitution VI tokens). All merged to `main`.
 
 ---
 
@@ -217,11 +226,34 @@ Yellow / red banners stay persistent in their respective states (no toast spam).
 
 ## Recent Changes
 
-- **2026-05-04** — Sprint S3 **backend slice** (in progress): KVGS + ledger REST +
-  SignalR hub and `ListDeclarations` repository fixes for SQLite / minimal-API
-  query binding; `T-S3-01`..`T-S3-03` and `T-S3-05`..`T-S3-08` marked complete in
-  `specs/001-b2-clearance/tasks.md`. MAUI tasks `T-S3-04`, `T-S3-09`..`T-S3-12`
-  remain.
+- **2026-05-04** — Sprint S3 **Round 3a** merged via PR #9 (`577d388`):
+  wireframe § 5 vertical sidebar (220 px) replaces the temporary tab strip;
+  Windows `F1` + `Alt+1..Alt+8` accelerators wired via
+  `Microsoft.UI.Xaml.Input.KeyboardAccelerator`; connectivity badge becomes
+  tappable and opens a state-specific info popup; `ColorSidebarBg` and
+  `ColorBorderFocus` tokens added.
+- **2026-05-04** — Sprint S3 **Round 2** merged via PR #8 (`d41c607`):
+  modal popups (`ConfirmPopup`, `InfoPopup`) backed by
+  `CommunityToolkit.Maui.Views.Popup` with focus trap + Esc / backdrop
+  dismissal per wireframe § 7; toast switched to Snackbar with
+  severity-based timing (4 s success, 8 s warning, manual dismiss for error);
+  Entry / Exit / KVGS toast call sites tagged `ToastSeverity.Success`.
+- **2026-05-04** — Sprint S3 **Round 1** merged via PR #7 (`797a987`):
+  FR-028 Serilog `Information` event on every `ConnectivityService.Mode`
+  transition; F-10 Scenario 3 acceptance test (writes-during-🟡-polling)
+  added to `ListDeclarationsEndpointTests.cs` (F-10 trait count: 5 → 6);
+  two hard-coded `FontSize` literals migrated to design tokens
+  (`Typography.xaml` now matches wireframe § 3 fully).
+- **2026-05-04** — Sprint S3 **partial** merged via PR #6 (`e926982`):
+  KVGS + ledger backend (`Declaration.ConfirmKvgs`,
+  `ListDeclarationsQueryHandler`, `EventsHub`,
+  `SignalRLedgerDispatcher`); desktop chrome (LedgerPage, KvgsPage,
+  `MainShellPage : ContentPage` + Grid, `ISessionCorrelationService`,
+  `ISessionContext`, `IAppNavigator`, `ConnectivityService` FR-028
+  tri-state); `IToastService` / `IModalService` services + Entry / Exit /
+  MasterData VM migration. T-S3-01..03, T-S3-05..08, T-S3-11, T-S3-12
+  marked complete; T-S3-04, T-S3-09, T-S3-10 partial (Round 3b/c/d/e
+  backlog).
 - **2026-05-04** — Sprint S2 merged via PR #5 (`de24ec5`): Entry, Exit, Master
   Data backend + MAUI desktop pages. All 22 S2 tasks (`T-S2-01..T-S2-22`)
   complete. Post-mortem captured as the new `Pre-push gates` section above

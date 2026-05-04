@@ -6,62 +6,147 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 
+Sprint S3 is substantially shipped through 4 merged PRs (#6 backend +
+desktop chrome partial, #7 Round 1 audit follow-up, #8 Round 2 modal /
+toast spec, #9 Round 3a sidebar + Windows accelerators). Round 3b/c/d/e
+remain (functional Cỡ chữ dropdown, KVGS animations, ledger drawer chi
+tiết, list-view skeletons across pages). Sprints S4..S6 not started.
+
 ### Added
 
-- `CLAUDE.md` § "Pre-push gates" — locally runnable subset of the CI gates
-  (`dotnet format` + `dotnet build` + `dotnet test` against
-  `B2.NoMaui.slnf`) plus a "macOS analyzer trap" callout documenting the
-  `CompositeFormat` / `CultureInfo.CurrentCulture` / `IDisposable` patterns
-  required by the `B2.Desktop` analyzers (CA1305 / CA1863 / CA1001) that only
-  run on the Windows CI runner.
-- `specs/001-b2-clearance/quickstart.md` § 7 — two new troubleshooting rows
-  (UTF-8 BOM `error CHARSET` and the macOS-vs-CI Desktop analyzer divergence)
-  with concrete remediation steps.
-- **Sprint S3 (T-S3-11)** — wireframe § 5 app-shell chrome on the desktop
-  client: `MainShellPage : ContentPage` + Grid layout (top bar / nav strip /
-  content host / status bar), tri-state connectivity badge, user menu with
-  Đổi mật khẩu / Đăng xuất, and an F1 cheat-sheet modal via `IModalService`.
-- **Sprint S3 (T-S3-11 / 1a)** — `ISessionCorrelationService` +
-  `CorrelationCaptureHandler` capture `X-Correlation-Id` from every API
-  response so the status bar can surface "Mã phiên: …".
-- `ISessionContext` — singleton identity holder populated on login, cleared
-  on logout, surfaced in the user-menu button label.
-- `IAppNavigator` — abstracts the "send the user back to login" navigation
-  so it works from both the pre-login `Shell.Current.GoToAsync("//login")`
-  path and the post-login `MainPage = AppShell` path.
+#### PR #6 — Sprint S3 partial (`e926982`)
+
+- **F-09 KVGS Confirmation** — `Declaration.ConfirmKvgs` domain method
+  enforcing INV-6 + state machine; `ConfirmKvgsCommandHandler`;
+  `POST /api/declarations/{id}/kvgs-confirm` (`SupervisorOrAbove`).
+  KvgsPage + KvgsViewModel with confirmation modal.
+- **F-10 ledger query + realtime** — `ListDeclarationsQueryHandler`
+  with paginated date / status / plate / yard / processor / officer /
+  `since` / `includeCancelled` filters; `GET /api/declarations` and
+  `/api/declarations/{id}`; `EventsHub` SignalR hub at `/hubs/events`
+  with `SignalRLedgerDispatcher` publishing `LedgerChanged` for
+  Create / Exit / KvgsConfirm / Cancel / OfficerNameChanged.
+- **Desktop ledger** — LedgerPage / LedgerViewModel per wireframe
+  § 6.2: sticky search row, daily-header rows, status badges
+  (icon + color + text per Constitution VIII), date / status / yard /
+  plate filters, "Chỉ tờ còn xe trong cổng" toggle, pagination, four
+  list-view states.
+- **FR-028 tri-state connectivity** — `ConnectivityService` driving
+  ledger live updates and the new top-bar badge.
+- **Wireframe § 5 app shell (T-S3-11 baseline)** —
+  `MainShellPage : ContentPage` + Grid layout, tri-state badge,
+  user menu (Đổi mật khẩu / Đăng xuất), F1 cheat-sheet modal,
+  status bar with `Mã phiên` from a new `ISessionCorrelationService`
+  populated by a `CorrelationCaptureHandler` on every API response.
+- **Service consolidation (T-S3-12 baseline)** — Entry / Exit /
+  MasterData ViewModels migrated off direct `Toast.Make` and
+  `page.DisplayAlert` to `IToastService` / `IModalService` per
+  Constitution VIII.
+
+#### PR #7 — Round 1 audit follow-up (`797a987`)
+
+- **FR-028 audit log** — `ConnectivityService.Mode` setter now emits
+  a Serilog `Information` event on every state transition with
+  `{Previous}` and `{Current}` modes. Spec FR-028 demands this; was
+  previously absent.
+- **F-10 Scenario 3 test** — `Should_accept_writes_during_polling_fallback_and_surface_in_since_delta`
+  added to `ListDeclarationsEndpointTests.cs` (the spec lists 4
+  acceptance scenarios; only 3 had server-side coverage). F-10 trait
+  count: 5 → 6.
+- **Constitution VI tokens** — `Typography.xaml` matches wireframe § 3
+  fully (`FontSizeXS=12`, `FontSizeL=18`, `FontSizeXXL=28` newly
+  added); `FontSizeSearchInput=24` for the § 6.4 special case. Two
+  hard-coded `FontSize` literals (`ExitPage.xaml`, `Admin/UsersPage.xaml`)
+  now reference tokens.
+
+#### PR #8 — Round 2 audit follow-up (`d41c607`)
+
+- **Toast severity + timing (wireframe § 7)** — new `ToastSeverity`
+  enum (Info/Success/Warning/Error) and overload
+  `IToastService.ShowAsync(message, severity, ct)`. `ToastService`
+  switched from CT.Maui Toast to Snackbar so duration is configurable:
+  4 s Success/Info, 8 s Warning, manual close via "Đóng" action button
+  for Error. Entry / Exit / KVGS toast call sites tagged
+  `ToastSeverity.Success`.
+- **Modal popup with focus trap (wireframe § 7)** — `IModalService`
+  now backed by `CommunityToolkit.Maui.Views.Popup` (`ConfirmPopup`,
+  `InfoPopup` under `Services/Popups/`). Focus trap, Esc dismissal,
+  backdrop tap-to-close, return-focus-to-trigger are enforced by
+  CT.Maui's Popup natively. `ConfirmAsync` gets a `destructive` bool
+  (default false) that suppresses backdrop dismissal for destructive
+  flows per § 7.
+
+#### PR #9 — Round 3a audit follow-up (`577d388`)
+
+- **Wireframe § 5 sidebar (220 px)** — `MainShellPage` replaces the
+  temporary horizontal tab strip with a vertical sidebar. Items
+  follow FR-027 / sidebar matrix; active item shows a 4-px
+  `ColorPrimary` left bar + bold label. New Vietnamese sidebar item
+  strings (📋 Sổ B2 / ➕ Nhập / 🔍 Xe ra / ✅ KVGS / 🗂️ Danh mục /
+  👥 Người dùng) live in `AppResources.vi.resx`.
+- **Windows keyboard accelerators (§ 5)** — `F1` opens the cheat
+  sheet; `Alt+1..Alt+8` activates the N-th visible sidebar item.
+  `Microsoft.UI.Xaml.Input.KeyboardAccelerator` attached to the
+  page's `PlatformView` on `Loaded`. Out-of-range `Alt+N` is a
+  no-op so role-restricted sidebars don't spuriously navigate.
+- **Connectivity badge clickable** — tap opens an info popup with
+  state-specific Vietnamese description (`Connectivity_Detail_Online`
+  / `_Polling` / `_Offline`). Health-page nav for Admin is a follow-up.
+- **Tokens (Constitution VI)** — `ColorSidebarBg` (#FAFAFC) and
+  `ColorBorderFocus` (#1A73E8) added to `Colors.xaml`. Style sweep
+  to apply the focus ring across controls is its own commit.
+
+#### Other
+
+- `CLAUDE.md` § "Pre-push gates" — locally runnable subset of the CI
+  gates plus a "macOS analyzer trap" callout documenting the
+  `CompositeFormat` / `CultureInfo.CurrentCulture` / `IDisposable`
+  patterns required by the `B2.Desktop` analyzers (CA1305 / CA1863 /
+  CA1001) that only run on the Windows CI runner.
+- `specs/001-b2-clearance/quickstart.md` § 7 — two new troubleshooting
+  rows (UTF-8 BOM `error CHARSET` and the macOS-vs-CI Desktop analyzer
+  divergence) with concrete remediation steps.
+- `ISessionContext` — singleton identity holder populated on login,
+  cleared on logout, surfaced in the user-menu button label.
+- `IAppNavigator` — abstracts the "send the user back to login"
+  navigation so it works from both the pre-login
+  `Shell.Current.GoToAsync("//login")` path and the post-login
+  `MainPage = AppShell` path.
 
 ### Changed
 
-- **Sprint S3 (T-S3-12)** — Entry / Exit / MasterData ViewModels migrated
-  off direct `CommunityToolkit.Maui.Alerts.Toast.Make` and
-  `Application.Current.MainPage.DisplayAlert` to `IToastService` /
-  `IModalService.ConfirmAsync`, consolidating notification surfaces per
-  Constitution VIII.
-- Tab pages (Ledger / Entry / Exit / Kvgs / MasterData / Users) converted
-  from `ContentPage` to `ContentView` so they can be hosted inside the
-  `MainShellPage` grid; OnAppearing init logic moved to one-shot `Loaded`
-  handlers.
-- `IMainShellFactory.CreateMainShell` no longer takes a `UserRoleDto` —
-  role is now read from `ISessionContext`. `ChangePasswordViewModel` uses
-  `IAppNavigator` so the post-login voluntary password change works
-  outside `Shell.Current`.
+- Tab pages (Ledger / Entry / Exit / Kvgs / MasterData / Users)
+  converted from `ContentPage` to `ContentView` so they can be hosted
+  inside the `MainShellPage` grid; `OnAppearing` init logic moved to
+  one-shot `Loaded` handlers.
+- `IMainShellFactory.CreateMainShell` no longer takes a `UserRoleDto`
+  — role is now read from `ISessionContext`. `ChangePasswordViewModel`
+  uses `IAppNavigator` so the post-login voluntary password change
+  works outside `Shell.Current`.
+- `CLAUDE.md` "Active phase" updated to **Sprint S3** (S0 + S1 + S2
+  merged to `main`). "Recent Changes" log extended with PR #4 (S1),
+  PR #5 (S2), PR #6 (S3 partial), PR #7 (R1), PR #8 (R2), PR #9 (R3a)
+  merge entries.
 
 ### Fixed
 
-- **Sprint S3 (backend slice)**: `GET /api/declarations` reads query parameters
-  via `HttpRequest.Query` (avoids minimal-API binding returning HTTP 400 with an
-  empty body). `DeclarationRepository.ListDeclarationsAsync` avoids SQLite EF
-  limitations on `DateTimeOffset` in `ORDER BY` and on `since` / vehicle time
-  predicates (in-memory sort + `since` filter, plate filter via `IN` subquery).
-  SignalR integration test connects through `WebApplicationFactory.Server` with
-  `HttpMessageHandlerFactory` so negotiation uses the in-memory test server
-  instead of `localhost:80`.
-
-### Changed
-
-- `CLAUDE.md` "Active phase" updated to **Sprint S3** (S0 + S1 + S2 merged
-  to `main`). "Recent Changes" log extended with PR #4 (S1) and PR #5 (S2)
-  merge entries.
+- **Sprint S3 (backend slice)**: `GET /api/declarations` reads query
+  parameters via `HttpRequest.Query` (avoids minimal-API binding
+  returning HTTP 400 with an empty body).
+  `DeclarationRepository.ListDeclarationsAsync` avoids SQLite EF
+  limitations on `DateTimeOffset` in `ORDER BY` and on `since` /
+  vehicle time predicates (in-memory sort + `since` filter, plate
+  filter via `IN` subquery). SignalR integration test connects
+  through `WebApplicationFactory.Server` with
+  `HttpMessageHandlerFactory` so negotiation uses the in-memory
+  test server instead of `localhost:80`.
+- **Round 1 fix** — `KvgsViewModel` was missing `using System.Text;`
+  for `CompositeFormat`; only the Windows runner caught it.
+- **Round 2 fix** — `Page.ShowPopupAsync` returns `Task<object?>` in
+  CT.Maui v9 (not `Task<IPopupResult>`); `result is true` pattern
+  match instead of `.Result` accessor.
+- **Round 3a fix** — `VirtualKeyModifiers` lives in `Windows.System`,
+  not `Microsoft.UI.Xaml.Input`. CS0234 from the Windows runner.
 
 ## [0.2.0] — 2026-05-04 — Sprint S2 (Entry & Exit happy path)
 
