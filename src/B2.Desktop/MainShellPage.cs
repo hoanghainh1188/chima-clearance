@@ -133,7 +133,7 @@ public sealed class MainShellPage : ContentPage
         AttachAccelerator(
             element,
             Windows.System.VirtualKey.F1,
-            Microsoft.UI.Xaml.Input.VirtualKeyModifiers.None,
+            Windows.System.VirtualKeyModifiers.None,
             () => _ = ShowShortcutsAsync());
 
         for (var i = 1; i <= 8; i++)
@@ -143,7 +143,7 @@ public sealed class MainShellPage : ContentPage
             AttachAccelerator(
                 element,
                 key,
-                Microsoft.UI.Xaml.Input.VirtualKeyModifiers.Menu,
+                Windows.System.VirtualKeyModifiers.Menu,
                 () => ActivateTabByIndex(captured));
         }
     }
@@ -151,7 +151,7 @@ public sealed class MainShellPage : ContentPage
     private static void AttachAccelerator(
         Microsoft.UI.Xaml.UIElement element,
         Windows.System.VirtualKey key,
-        Microsoft.UI.Xaml.Input.VirtualKeyModifiers modifiers,
+        Windows.System.VirtualKeyModifiers modifiers,
         Action invoke)
     {
         var accelerator = new Microsoft.UI.Xaml.Input.KeyboardAccelerator
