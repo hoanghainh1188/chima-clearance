@@ -228,6 +228,7 @@
                 Command="{Binding NextPageCommand}" />
       </HorizontalStackLayout>
     </Grid>
+    </Grid>
     <Border Grid.Column="1"
             IsVisible="{Binding IsDrawerOpen}"
             WidthRequest="420"
