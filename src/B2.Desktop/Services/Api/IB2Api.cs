@@ -79,4 +79,26 @@ public interface IB2Api
         Guid id,
         [Header("Idempotency-Key")] string idempotencyKey,
         CancellationToken cancellationToken = default);
+
+    [Get("/api/admin/health")]
+    Task<AdminHealthResponse> GetHealthAsync(CancellationToken cancellationToken = default);
+
+    [Get("/api/declarations")]
+    Task<PagedDeclarationsResponse> ListDeclarationsAsync(
+        [Query] int? page,
+        [Query] int? pageSize,
+        [Query] string? status,
+        [Query] string? since,
+        [Query] string? fromDate,
+        [Query] string? toDate,
+        [Query] string? plate,
+        [Query] string? yardIds,
+        [Query] bool? includeCancelled,
+        CancellationToken cancellationToken = default);
+
+    [Get("/api/declarations/{id}")]
+    Task<DeclarationDetailResponse> GetDeclarationDetailAsync(Guid id, CancellationToken cancellationToken = default);
+
+    [Post("/api/declarations/{id}/kvgs-confirm")]
+    Task ConfirmKvgsAsync(Guid id, CancellationToken cancellationToken = default);
 }

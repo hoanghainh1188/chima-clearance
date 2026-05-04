@@ -22,6 +22,12 @@ public static class MauiProgram
             .UseMauiCommunityToolkit();
 
         const string apiBase = "http://127.0.0.1:5000/";
+        var apiUri = new Uri(apiBase);
+        builder.Services.AddSingleton(new DesktopRuntimeOptions(apiUri));
+        builder.Services.AddSingleton<ConnectivityService>();
+        builder.Services.AddSingleton<IToastService, ToastService>();
+        builder.Services.AddSingleton<IModalService, ModalService>();
+
         var refitSettings = new RefitSettings
         {
             ContentSerializer = new SystemTextJsonContentSerializer(
@@ -51,7 +57,10 @@ public static class MauiProgram
         builder.Services.AddTransient<ExitPage>();
         builder.Services.AddTransient<MasterDataViewModel>();
         builder.Services.AddTransient<MasterDataPage>();
-        builder.Services.AddTransient<SupervisorHomePage>();
+        builder.Services.AddTransient<LedgerViewModel>();
+        builder.Services.AddTransient<LedgerPage>();
+        builder.Services.AddTransient<KvgsViewModel>();
+        builder.Services.AddTransient<KvgsPage>();
         builder.Services.AddTransient<AppShell>();
 
 #if DEBUG

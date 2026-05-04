@@ -1,0 +1,87 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage x:Class="B2.Desktop.Views.KvgsPage"
+             x:Name="KvgsRoot"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:B2.Desktop.ViewModels"
+             xmlns:s="clr-namespace:B2.Desktop.Resources.Strings"
+             x:DataType="vm:KvgsViewModel"
+             Title="{x:Static s:AppResources.Kvgs_PageTitle}"
+             BackgroundColor="{StaticResource ColorSurface}">
+  <Grid Padding="{StaticResource SpacingM}"
+        RowDefinitions="Auto,Auto,Auto,Auto,*"
+        RowSpacing="{StaticResource SpacingS}">
+    <Border Grid.Row="0"
+            Padding="{StaticResource SpacingS}"
+            BackgroundColor="{StaticResource ColorErrorBg}"
+            IsVisible="{Binding ShowOfflineBanner}">
+      <Label Text="{x:Static s:AppResources.Connectivity_OfflineBanner}"
+             TextColor="{StaticResource ColorError}" />
+    </Border>
+    <Border Grid.Row="1"
+            Padding="{StaticResource SpacingS}"
+            BackgroundColor="{StaticResource ColorWarningBanner}"
+            IsVisible="{Binding ShowPollingBanner}">
+      <Label Text="{x:Static s:AppResources.Connectivity_PollingBanner}"
+             TextColor="{StaticResource ColorWarning}" />
+    </Border>
+    <HorizontalStackLayout Grid.Row="2" Spacing="{StaticResource SpacingS}">
+      <Label Text="{x:Static s:AppResources.Ledger_ConnectivityPrefix}"
+             TextColor="{StaticResource ColorOnSurfaceMuted}" />
+      <Label Text="{Binding ConnectivityLabel}"
+             FontAttributes="Bold"
+             TextColor="{StaticResource ColorOnSurface}" />
+    </HorizontalStackLayout>
+    <Button Grid.Row="3"
+            Text="{x:Static s:AppResources.Kvgs_Refresh}"
+            Command="{Binding RefreshCommand}"
+            HorizontalOptions="Start" />
+    <ScrollView Grid.Row="4">
+      <VerticalStackLayout Spacing="{StaticResource SpacingM}">
+        <ActivityIndicator IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           HorizontalOptions="Center" />
+        <VerticalStackLayout Spacing="{StaticResource SpacingS}"
+                             IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
+          <Label Text="{Binding ErrorMessage}"
+                 TextColor="{StaticResource ColorError}"
+                 IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+          <Button Text="{x:Static s:AppResources.Common_Retry}"
+                  Command="{Binding RefreshCommand}"
+                  IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+          <Label Text="{x:Static s:AppResources.Kvgs_Empty}"
+                 IsVisible="{Binding ShowEmpty}"
+                 TextColor="{StaticResource ColorOnSurfaceMuted}"
+                 HorizontalOptions="Center" />
+          <CollectionView ItemsSource="{Binding Rows}"
+                          IsVisible="{Binding ShowDataGrid}"
+                          SelectionMode="None">
+            <CollectionView.ItemTemplate>
+              <DataTemplate x:DataType="vm:LedgerRowViewModel">
+                <Grid Padding="{StaticResource SpacingS}"
+                      ColumnDefinitions="*,Auto"
+                      ColumnSpacing="{StaticResource SpacingM}">
+                  <VerticalStackLayout Grid.Column="0">
+                    <Label Text="{Binding DeclarationMasked}"
+                           FontAttributes="Bold" />
+                    <Label Text="{Binding CompanyName}"
+                           FontSize="{StaticResource FontSizeS}"
+                           TextColor="{StaticResource ColorOnSurfaceMuted}" />
+                    <Label Text="{Binding ProcessorName}"
+                           FontSize="{StaticResource FontSizeS}"
+                           TextColor="{StaticResource ColorOnSurfaceMuted}" />
+                  </VerticalStackLayout>
+                  <Button Grid.Column="1"
+                          Text="{x:Static s:AppResources.Kvgs_ConfirmButton}"
+                          VerticalOptions="Center"
+                          Command="{Binding Source={x:Reference KvgsRoot}, Path=BindingContext.ConfirmCommand}"
+                          CommandParameter="{Binding .}" />
+                </Grid>
+              </DataTemplate>
+            </CollectionView.ItemTemplate>
+          </CollectionView>
+        </VerticalStackLayout>
+      </VerticalStackLayout>
+    </ScrollView>
+  </Grid>
+</ContentPage>

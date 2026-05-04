@@ -1,0 +1,223 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage x:Class="B2.Desktop.Views.LedgerPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:B2.Desktop.ViewModels"
+             xmlns:s="clr-namespace:B2.Desktop.Resources.Strings"
+             x:DataType="vm:LedgerViewModel"
+             Title="{x:Static s:AppResources.Ledger_PageTitle}"
+             BackgroundColor="{StaticResource ColorSurface}">
+  <Grid Padding="{StaticResource SpacingM}"
+        RowDefinitions="Auto,Auto,Auto,*"
+        RowSpacing="{StaticResource SpacingS}">
+    <Border Grid.Row="0"
+            Padding="{StaticResource SpacingS}"
+            BackgroundColor="{StaticResource ColorErrorBg}"
+            IsVisible="{Binding ShowOfflineBanner}">
+      <Label Text="{x:Static s:AppResources.Connectivity_OfflineBanner}"
+             TextColor="{StaticResource ColorError}" />
+    </Border>
+    <Border Grid.Row="1"
+            Padding="{StaticResource SpacingS}"
+            BackgroundColor="{StaticResource ColorWarningBanner}"
+            IsVisible="{Binding ShowPollingBanner}">
+      <Label Text="{x:Static s:AppResources.Connectivity_PollingBanner}"
+             TextColor="{StaticResource ColorWarning}" />
+    </Border>
+    <HorizontalStackLayout Grid.Row="2" Spacing="{StaticResource SpacingS}">
+      <Label Text="{x:Static s:AppResources.Ledger_ConnectivityPrefix}"
+             TextColor="{StaticResource ColorOnSurfaceMuted}" />
+      <Label Text="{Binding ConnectivityLabel}"
+             FontAttributes="Bold"
+             TextColor="{StaticResource ColorOnSurface}" />
+    </HorizontalStackLayout>
+    <Grid Grid.Row="3"
+          RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*"
+          RowSpacing="{StaticResource SpacingS}">
+      <ActivityIndicator Grid.Row="0"
+                         IsRunning="{Binding IsLoading}"
+                         IsVisible="{Binding IsLoading}"
+                         HorizontalOptions="Center" />
+      <VerticalStackLayout Grid.Row="1"
+                           Spacing="{StaticResource SpacingS}"
+                           IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}">
+        <Label Text="{Binding ErrorMessage}"
+               TextColor="{StaticResource ColorError}" />
+        <Button Text="{x:Static s:AppResources.Common_Retry}"
+                Command="{Binding RefreshCommand}" />
+      </VerticalStackLayout>
+      <Label Grid.Row="2"
+             Text="{Binding LedgerSubtitle}"
+             FontSize="{StaticResource FontSizeXL}"
+             TextColor="{StaticResource ColorPrimary}"
+             IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}" />
+      <VerticalStackLayout Grid.Row="3"
+                           Spacing="{StaticResource SpacingS}"
+                           IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
+        <Label Text="{x:Static s:AppResources.Ledger_Search_Label}"
+               TextColor="{StaticResource ColorOnSurfaceMuted}" />
+        <HorizontalStackLayout Spacing="{StaticResource SpacingS}">
+          <Entry Text="{Binding PlateSearch}"
+                 HorizontalOptions="FillAndExpand"
+                 ReturnType="Search"
+                 ReturnCommand="{Binding SearchFromFilterCommand}" />
+          <Button Text="{x:Static s:AppResources.Ledger_Search_Button}"
+                  Command="{Binding SearchFromFilterCommand}" />
+        </HorizontalStackLayout>
+        <HorizontalStackLayout Spacing="{StaticResource SpacingM}">
+          <CheckBox IsChecked="{Binding FilterOnlyUnexited}" VerticalOptions="Center" />
+          <Label Text="{x:Static s:AppResources.Ledger_UnexitedOnly}"
+                 VerticalOptions="Center"
+                 TextColor="{StaticResource ColorOnSurface}" />
+        </HorizontalStackLayout>
+      </VerticalStackLayout>
+      <Grid Grid.Row="4"
+            ColumnDefinitions="*,*,*,Auto"
+            ColumnSpacing="{StaticResource SpacingS}"
+            RowDefinitions="Auto,Auto"
+            RowSpacing="{StaticResource SpacingS}"
+            IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
+        <Label Grid.Row="0"
+               Grid.Column="0"
+               Text="{x:Static s:AppResources.Ledger_Filter_DateLabel}"
+               TextColor="{StaticResource ColorOnSurfaceMuted}" />
+        <Picker Grid.Row="1"
+                Grid.Column="0"
+                ItemsSource="{Binding DatePresetOptions}"
+                SelectedIndex="{Binding DatePresetIndex}" />
+        <Label Grid.Row="0"
+               Grid.Column="1"
+               Text="{x:Static s:AppResources.Ledger_Filter_StatusLabel}"
+               TextColor="{StaticResource ColorOnSurfaceMuted}" />
+        <Picker Grid.Row="1"
+                Grid.Column="1"
+                ItemsSource="{Binding StatusFilterOptions}"
+                SelectedIndex="{Binding StatusFilterIndex}" />
+        <Label Grid.Row="0"
+               Grid.Column="2"
+               Text="{x:Static s:AppResources.Ledger_Filter_YardLabel}"
+               TextColor="{StaticResource ColorOnSurfaceMuted}" />
+        <Picker Grid.Row="1"
+                Grid.Column="2"
+                ItemsSource="{Binding YardPickerSource}"
+                ItemDisplayBinding="{Binding Name}"
+                SelectedItem="{Binding SelectedYard}" />
+        <Button Grid.Row="0"
+                Grid.RowSpan="2"
+                Grid.Column="3"
+                Text="{x:Static s:AppResources.Ledger_ResetFilters}"
+                Command="{Binding ResetFiltersCommand}"
+                VerticalOptions="Center" />
+      </Grid>
+      <Grid Grid.Row="5"
+            IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
+        <CollectionView ItemsSource="{Binding DisplayItems}"
+                        IsVisible="{Binding ShowDataGrid}"
+                        SelectionMode="None">
+          <CollectionView.ItemTemplate>
+            <DataTemplate x:DataType="vm:LedgerUiItem">
+              <Grid Padding="0,2">
+                <Border IsVisible="{Binding IsDateHeader}"
+                        Padding="{StaticResource SpacingS}"
+                        BackgroundColor="{StaticResource ColorLedgerDailyHeaderBg}">
+                  <Label Text="{Binding HeaderText}"
+                         TextColor="{StaticResource ColorOnSurface}"
+                         LineBreakMode="WordWrap" />
+                </Border>
+                <Grid IsVisible="{Binding IsDataRow}"
+                      Padding="{StaticResource SpacingS}"
+                      ColumnDefinitions="Auto,Auto,*,*,*,*,*,Auto"
+                      ColumnSpacing="6">
+                  <Label Grid.Column="0"
+                         Text="{Binding Row.RowOrdinal}"
+                         VerticalOptions="Center"
+                         WidthRequest="28"
+                         TextColor="{StaticResource ColorOnSurfaceMuted}" />
+                  <HorizontalStackLayout Grid.Column="1"
+                                         Spacing="2"
+                                         VerticalOptions="Center">
+                    <Label Text="{Binding Row.StatusIcon}" />
+                    <Label Text="{Binding Row.StatusLabel}">
+                      <Label.Triggers>
+                        <DataTrigger TargetType="Label"
+                                     Binding="{Binding Row.Dto.Status}"
+                                     Value="Open">
+                          <Setter Property="TextColor" Value="{StaticResource ColorLedgerStatusOpen}" />
+                        </DataTrigger>
+                        <DataTrigger TargetType="Label"
+                                     Binding="{Binding Row.Dto.Status}"
+                                     Value="AllExited">
+                          <Setter Property="TextColor" Value="{StaticResource ColorLedgerStatusAllExited}" />
+                        </DataTrigger>
+                        <DataTrigger TargetType="Label"
+                                     Binding="{Binding Row.Dto.Status}"
+                                     Value="KVGSConfirmed">
+                          <Setter Property="TextColor" Value="{StaticResource ColorLedgerStatusKvgsConfirmed}" />
+                        </DataTrigger>
+                        <DataTrigger TargetType="Label"
+                                     Binding="{Binding Row.Dto.Status}"
+                                     Value="Cancelled">
+                          <Setter Property="TextColor" Value="{StaticResource ColorLedgerStatusCancelled}" />
+                        </DataTrigger>
+                      </Label.Triggers>
+                    </Label>
+                  </HorizontalStackLayout>
+                  <Label Grid.Column="2"
+                         Text="{Binding Row.DeclarationMasked}"
+                         FontAttributes="Bold"
+                         VerticalOptions="Center"
+                         LineBreakMode="TailTruncation" />
+                  <Label Grid.Column="3"
+                         Text="{Binding Row.CompanyName}"
+                         VerticalOptions="Center"
+                         LineBreakMode="TailTruncation"
+                         TextColor="{StaticResource ColorOnSurface}" />
+                  <Label Grid.Column="4"
+                         Text="{Binding Row.ProcessorName}"
+                         VerticalOptions="Center"
+                         LineBreakMode="TailTruncation"
+                         TextColor="{StaticResource ColorOnSurfaceMuted}"
+                         FontSize="{StaticResource FontSizeS}" />
+                  <Label Grid.Column="5"
+                         Text="{Binding Row.PlateAndTrailerLine}"
+                         VerticalOptions="Center"
+                         LineBreakMode="TailTruncation"
+                         TextColor="{StaticResource ColorOnSurface}" />
+                  <Label Grid.Column="6"
+                         Text="{Binding Row.YardLabel}"
+                         VerticalOptions="Center"
+                         TextColor="{StaticResource ColorOnSurfaceMuted}"
+                         FontSize="{StaticResource FontSizeS}" />
+                  <Label Grid.Column="7"
+                         Text="{Binding Row.TimeLocal}"
+                         VerticalOptions="Center"
+                         TextColor="{StaticResource ColorOnSurface}" />
+                </Grid>
+              </Grid>
+            </DataTemplate>
+          </CollectionView.ItemTemplate>
+        </CollectionView>
+        <Label Text="{x:Static s:AppResources.Ledger_Empty}"
+               IsVisible="{Binding ShowEmpty}"
+               TextColor="{StaticResource ColorOnSurfaceMuted}"
+               HorizontalOptions="Center"
+               VerticalOptions="Center" />
+      </Grid>
+      <HorizontalStackLayout Grid.Row="6"
+                             Spacing="{StaticResource SpacingM}"
+                             HorizontalOptions="Center"
+                             VerticalOptions="End"
+                             IsVisible="{Binding ShowDataGrid}">
+        <Label Text="{Binding DisplayRangeText}"
+               VerticalOptions="Center"
+               TextColor="{StaticResource ColorOnSurfaceMuted}" />
+        <Button Text="{x:Static s:AppResources.Ledger_PrevPage}"
+                Command="{Binding PrevPageCommand}" />
+        <Label Text="{Binding PageSummary}"
+               VerticalOptions="Center" />
+        <Button Text="{x:Static s:AppResources.Ledger_NextPage}"
+                Command="{Binding NextPageCommand}" />
+      </HorizontalStackLayout>
+    </Grid>
+  </Grid>
+</ContentPage>

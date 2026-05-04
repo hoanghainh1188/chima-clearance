@@ -1,4 +1,5 @@
 using B2.Desktop.Resources.Strings;
+using B2.Desktop.Services;
 using B2.Desktop.Services.Api;
 using B2.Desktop.Views;
 using B2.Desktop.Views.Admin;
@@ -22,6 +23,14 @@ public sealed class MainShell : Shell
         Title = AppResources.Shell_AppTitle;
 
         var bar = new TabBar();
+        bar.Items.Add(
+            new ShellContent
+            {
+                Title = AppResources.Ledger_PageTitle,
+                Route = "ledger",
+                Content = services.GetRequiredService<LedgerPage>(),
+            });
+
         if (role is UserRoleDto.Admin or UserRoleDto.Operator)
         {
             bar.Items.Add(
@@ -37,6 +46,17 @@ public sealed class MainShell : Shell
                     Title = AppResources.Exit_PageTitle,
                     Route = "exit",
                     Content = services.GetRequiredService<ExitPage>(),
+                });
+        }
+
+        if (role is UserRoleDto.Admin or UserRoleDto.Supervisor)
+        {
+            bar.Items.Add(
+                new ShellContent
+                {
+                    Title = AppResources.Kvgs_PageTitle,
+                    Route = "kvgs",
+                    Content = services.GetRequiredService<KvgsPage>(),
                 });
         }
 
@@ -58,18 +78,9 @@ public sealed class MainShell : Shell
                 });
         }
 
-        if (role == UserRoleDto.Supervisor)
-        {
-            bar.Items.Add(
-                new ShellContent
-                {
-                    Title = AppResources.Supervisor_HomeTitle,
-                    Route = "supervisor",
-                    Content = services.GetRequiredService<SupervisorHomePage>(),
-                });
-        }
-
         Items.Add(bar);
+
+        services.GetRequiredService<ConnectivityService>().Start();
 
         ToolbarItems.Add(
             new ToolbarItem
@@ -82,6 +93,8 @@ public sealed class MainShell : Shell
 
     private async Task LogoutAsync()
     {
+        var connectivity = _services.GetRequiredService<ConnectivityService>();
+        await connectivity.StopAsync().ConfigureAwait(false);
         _auth.AccessToken = null;
         await MainThread.InvokeOnMainThreadAsync(() =>
         {
