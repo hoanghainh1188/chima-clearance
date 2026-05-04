@@ -1,5 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Globalization;
+using System.Text;
 using B2.Desktop.Resources.Strings;
 using B2.Desktop.Services;
 using B2.Desktop.Services.Api;
