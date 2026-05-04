@@ -1,0 +1,100 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage x:Class="B2.Desktop.Views.Admin.MasterDataPage"
+             x:Name="PageRoot"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:B2.Desktop.ViewModels.Admin"
+             xmlns:s="clr-namespace:B2.Desktop.Resources.Strings"
+             xmlns:md="clr-namespace:B2.Shared.Contracts.MasterData;assembly=B2.Shared.Contracts"
+             x:DataType="vm:MasterDataViewModel"
+             Title="{x:Static s:AppResources.MasterData_PageTitle}"
+             BackgroundColor="{StaticResource ColorSurface}">
+  <Grid Padding="{StaticResource SpacingM}" RowDefinitions="Auto,Auto,Auto,*">
+    <HorizontalStackLayout Grid.Row="0" Spacing="{StaticResource SpacingS}">
+      <Button Text="{x:Static s:AppResources.MasterData_Tab_Processors}"
+              Command="{Binding SelectProcessorsTabCommand}"
+              SemanticProperties.Hint="{x:Static s:AppResources.MasterData_Tab_Processors}" />
+      <Button Text="{x:Static s:AppResources.MasterData_Tab_Yards}"
+              Command="{Binding SelectYardsTabCommand}"
+              SemanticProperties.Hint="{x:Static s:AppResources.MasterData_Tab_Yards}" />
+    </HorizontalStackLayout>
+    <Label Grid.Row="1"
+           Text="{Binding ErrorMessage}"
+           TextColor="{StaticResource ColorError}"
+           IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+    <Label Grid.Row="2"
+           Text="{x:Static s:AppResources.MasterData_FooterNote}"
+           TextColor="{StaticResource ColorWarning}"
+           FontSize="{StaticResource FontSizeM}" />
+    <Grid Grid.Row="3">
+      <VerticalStackLayout IsVisible="{Binding IsProcessorsTab}" Spacing="{StaticResource SpacingS}">
+        <Button Text="{x:Static s:AppResources.MasterData_AddProcessor}"
+                Command="{Binding AddProcessorCommand}"
+                HorizontalOptions="Start"
+                SemanticProperties.Hint="{x:Static s:AppResources.MasterData_AddProcessor}" />
+        <ActivityIndicator IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           HorizontalOptions="Center" />
+        <CollectionView ItemsSource="{Binding Processors}"
+                        IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
+          <CollectionView.ItemTemplate>
+            <DataTemplate x:DataType="md:ProcessorDto">
+              <Grid Padding="8" ColumnDefinitions="*,Auto,Auto,Auto">
+                <Label Grid.Column="0" Text="{Binding FullName}" VerticalOptions="Center" />
+                <HorizontalStackLayout Grid.Column="1" VerticalOptions="Center">
+                  <Label Text="{x:Static s:AppResources.MasterData_Status_Active}"
+                         IsVisible="{Binding IsActive}" />
+                  <Label Text="{x:Static s:AppResources.MasterData_Status_Inactive}"
+                         IsVisible="{Binding IsActive, Converter={StaticResource InvertedBoolConverter}}" />
+                </HorizontalStackLayout>
+                <Button Grid.Column="2"
+                        Text="{x:Static s:AppResources.MasterData_Edit}"
+                        Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.EditProcessorCommand}"
+                        CommandParameter="{Binding .}" />
+                <Button Grid.Column="3"
+                        Text="{x:Static s:AppResources.MasterData_ToggleActive}"
+                        Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.ToggleProcessorActiveCommand}"
+                        CommandParameter="{Binding .}" />
+              </Grid>
+            </DataTemplate>
+          </CollectionView.ItemTemplate>
+        </CollectionView>
+      </VerticalStackLayout>
+      <VerticalStackLayout IsVisible="{Binding IsProcessorsTab, Converter={StaticResource InvertedBoolConverter}}"
+                           Spacing="{StaticResource SpacingS}">
+        <Button Text="{x:Static s:AppResources.MasterData_AddYard}"
+                Command="{Binding AddYardCommand}"
+                HorizontalOptions="Start"
+                SemanticProperties.Hint="{x:Static s:AppResources.MasterData_AddYard}" />
+        <ActivityIndicator IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           HorizontalOptions="Center" />
+        <CollectionView ItemsSource="{Binding Yards}"
+                        IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
+          <CollectionView.ItemTemplate>
+            <DataTemplate x:DataType="md:YardDto">
+              <Grid Padding="8" ColumnDefinitions="Auto,*,Auto,Auto,Auto">
+                <Label Grid.Column="0" Text="{Binding Code}" VerticalOptions="Center" FontAttributes="Bold" />
+                <Label Grid.Column="1" Text="{Binding Name}" VerticalOptions="Center" />
+                <HorizontalStackLayout Grid.Column="2" VerticalOptions="Center">
+                  <Label Text="{x:Static s:AppResources.MasterData_Status_Active}"
+                         IsVisible="{Binding IsActive}" />
+                  <Label Text="{x:Static s:AppResources.MasterData_Status_Inactive}"
+                         IsVisible="{Binding IsActive, Converter={StaticResource InvertedBoolConverter}}" />
+                </HorizontalStackLayout>
+                <Button Grid.Column="3"
+                        Text="{x:Static s:AppResources.MasterData_Edit}"
+                        Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.EditYardCommand}"
+                        CommandParameter="{Binding .}" />
+                <Button Grid.Column="4"
+                        Text="{x:Static s:AppResources.MasterData_ToggleActive}"
+                        Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.ToggleYardActiveCommand}"
+                        CommandParameter="{Binding .}" />
+              </Grid>
+            </DataTemplate>
+          </CollectionView.ItemTemplate>
+        </CollectionView>
+      </VerticalStackLayout>
+    </Grid>
+  </Grid>
+</ContentPage>

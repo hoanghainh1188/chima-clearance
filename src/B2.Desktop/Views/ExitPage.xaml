@@ -1,0 +1,78 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage x:Class="B2.Desktop.Views.ExitPage"
+             x:Name="PageRoot"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:B2.Desktop.ViewModels"
+             xmlns:s="clr-namespace:B2.Desktop.Resources.Strings"
+             xmlns:decl="clr-namespace:B2.Shared.Contracts.Declarations;assembly=B2.Shared.Contracts"
+             x:DataType="vm:ExitViewModel"
+             Title="{x:Static s:AppResources.Exit_PageTitle}"
+             BackgroundColor="{StaticResource ColorSurface}">
+  <Grid Padding="{StaticResource SpacingM}" RowDefinitions="Auto,Auto,Auto,Auto,*,Auto">
+    <Label Grid.Row="0"
+           Text="{x:Static s:AppResources.Exit_SearchLabel}"
+           TextColor="{StaticResource ColorOnSurface}" />
+    <HorizontalStackLayout Grid.Row="1" Spacing="{StaticResource SpacingS}">
+      <Entry Text="{Binding Suffix}"
+             FontSize="24"
+             HeightRequest="56"
+             MinimumWidthRequest="200"
+             SemanticProperties.Hint="{x:Static s:AppResources.Exit_SearchLabel}" />
+      <Button Text="{x:Static s:AppResources.Exit_SearchButton}"
+              Command="{Binding SearchCommand}"
+              SemanticProperties.Hint="{x:Static s:AppResources.Exit_SearchButton}" />
+    </HorizontalStackLayout>
+    <ActivityIndicator Grid.Row="2"
+                       IsRunning="{Binding IsSearching}"
+                       IsVisible="{Binding IsSearching}"
+                       HorizontalOptions="Center" />
+    <VerticalStackLayout Grid.Row="3" Spacing="{StaticResource SpacingS}">
+      <Label Text="{Binding ErrorMessage}"
+             TextColor="{StaticResource ColorError}"
+             IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+      <Label Text="{Binding WarningMessage}"
+             TextColor="{StaticResource ColorWarning}"
+             IsVisible="{Binding WarningMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+    </VerticalStackLayout>
+    <CollectionView Grid.Row="4"
+                    ItemsSource="{Binding Results}"
+                    SelectionMode="Single"
+                    SelectedItem="{Binding SelectedResult}"
+                    VerticalOptions="FillAndExpand">
+      <CollectionView.ItemTemplate>
+        <DataTemplate x:DataType="decl:VehicleSearchResultDto">
+          <VerticalStackLayout Padding="{StaticResource SpacingS}" Spacing="{StaticResource SpacingS}">
+            <Label TextColor="{StaticResource ColorOnSurface}">
+              <Label.FormattedText>
+                <FormattedString>
+                  <Span Text="{Binding PlateNumber}" FontAttributes="Bold" />
+                  <Span Text="  " />
+                  <Span Text="{Binding CompanyName}" />
+                </FormattedString>
+              </Label.FormattedText>
+            </Label>
+            <Label TextColor="{StaticResource ColorOnSurface}" FontSize="{StaticResource FontSizeM}">
+              <Label.FormattedText>
+                <FormattedString>
+                  <Span Text="{x:Static s:AppResources.Exit_Result_DeclarationPrefix}" />
+                  <Span Text="{Binding DeclarationNumber}" />
+                  <Span Text=" · " />
+                  <Span Text="{Binding EntryTime}" />
+                </FormattedString>
+              </Label.FormattedText>
+            </Label>
+            <Button Text="{x:Static s:AppResources.Exit_MarkExit}"
+                    Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.MarkExitCommand}"
+                    CommandParameter="{Binding .}"
+                    SemanticProperties.Hint="{x:Static s:AppResources.Exit_MarkExit}" />
+          </VerticalStackLayout>
+        </DataTemplate>
+      </CollectionView.ItemTemplate>
+    </CollectionView>
+    <Label Grid.Row="5"
+           Text="{x:Static s:AppResources.Exit_SessionFooter}"
+           TextColor="{StaticResource ColorOnSurface}"
+           FontSize="{StaticResource FontSizeM}" />
+  </Grid>
+</ContentPage>

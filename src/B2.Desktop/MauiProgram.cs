@@ -1,5 +1,6 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using System.Text.Json.Serialization;
+using B2.Desktop.Services;
 using B2.Desktop.Services.Api;
 using B2.Desktop.ViewModels;
 using B2.Desktop.ViewModels.Admin;
@@ -36,13 +37,22 @@ public static class MauiProgram
             .ConfigureHttpClient(c => c.BaseAddress = new Uri(apiBase))
             .AddHttpMessageHandler<AuthTokenHandler>();
 
+        builder.Services.AddSingleton<IMainShellFactory, MainShellFactory>();
+
         builder.Services.AddTransient<LoginViewModel>();
         builder.Services.AddTransient<LoginPage>();
         builder.Services.AddTransient<ChangePasswordViewModel>();
         builder.Services.AddTransient<ChangePasswordPage>();
         builder.Services.AddTransient<UsersViewModel>();
         builder.Services.AddTransient<UsersPage>();
-        builder.Services.AddSingleton<AppShell>();
+        builder.Services.AddTransient<EntryViewModel>();
+        builder.Services.AddTransient<EntryPage>();
+        builder.Services.AddTransient<ExitViewModel>();
+        builder.Services.AddTransient<ExitPage>();
+        builder.Services.AddTransient<MasterDataViewModel>();
+        builder.Services.AddTransient<MasterDataPage>();
+        builder.Services.AddTransient<SupervisorHomePage>();
+        builder.Services.AddTransient<AppShell>();
 
 #if DEBUG
         builder.Logging.AddDebug();

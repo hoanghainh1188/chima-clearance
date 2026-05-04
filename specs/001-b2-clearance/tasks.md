@@ -350,7 +350,7 @@ auto-promotes to `AllExited`.
 - [x] **T-S2-04** [F-04] Wire `/api/master/yards` GET / POST / PUT / DELETE in
   `src/B2.Server.Api/Endpoints/YardsEndpoints.cs`. Make T-S1-21 yard-tests
   green. **Dep**: T-S2-03. **LOC**: ~140.
-- [ ] **T-S2-05** [F-03] [F-04] Implement `Admin/MasterDataPage.xaml`
+- [x] **T-S2-05** [F-03] [F-04] Implement `Admin/MasterDataPage.xaml`
   (tabbed) + `MasterDataViewModel.cs` per
   [wireframe § 6.9](../05-ui-wireframes.md). Vietnamese copy verbatim. Files:
   `src/B2.Desktop/Views/Admin/MasterDataPage.xaml`,
@@ -385,14 +385,14 @@ auto-promotes to `AllExited`.
   `src/B2.Server.Api/Endpoints/DeclarationsEndpoints.cs` with
   `OperatorOrAbove` policy + `Idempotency-Key` middleware. Make T-S2-06 green.
   **Dep**: T-S2-09, T-S1-08. **LOC**: ~150.
-- [ ] **T-S2-11** [F-05] Implement `EntryPage.xaml` + `EntryViewModel.cs` per
+- [x] **T-S2-11** [F-05] Implement `EntryPage.xaml` + `EntryViewModel.cs` per
   [wireframe § 6.3](../05-ui-wireframes.md). TabIndex 1..11; Enter saves;
   Ctrl+Enter saves and opens "add child" mode (F-06). Inline ✓/✗ validation.
   Smart-suggestion ghost text region present but disabled until S6 (F-17).
   Files: `src/B2.Desktop/Views/EntryPage.xaml`,
   `src/B2.Desktop/ViewModels/EntryViewModel.cs`. **Dep**: T-S2-10. **LOC**:
   ~400.
-- [ ] **T-S2-12** [F-05] Wire Vietnamese strings for EntryPage into
+- [x] **T-S2-12** [F-05] Wire Vietnamese strings for EntryPage into
   `AppResources.vi.resx` verbatim from wireframe § 6.3. **Dep**: T-S2-11.
   **LOC**: ~100. **DoD**: §DoD-6.
 
@@ -409,7 +409,7 @@ auto-promotes to `AllExited`.
   **Dep**: T-S2-07, T-S2-09. **LOC**: ~180.
 - [x] **T-S2-15** [F-06] Wire `POST /api/declarations/{id}/vehicles` endpoint
   in `DeclarationsEndpoints.cs`. Make T-S2-13 green. **Dep**: T-S2-14. **LOC**: ~80.
-- [ ] **T-S2-16** [F-06] Extend `EntryPage.xaml` with the read-only
+- [x] **T-S2-16** [F-06] Extend `EntryPage.xaml` with the read-only
   "Tờ khai 1234...12 — [Đổi tờ khai]" banner activated when the page is opened
   in add-child mode after Ctrl+Enter (per wireframe § 6.3 last block).
   **Dep**: T-S2-15, T-S2-11. **LOC**: ~120.
@@ -445,7 +445,7 @@ auto-promotes to `AllExited`.
 - [x] **T-S2-21** [F-08] Wire `POST /api/vehicles/{id}/exit` (Operator+) and
   `POST /api/vehicles/{id}/un-exit` (Admin) in `VehiclesEndpoints.cs`. Make
   T-S2-19 green. **Dep**: T-S2-20, T-S1-08. **LOC**: ~120.
-- [ ] **T-S2-22** [F-08] [F-07] Implement `ExitPage.xaml` +
+- [x] **T-S2-22** [F-08] [F-07] Implement `ExitPage.xaml` +
   `ExitViewModel.cs` per [wireframe § 6.4](../05-ui-wireframes.md). Big input
   (height 56, font 24); 500 ms debounce; Enter-Enter for single-result quick
   mark; "Đã đánh dấu hôm nay: N xe" self-monitoring widget. Vietnamese copy

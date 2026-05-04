@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <root>
   <resheader name="resmimetype">
     <value>text/microsoft-resx</value>
@@ -86,5 +86,203 @@
   </data>
   <data name="ChangePassword_SuccessRelogin" xml:space="preserve">
     <value>Đổi mật khẩu thành công. Vui lòng đăng nhập lại.</value>
+  </data>
+  <data name="Common_Logout" xml:space="preserve">
+    <value>Đăng xuất</value>
+  </data>
+  <data name="Common_Yes" xml:space="preserve">
+    <value>Có</value>
+  </data>
+  <data name="Common_No" xml:space="preserve">
+    <value>Không</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>Hủy</value>
+  </data>
+  <data name="Entry_PageTitle" xml:space="preserve">
+    <value>Nhập xe vào</value>
+  </data>
+  <data name="Entry_Section_Declaration" xml:space="preserve">
+    <value>Tờ khai</value>
+  </data>
+  <data name="Entry_DeclarationNumberLabel" xml:space="preserve">
+    <value>Số tờ khai (12 chữ số)</value>
+  </data>
+  <data name="Entry_ProcessorLabel" xml:space="preserve">
+    <value>Người làm thủ tục</value>
+  </data>
+  <data name="Entry_CompanyLabel" xml:space="preserve">
+    <value>Tên công ty</value>
+  </data>
+  <data name="Entry_GoodsLabel" xml:space="preserve">
+    <value>Tên hàng</value>
+  </data>
+  <data name="Entry_YardLabel" xml:space="preserve">
+    <value>Tên bãi</value>
+  </data>
+  <data name="Entry_Section_Vehicle" xml:space="preserve">
+    <value>Xe đầu tiên</value>
+  </data>
+  <data name="Entry_PlateLabel" xml:space="preserve">
+    <value>Biển số xe</value>
+  </data>
+  <data name="Entry_TrailerLabel" xml:space="preserve">
+    <value>Số mooc/Cont</value>
+  </data>
+  <data name="Entry_NoteLabel" xml:space="preserve">
+    <value>Ghi chú</value>
+  </data>
+  <data name="Entry_Cancel" xml:space="preserve">
+    <value>Hủy</value>
+  </data>
+  <data name="Entry_Save" xml:space="preserve">
+    <value>Lưu</value>
+  </data>
+  <data name="Entry_SaveAndContinue" xml:space="preserve">
+    <value>Lưu và nhập xe khác</value>
+  </data>
+  <data name="Entry_SwitchDeclaration" xml:space="preserve">
+    <value>Đổi tờ khai</value>
+  </data>
+  <data name="Entry_AddChildBanner_Format" xml:space="preserve">
+    <value>Đang thêm xe vào tờ khai {0}</value>
+  </data>
+  <data name="Entry_Error_LoadMaster" xml:space="preserve">
+    <value>Không tải được danh sách bãi hoặc người làm thủ tục.</value>
+  </data>
+  <data name="Entry_Error_MasterRequired" xml:space="preserve">
+    <value>Chọn người làm thủ tục và bãi.</value>
+  </data>
+  <data name="Entry_Error_DeclarationInvalid" xml:space="preserve">
+    <value>Số tờ khai phải gồm đúng 12 chữ số.</value>
+  </data>
+  <data name="Entry_Error_PlateInvalid" xml:space="preserve">
+    <value>Biển số không hợp lệ.</value>
+  </data>
+  <data name="Entry_Error_CompanyRequired" xml:space="preserve">
+    <value>Nhập tên công ty.</value>
+  </data>
+  <data name="Entry_Error_GoodsRequired" xml:space="preserve">
+    <value>Nhập tên hàng.</value>
+  </data>
+  <data name="Entry_Error_CreateDeclaration" xml:space="preserve">
+    <value>Không tạo được tờ khai (kiểm tra dữ liệu hoặc kết nối máy chủ).</value>
+  </data>
+  <data name="Entry_Error_SaveVehicle" xml:space="preserve">
+    <value>Không thêm được xe (kiểm tra kết nối máy chủ).</value>
+  </data>
+  <data name="Entry_Toast_Saved" xml:space="preserve">
+    <value>Đã lưu tờ khai</value>
+  </data>
+  <data name="Entry_Toast_VehicleAdded" xml:space="preserve">
+    <value>Đã thêm xe</value>
+  </data>
+  <data name="Exit_PageTitle" xml:space="preserve">
+    <value>Xác nhận xe ra</value>
+  </data>
+  <data name="Exit_SearchLabel" xml:space="preserve">
+    <value>Nhập 3–4 số cuối biển số</value>
+  </data>
+  <data name="Exit_SearchButton" xml:space="preserve">
+    <value>Tìm</value>
+  </data>
+  <data name="Exit_MarkExit" xml:space="preserve">
+    <value>Đánh dấu xe đã ra</value>
+  </data>
+  <data name="Exit_Result_DeclarationPrefix" xml:space="preserve">
+    <value>Tờ khai: </value>
+  </data>
+  <data name="Exit_Error_NoMatch_Format" xml:space="preserve">
+    <value>Không tìm thấy xe khớp với '{0}' đang ở trong cổng.</value>
+  </data>
+  <data name="Exit_Error_Search" xml:space="preserve">
+    <value>Không tìm được (kiểm tra kết nối máy chủ).</value>
+  </data>
+  <data name="Exit_Error_MarkExit" xml:space="preserve">
+    <value>Không đánh dấu được (kiểm tra kết nối hoặc quyền).</value>
+  </data>
+  <data name="Exit_Warning_TooMany" xml:space="preserve">
+    <value>Quá nhiều kết quả. Hãy nhập đủ 4 chữ số.</value>
+  </data>
+  <data name="Exit_Toast_ExitMarked_Format" xml:space="preserve">
+    <value>Đã đánh dấu {0} ra cổng</value>
+  </data>
+  <data name="Exit_Toast_DeclarationAllExited" xml:space="preserve">
+    <value>Tờ khai đủ điều kiện KVGS (tất cả xe đã ra).</value>
+  </data>
+  <data name="Exit_SessionFooter" xml:space="preserve">
+    <value>Mẹo: Bấm Tìm sau khi nhập 3–4 số cuối; chọn xe rồi bấm Đánh dấu xe đã ra.</value>
+  </data>
+  <data name="MasterData_PageTitle" xml:space="preserve">
+    <value>Quản trị — Dữ liệu chuẩn</value>
+  </data>
+  <data name="MasterData_Tab_Processors" xml:space="preserve">
+    <value>Người làm thủ tục</value>
+  </data>
+  <data name="MasterData_Tab_Yards" xml:space="preserve">
+    <value>Bãi</value>
+  </data>
+  <data name="MasterData_AddProcessor" xml:space="preserve">
+    <value>+ Thêm người làm thủ tục</value>
+  </data>
+  <data name="MasterData_AddYard" xml:space="preserve">
+    <value>+ Thêm bãi</value>
+  </data>
+  <data name="MasterData_Edit" xml:space="preserve">
+    <value>Sửa</value>
+  </data>
+  <data name="MasterData_ToggleActive" xml:space="preserve">
+    <value>Đổi trạng thái</value>
+  </data>
+  <data name="MasterData_Status_Active" xml:space="preserve">
+    <value>Hoạt động</value>
+  </data>
+  <data name="MasterData_Status_Inactive" xml:space="preserve">
+    <value>Ngưng</value>
+  </data>
+  <data name="MasterData_FooterNote" xml:space="preserve">
+    <value>Vô hiệu hóa không xóa lịch sử. Tên cũ vẫn hiển thị trong các tờ khai đã nhập.</value>
+  </data>
+  <data name="MasterData_Error_Load" xml:space="preserve">
+    <value>Không tải được dữ liệu chuẩn.</value>
+  </data>
+  <data name="MasterData_Error_Save" xml:space="preserve">
+    <value>Thao tác không thành công (kiểm tra kết nối hoặc quyền).</value>
+  </data>
+  <data name="MasterData_AddProcessorTitle" xml:space="preserve">
+    <value>Thêm người làm thủ tục</value>
+  </data>
+  <data name="MasterData_EditProcessorTitle" xml:space="preserve">
+    <value>Sửa người làm thủ tục</value>
+  </data>
+  <data name="MasterData_ProcessorNamePrompt" xml:space="preserve">
+    <value>Họ và tên</value>
+  </data>
+  <data name="MasterData_AddYardTitle" xml:space="preserve">
+    <value>Thêm bãi</value>
+  </data>
+  <data name="MasterData_EditYardTitle" xml:space="preserve">
+    <value>Sửa bãi</value>
+  </data>
+  <data name="MasterData_YardCodePrompt" xml:space="preserve">
+    <value>Mã bãi</value>
+  </data>
+  <data name="MasterData_YardNamePrompt" xml:space="preserve">
+    <value>Tên đầy đủ</value>
+  </data>
+  <data name="MasterData_DeactivateTitle" xml:space="preserve">
+    <value>Xác nhận vô hiệu hóa</value>
+  </data>
+  <data name="MasterData_DeactivateProcessorMessage" xml:space="preserve">
+    <value>Vô hiệu hóa người làm thủ tục này?</value>
+  </data>
+  <data name="MasterData_DeactivateYardMessage" xml:space="preserve">
+    <value>Vô hiệu hóa bãi này?</value>
+  </data>
+  <data name="Supervisor_HomeTitle" xml:space="preserve">
+    <value>Trang chủ giám sát</value>
+  </data>
+  <data name="Supervisor_HomeBody" xml:space="preserve">
+    <value>Tài khoản giám sát không có quyền nhập xe hay xác nhận xe ra. Vui lòng dùng các chức năng khác (sổ B2, KVGS…) khi được triển khai.</value>
   </data>
 </root>
