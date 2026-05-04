@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.SignalR.Client;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using B2.Desktop.Services.Api;
 
 namespace B2.Desktop.Services;
@@ -13,6 +14,7 @@ public sealed class ConnectivityService : IDisposable
     private readonly AuthTokenHandler _auth;
     private readonly DesktopRuntimeOptions _options;
     private readonly IServiceScopeFactory _scopeFactory;
+    private readonly ILogger<ConnectivityService> _logger;
     private readonly object _gate = new();
     private HubConnection? _hub;
     private PeriodicTimer? _pollTimer;
@@ -24,11 +26,13 @@ public sealed class ConnectivityService : IDisposable
     public ConnectivityService(
         DesktopRuntimeOptions options,
         AuthTokenHandler auth,
-        IServiceScopeFactory scopeFactory)
+        IServiceScopeFactory scopeFactory,
+        ILogger<ConnectivityService> logger)
     {
         _options = options;
         _auth = auth;
         _scopeFactory = scopeFactory;
+        _logger = logger;
     }
 
     public event EventHandler? ModeChanged;
@@ -48,15 +52,21 @@ public sealed class ConnectivityService : IDisposable
         }
         private set
         {
+            ConnectivityMode previous;
             bool changed;
             lock (_gate)
             {
+                previous = _mode;
                 changed = _mode != value;
                 _mode = value;
             }
 
             if (changed)
             {
+                _logger.LogInformation(
+                    "FR-028 connectivity state changed: {Previous} -> {Current}",
+                    previous,
+                    value);
                 ModeChanged?.Invoke(this, EventArgs.Empty);
             }
         }

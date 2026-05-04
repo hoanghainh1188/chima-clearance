@@ -202,6 +202,49 @@ public sealed class ListDeclarationsEndpointTests
 
     [Fact]
     [Trait("Feature", "F-10")]
+    public async Task Should_accept_writes_during_polling_fallback_and_surface_in_since_delta()
+    {
+        // Spec.md F-10 Scenario 3 + FR-028: when SignalR has dropped and the
+        // client is on the polling fallback (🟡), writes are still permitted
+        // and the new row MUST surface in the next `since`-delta poll. The
+        // server has no client-state gating, so this verifies both halves
+        // (a) write accepted; (b) /api/declarations?since=… returns the row.
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+
+        // Capture the polling watermark just before the write — mirrors what
+        // a desktop client in PollingFallback mode would send.
+        var pollingSince = DateTimeOffset.UtcNow.AddSeconds(-1).ToString("O");
+
+        var no = TestDeclarationNumbers.Next();
+        var write = await client.PostAsJsonAsync(
+            "/api/declarations",
+            new DeclarationCreateRequest(
+                no,
+                SeedIds.ProcessorId,
+                "Polling Co",
+                "Polling Goods",
+                SeedIds.YardId,
+                new VehicleAddRequest("30P40001", null, null)),
+            TestJson.Options);
+
+        write.EnsureSuccessStatusCode();
+        var created = await write.Content.ReadFromJsonAsync<DeclarationDto>(TestJson.Options);
+
+        // Polling delta — what the FR-028 yellow-state ConnectivityService
+        // would request every ≤ 3 s — MUST surface the new row.
+        var delta = await client.GetFromJsonAsync<PagedDeclarationsResponse>(
+            $"/api/declarations?since={Uri.EscapeDataString(pollingSince)}&page=1&pageSize=50",
+            TestJson.Options);
+
+        delta!.Items.Should().Contain(x => x.Id == created!.Id,
+            "FR-028: writes during 🟡 polling-fallback must converge to other clients via the `since` delta");
+    }
+
+    [Fact]
+    [Trait("Feature", "F-10")]
     public async Task Should_pagination_returns_second_page()
     {
         await using var factory = new B2ApiFactory();
