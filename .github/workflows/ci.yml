@@ -33,7 +33,15 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
+      # Every dotnet step uses `shell: bash` (Git Bash). On windows-2022,
+      # `setup-dotnet@v5` writes the SDK location to GITHUB_PATH, but the
+      # default pwsh shell intermittently fails to pick it up between steps
+      # (observed: PR #9 first run, post-merge R3b, post-merge R3b re-run —
+      # always at "Verify formatting" with "Unable to locate dotnet CLI").
+      # Git Bash reads PATH via the runner's persistent env and avoids the
+      # flake.
       - name: Install MAUI workload
+        shell: bash
         run: dotnet workload install maui
 
       # B2.Desktop declares <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
@@ -42,17 +50,21 @@ jobs:
       # build). The plural form is the documented way to make restore RID-aware
       # without forcing platform-specific build outputs.
       - name: Restore
+        shell: bash
         run: |
           dotnet workload restore B2.sln
           dotnet restore B2.sln
 
       - name: Verify formatting (Constitution III)
+        shell: bash
         run: dotnet format B2.sln --verify-no-changes --no-restore
 
       - name: Build (Release; TreatWarningsAsErrors=true)
+        shell: bash
         run: dotnet build B2.sln -c Release --no-restore /p:TreatWarningsAsErrors=true
 
       - name: Test (Release) with coverage
+        shell: bash
         run: dotnet test B2.sln -c Release --no-build --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx"
 
       - name: Upload coverage
