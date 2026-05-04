@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using B2.Desktop.Services;
 using B2.Desktop.Services.Api;
+using B2.Desktop.Services.UserSettings;
 using B2.Desktop.ViewModels;
 using B2.Desktop.ViewModels.Admin;
 using B2.Desktop.Views;
@@ -30,6 +31,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<ISessionCorrelationService, SessionCorrelationService>();
         builder.Services.AddSingleton<ISessionContext, SessionContext>();
         builder.Services.AddSingleton<IAppNavigator, AppNavigator>();
+        builder.Services.AddSingleton<IUserSettingsService, UserSettingsService>();
         builder.Services.AddTransient<CorrelationCaptureHandler>();
 
         var refitSettings = new RefitSettings

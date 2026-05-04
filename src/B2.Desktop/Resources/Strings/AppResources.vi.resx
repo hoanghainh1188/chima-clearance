@@ -435,6 +435,15 @@
   <data name="Status_FontSize_Normal" xml:space="preserve">
     <value>Bình thường</value>
   </data>
+  <data name="Status_FontSize_Large" xml:space="preserve">
+    <value>Lớn</value>
+  </data>
+  <data name="Status_FontSize_ExtraLarge" xml:space="preserve">
+    <value>Rất lớn</value>
+  </data>
+  <data name="Status_FontSize_RestartHint" xml:space="preserve">
+    <value>Đã lưu cỡ chữ. Đăng nhập lại để áp dụng.</value>
+  </data>
   <data name="Status_Shortcuts_F1" xml:space="preserve">
     <value>Phím tắt: F1</value>
   </data>

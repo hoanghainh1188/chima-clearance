@@ -151,7 +151,10 @@ public static class AppResources
     public static string MasterData_YardNamePrompt => ResourceManager.GetString(nameof(MasterData_YardNamePrompt), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Status_AppVersion => ResourceManager.GetString(nameof(Status_AppVersion), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Status_FontSize_Label => ResourceManager.GetString(nameof(Status_FontSize_Label), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Status_FontSize_ExtraLarge => ResourceManager.GetString(nameof(Status_FontSize_ExtraLarge), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Status_FontSize_Large => ResourceManager.GetString(nameof(Status_FontSize_Large), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Status_FontSize_Normal => ResourceManager.GetString(nameof(Status_FontSize_Normal), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Status_FontSize_RestartHint => ResourceManager.GetString(nameof(Status_FontSize_RestartHint), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Status_Session_Label => ResourceManager.GetString(nameof(Status_Session_Label), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Status_Session_None => ResourceManager.GetString(nameof(Status_Session_None), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Shortcuts_Body => ResourceManager.GetString(nameof(Shortcuts_Body), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
