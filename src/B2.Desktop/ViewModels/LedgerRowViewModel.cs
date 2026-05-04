@@ -2,13 +2,22 @@ using System.Globalization;
 using System.Text;
 using B2.Desktop.Resources.Strings;
 using B2.Shared.Contracts.Declarations;
+using CommunityToolkit.Mvvm.ComponentModel;
 
 namespace B2.Desktop.ViewModels;
 
-public sealed class LedgerRowViewModel
+public sealed partial class LedgerRowViewModel : ObservableObject
 {
     private static readonly CompositeFormat YardCodeFormat = CompositeFormat.Parse(AppResources.Ledger_YardCode_Format);
     private static readonly CompositeFormat PlateTrailerFormat = CompositeFormat.Parse(AppResources.Ledger_PlateTrailer_Format);
+
+    /// <summary>
+    /// Bound by KvgsPage's row template; used by <c>KvgsViewModel</c> to fade
+    /// the row out over 300 ms after a successful confirmation per
+    /// wireframe § 6.5. Default 1.0 means fully visible.
+    /// </summary>
+    [ObservableProperty]
+    private double _opacity = 1.0;
 
     private LedgerRowViewModel(
         DeclarationSummaryDto dto,

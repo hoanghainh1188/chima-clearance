@@ -190,6 +190,9 @@
   <data name="Kvgs_Toast_Confirmed_Format" xml:space="preserve">
     <value>Đã xác nhận KVGS cho tờ khai {0}.</value>
   </data>
+  <data name="Kvgs_ConfirmedToday_Format" xml:space="preserve">
+    <value>Đã xác nhận hôm nay: {0} tờ khai</value>
+  </data>
   <data name="Ledger_ConnectivityPrefix" xml:space="preserve">
     <value>Kết nối:</value>
   </data>

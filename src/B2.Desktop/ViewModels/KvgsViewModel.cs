@@ -16,6 +16,10 @@ public sealed partial class KvgsViewModel : ObservableObject, IDisposable
     private static readonly CompositeFormat KvgsConfirmMessageFormat = CompositeFormat.Parse(AppResources.Kvgs_ConfirmMessage_Format);
     private static readonly CompositeFormat KvgsErrorConfirmFormat = CompositeFormat.Parse(AppResources.Kvgs_Error_Confirm_Format);
     private static readonly CompositeFormat KvgsLedgerErrorLoadFormat = CompositeFormat.Parse(AppResources.Ledger_Error_Load_Format);
+    private static readonly CompositeFormat KvgsConfirmedTodayFormat = CompositeFormat.Parse(AppResources.Kvgs_ConfirmedToday_Format);
+
+    private const int FadeDurationMs = 300;
+    private const int FadeFrames = 12;
 
     private readonly IB2Api _api;
     private readonly ConnectivityService _connectivity;
@@ -52,6 +56,22 @@ public sealed partial class KvgsViewModel : ObservableObject, IDisposable
 
     [ObservableProperty]
     private bool _showPollingBanner;
+
+    /// <summary>
+    /// Per-session counter of successful KVGS confirmations driven by the
+    /// current operator (wireframe § 6.5 self-monitoring widget). Resets on
+    /// app restart — operators using one machine all day see the count grow.
+    /// </summary>
+    [ObservableProperty]
+    private int _confirmedTodayCount;
+
+    public string ConfirmedTodayLabel =>
+        string.Format(CultureInfo.CurrentCulture, KvgsConfirmedTodayFormat, ConfirmedTodayCount);
+
+    partial void OnConfirmedTodayCountChanged(int value)
+    {
+        OnPropertyChanged(nameof(ConfirmedTodayLabel));
+    }
 
     public bool ShowEmpty => !IsLoading && string.IsNullOrEmpty(ErrorMessage) && Rows.Count == 0;
 
@@ -121,8 +141,10 @@ public sealed partial class KvgsViewModel : ObservableObject, IDisposable
         try
         {
             await _api.ConfirmKvgsAsync(row.Dto.Id).ConfigureAwait(true);
+            ConfirmedTodayCount++;
             var toast = string.Format(CultureInfo.CurrentCulture, KvgsToastFormat, row.DeclarationMasked);
             await _toast.ShowAsync(toast, ToastSeverity.Success).ConfigureAwait(true);
+            await FadeRowAsync(row).ConfigureAwait(true);
             await LoadAsync().ConfigureAwait(true);
         }
         catch (ApiException ex)
@@ -134,6 +156,16 @@ public sealed partial class KvgsViewModel : ObservableObject, IDisposable
         {
             ErrorMessage = AppResources.Ledger_Error_Network;
             NotifyViewStates();
+        }
+    }
+
+    private static async Task FadeRowAsync(LedgerRowViewModel row)
+    {
+        const int frameMs = FadeDurationMs / FadeFrames;
+        for (var i = FadeFrames - 1; i >= 0; i--)
+        {
+            row.Opacity = i / (double)FadeFrames;
+            await Task.Delay(frameMs).ConfigureAwait(true);
         }
     }
 

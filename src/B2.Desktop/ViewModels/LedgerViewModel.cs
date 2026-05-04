@@ -143,7 +143,11 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
         OnPropertyChanged(nameof(DisplayRangeText));
     }
 
-    partial void OnPageChanged(int value) => OnPropertyChanged(nameof(PageSummary));
+    partial void OnPageChanged(int value)
+    {
+        OnPropertyChanged(nameof(PageSummary));
+        OnPropertyChanged(nameof(DisplayRangeText));
+    }
 
     partial void OnTotalCountChanged(int value)
     {
