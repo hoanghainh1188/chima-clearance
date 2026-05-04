@@ -1,0 +1,101 @@
+﻿<?xml version="1.0" encoding="UTF-8" ?>
+<ContentPage x:Class="B2.Desktop.Views.EntryPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:B2.Desktop.ViewModels"
+             xmlns:s="clr-namespace:B2.Desktop.Resources.Strings"
+             x:DataType="vm:EntryViewModel"
+             Title="{x:Static s:AppResources.Entry_PageTitle}"
+             BackgroundColor="{StaticResource ColorSurface}">
+  <Grid Padding="{StaticResource SpacingM}" RowDefinitions="Auto,Auto,*">
+    <Border Grid.Row="0"
+            Padding="{StaticResource SpacingS}"
+            BackgroundColor="{StaticResource ColorWarningBanner}"
+            IsVisible="{Binding IsAddChildMode}">
+      <VerticalStackLayout Spacing="{StaticResource SpacingS}">
+        <Label Text="{Binding AddChildBannerDeclarationLabel}"
+               TextColor="{StaticResource ColorWarning}" />
+        <Button Text="{x:Static s:AppResources.Entry_SwitchDeclaration}"
+                Command="{Binding SwitchDeclarationCommand}"
+                SemanticProperties.Hint="{x:Static s:AppResources.Entry_SwitchDeclaration}" />
+      </VerticalStackLayout>
+    </Border>
+    <Label Grid.Row="1"
+           Text="{Binding ErrorMessage}"
+           TextColor="{StaticResource ColorError}"
+           IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+    <ScrollView Grid.Row="2">
+      <VerticalStackLayout Spacing="{StaticResource SpacingM}">
+        <ActivityIndicator IsRunning="{Binding IsLoading}"
+                           IsVisible="{Binding IsLoading}"
+                           HorizontalOptions="Center" />
+        <VerticalStackLayout Spacing="{StaticResource SpacingS}"
+                               IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
+          <Label Text="{x:Static s:AppResources.Entry_Section_Declaration}"
+                 FontAttributes="Bold"
+                 TextColor="{StaticResource ColorPrimary}" />
+          <VerticalStackLayout IsEnabled="{Binding IsAddChildMode, Converter={StaticResource InvertedBoolConverter}}">
+            <Label Text="{x:Static s:AppResources.Entry_DeclarationNumberLabel}" />
+            <Entry Text="{Binding DeclarationNumber}"
+                   MaxLength="12"
+                   Keyboard="Numeric"
+                   SemanticProperties.Hint="{x:Static s:AppResources.Entry_DeclarationNumberLabel}" />
+            <Label Text="{x:Static s:AppResources.Entry_ProcessorLabel}" />
+            <Picker ItemsSource="{Binding Processors}"
+                    SelectedItem="{Binding SelectedProcessor}"
+                    SemanticProperties.Hint="{x:Static s:AppResources.Entry_ProcessorLabel}">
+              <Picker.ItemDisplayBinding>
+                <Binding Path="FullName" />
+              </Picker.ItemDisplayBinding>
+            </Picker>
+            <Label Text="{x:Static s:AppResources.Entry_CompanyLabel}" />
+            <Entry Text="{Binding CompanyName}"
+                   MaxLength="200"
+                   SemanticProperties.Hint="{x:Static s:AppResources.Entry_CompanyLabel}" />
+            <Label Text="{x:Static s:AppResources.Entry_GoodsLabel}" />
+            <Entry Text="{Binding GoodsName}"
+                   MaxLength="200"
+                   SemanticProperties.Hint="{x:Static s:AppResources.Entry_GoodsLabel}" />
+            <Label Text="{x:Static s:AppResources.Entry_YardLabel}" />
+            <Picker ItemsSource="{Binding Yards}"
+                    SelectedItem="{Binding SelectedYard}"
+                    SemanticProperties.Hint="{x:Static s:AppResources.Entry_YardLabel}">
+              <Picker.ItemDisplayBinding>
+                <Binding Path="Name" />
+              </Picker.ItemDisplayBinding>
+            </Picker>
+          </VerticalStackLayout>
+          <Label Text="{x:Static s:AppResources.Entry_Section_Vehicle}"
+                 FontAttributes="Bold"
+                 TextColor="{StaticResource ColorPrimary}" />
+          <Label Text="{x:Static s:AppResources.Entry_PlateLabel}" />
+          <Entry Text="{Binding PlateNumber}"
+                 MaxLength="12"
+                 SemanticProperties.Hint="{x:Static s:AppResources.Entry_PlateLabel}" />
+          <Label Text="{x:Static s:AppResources.Entry_TrailerLabel}" />
+          <Entry Text="{Binding TrailerOrContainerNumber}"
+                 MaxLength="20"
+                 SemanticProperties.Hint="{x:Static s:AppResources.Entry_TrailerLabel}" />
+          <Label Text="{x:Static s:AppResources.Entry_NoteLabel}" />
+          <Editor Text="{Binding VehicleNote}"
+                  AutoSize="TextChanges"
+                  MaxLength="500"
+                  SemanticProperties.Hint="{x:Static s:AppResources.Entry_NoteLabel}" />
+          <HorizontalStackLayout Spacing="{StaticResource SpacingS}">
+            <Button Text="{x:Static s:AppResources.Entry_Cancel}"
+                    Command="{Binding CancelCommand}"
+                    SemanticProperties.Hint="{x:Static s:AppResources.Entry_Cancel}" />
+            <Button Text="{x:Static s:AppResources.Entry_SaveAndContinue}"
+                    Command="{Binding SaveAndContinueCommand}"
+                    SemanticProperties.Hint="{x:Static s:AppResources.Entry_SaveAndContinue}" />
+            <Button Text="{x:Static s:AppResources.Entry_Save}"
+                    Command="{Binding SaveCommand}"
+                    BackgroundColor="{StaticResource ColorPrimary}"
+                    TextColor="White"
+                    SemanticProperties.Hint="{x:Static s:AppResources.Entry_Save}" />
+          </HorizontalStackLayout>
+        </VerticalStackLayout>
+      </VerticalStackLayout>
+    </ScrollView>
+  </Grid>
+</ContentPage>

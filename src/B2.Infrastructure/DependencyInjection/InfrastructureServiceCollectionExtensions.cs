@@ -30,6 +30,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IProcessorRepository, ProcessorRepository>();
         services.AddScoped<IYardRepository, YardRepository>();
         services.AddScoped<IDeclarationRepository, DeclarationRepository>();
+        services.AddScoped<IVehicleSuffixSearchRepository, VehicleSuffixSearchRepository>();
 
         if (enableBackgroundJobs)
         {

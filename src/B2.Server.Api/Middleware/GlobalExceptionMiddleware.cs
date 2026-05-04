@@ -34,15 +34,25 @@ public sealed class GlobalExceptionMiddleware(RequestDelegate next, ILogger<Glob
         context.Response.StatusCode = status;
         context.Response.ContentType = "application/problem+json";
         var correlationId = context.Items[CorrelationIdMiddleware.ItemKey]?.ToString() ?? "";
-        await context.Response.WriteAsync(JsonSerializer.Serialize(new
+        var payload = new Dictionary<string, object?>
         {
-            type = "https://b2/errors/domain",
-            title = dex.Code,
-            status = status,
-            detail = dex.Message,
-            code = dex.Code,
-            correlationId,
-        }));
+            ["type"] = "https://b2/errors/domain",
+            ["title"] = dex.Code,
+            ["status"] = status,
+            ["detail"] = dex.Message,
+            ["code"] = dex.Code,
+            ["correlationId"] = correlationId,
+        };
+
+        if (dex.Extensions is not null)
+        {
+            foreach (var kv in dex.Extensions)
+            {
+                payload[kv.Key] = kv.Value;
+            }
+        }
+
+        await context.Response.WriteAsync(JsonSerializer.Serialize(payload));
     }
 
     private static async Task WriteValidationProblemAsync(HttpContext context, ValidationException vex)

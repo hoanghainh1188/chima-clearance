@@ -1,8 +1,8 @@
 using System.Net;
 using B2.Desktop.Resources.Strings;
+using B2.Desktop.Services;
 using B2.Desktop.Services.Api;
 using B2.Shared.Contracts.Auth;
-using B2.Shared.Contracts.Users;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Refit;
@@ -13,6 +13,7 @@ public partial class LoginViewModel : ObservableObject
 {
     private readonly IB2Api _api;
     private readonly AuthTokenHandler _auth;
+    private readonly IMainShellFactory _mainShellFactory;
 
     [ObservableProperty]
     private string _username = string.Empty;
@@ -26,10 +27,11 @@ public partial class LoginViewModel : ObservableObject
     [ObservableProperty]
     private bool _isBusy;
 
-    public LoginViewModel(IB2Api api, AuthTokenHandler auth)
+    public LoginViewModel(IB2Api api, AuthTokenHandler auth, IMainShellFactory mainShellFactory)
     {
         _api = api;
         _auth = auth;
+        _mainShellFactory = mainShellFactory;
     }
 
     [RelayCommand]
@@ -53,13 +55,7 @@ public partial class LoginViewModel : ObservableObject
                 return;
             }
 
-            if (response.Role == UserRoleDto.Admin)
-            {
-                await Shell.Current.GoToAsync("admin/users");
-                return;
-            }
-
-            ErrorMessage = AppResources.Login_Error_Generic;
+            Application.Current!.MainPage = _mainShellFactory.CreateMainShell(response.Role);
         }
         catch (ApiException ex) when (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
         {
@@ -68,6 +64,14 @@ public partial class LoginViewModel : ObservableObject
         catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.Locked)
         {
             ErrorMessage = AppResources.Login_AccountLocked;
+        }
+        catch (ApiException)
+        {
+            ErrorMessage = AppResources.Login_Error_Generic;
+        }
+        catch (HttpRequestException)
+        {
+            ErrorMessage = AppResources.Login_Error_Generic;
         }
         finally
         {

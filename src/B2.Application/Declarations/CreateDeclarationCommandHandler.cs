@@ -49,17 +49,20 @@ public sealed class CreateDeclarationCommandHandler
             throw new DomainException("MASTER_YARD_NOT_FOUND", "Yard is missing or inactive.", 400);
         }
 
-        var declNo = request.DeclarationNumber.Trim();
-        if (await _declarations.DeclarationNumberExistsAsync(declNo, cancellationToken))
+        var declNo = DeclarationNumber.Parse(request.DeclarationNumber);
+        if (await _declarations.DeclarationNumberExistsAsync(declNo.Value, cancellationToken))
         {
             throw new DomainException("DECLARATION_NUMBER_DUPLICATE", "Declaration number already exists.", 409);
         }
 
         var now = _clock.UtcNow;
         var businessDate = VietnamTime.BusinessDateFromUtc(now);
-        var plate = request.FirstVehicle.PlateNumber.Trim().ToUpperInvariant();
+        var plate = PlateNumber.Parse(request.FirstVehicle.PlateNumber);
+        var container = ContainerNumber.TryParse(request.FirstVehicle.TrailerOrContainerNumber);
+        var note = string.IsNullOrWhiteSpace(request.FirstVehicle.Note) ? null : request.FirstVehicle.Note.Trim();
+
         var declId = Guid.NewGuid();
-        var declaration = new Declaration(
+        var declaration = Declaration.CreateNew(
             declId,
             declNo,
             request.ProcessorId,
@@ -70,21 +73,8 @@ public sealed class CreateDeclarationCommandHandler
             now,
             businessDate);
 
-        var trailer = string.IsNullOrWhiteSpace(request.FirstVehicle.TrailerOrContainerNumber)
-            ? null
-            : request.FirstVehicle.TrailerOrContainerNumber.Trim().ToUpperInvariant();
-        var note = string.IsNullOrWhiteSpace(request.FirstVehicle.Note) ? null : request.FirstVehicle.Note.Trim();
+        declaration.AddVehicle(Guid.NewGuid(), plate, now, enteredByUserId, container, note);
 
-        var vehicle = new Vehicle(
-            Guid.NewGuid(),
-            declId,
-            plate,
-            now,
-            enteredByUserId,
-            trailer,
-            note);
-
-        declaration.Vehicles.Add(vehicle);
         await _declarations.AddAsync(declaration, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 

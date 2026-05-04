@@ -1,6 +1,8 @@
+using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using B2.Shared.Contracts.Auth;
+using B2.Shared.Contracts.Users;
 
 namespace B2.Server.Api.Tests.Support;
 
@@ -24,7 +26,17 @@ public static class AuthHttpExtensions
     {
         var first = await client.PostAsJsonAsync(
             "/api/auth/login",
-            new LoginRequest("admin", SeedAdminPassword));
+            new LoginRequest("admin", SeedAdminPassword),
+            TestJson.Options);
+        if (first.StatusCode == HttpStatusCode.Unauthorized)
+        {
+            // Same DB reused in one test: admin already rotated off the seed password (FR-017).
+            first = await client.PostAsJsonAsync(
+                "/api/auth/login",
+                new LoginRequest("admin", BootstrappedAdminPassword),
+                TestJson.Options);
+        }
+
         first.EnsureSuccessStatusCode();
         var firstBody = (await first.Content.ReadFromJsonAsync<LoginResponse>(TestJson.Options))!;
         if (!firstBody.MustChangePassword)
@@ -35,13 +47,89 @@ public static class AuthHttpExtensions
         client.SetBearer(firstBody.AccessToken);
         var change = await client.PostAsJsonAsync(
             "/api/auth/change-password",
-            new ChangePasswordRequest(SeedAdminPassword, BootstrappedAdminPassword));
+            new ChangePasswordRequest(SeedAdminPassword, BootstrappedAdminPassword),
+            TestJson.Options);
         change.EnsureSuccessStatusCode();
         client.DefaultRequestHeaders.Authorization = null;
 
         var second = await client.PostAsJsonAsync(
             "/api/auth/login",
-            new LoginRequest("admin", BootstrappedAdminPassword));
+            new LoginRequest("admin", BootstrappedAdminPassword),
+            TestJson.Options);
+        second.EnsureSuccessStatusCode();
+        return (await second.Content.ReadFromJsonAsync<LoginResponse>(TestJson.Options))!;
+    }
+
+    public const string BootstrappedOperatorPassword = "Test-Operator-Pass-1!";
+
+    /// <summary>Creates a fresh Operator account (unique username) and returns a login that bypasses forced password change.</summary>
+    public static async Task<LoginResponse> LoginAsNewOperatorAsync(this HttpClient client)
+    {
+        client.DefaultRequestHeaders.Authorization = null;
+        var adminLogin = await client.LoginAsAdminAsync();
+        client.SetBearer(adminLogin.AccessToken);
+        var username = "op_" + Guid.NewGuid().ToString("N")[..10];
+        var create = await client.PostAsJsonAsync(
+            "/api/users",
+            new UserCreateRequest(username, "Gate Operator", UserRoleDto.Operator, "Temp-Op-Pass-1!"),
+            TestJson.Options);
+        create.EnsureSuccessStatusCode();
+        client.DefaultRequestHeaders.Authorization = null;
+
+        var first = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest(username, "Temp-Op-Pass-1!"),
+            TestJson.Options);
+        first.EnsureSuccessStatusCode();
+        var firstBody = (await first.Content.ReadFromJsonAsync<LoginResponse>(TestJson.Options))!;
+        client.SetBearer(firstBody.AccessToken);
+        var change = await client.PostAsJsonAsync(
+            "/api/auth/change-password",
+            new ChangePasswordRequest("Temp-Op-Pass-1!", BootstrappedOperatorPassword),
+            TestJson.Options);
+        change.EnsureSuccessStatusCode();
+        client.DefaultRequestHeaders.Authorization = null;
+
+        var second = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest(username, BootstrappedOperatorPassword),
+            TestJson.Options);
+        second.EnsureSuccessStatusCode();
+        return (await second.Content.ReadFromJsonAsync<LoginResponse>(TestJson.Options))!;
+    }
+
+    public static async Task<LoginResponse> LoginAsNewSupervisorAsync(this HttpClient client)
+    {
+        client.DefaultRequestHeaders.Authorization = null;
+        var adminLogin = await client.LoginAsAdminAsync();
+        client.SetBearer(adminLogin.AccessToken);
+        var username = "sup_" + Guid.NewGuid().ToString("N")[..10];
+        var create = await client.PostAsJsonAsync(
+            "/api/users",
+            new UserCreateRequest(username, "Supervisor User", UserRoleDto.Supervisor, "Temp-Sup-Pass-1!"),
+            TestJson.Options);
+        create.EnsureSuccessStatusCode();
+        client.DefaultRequestHeaders.Authorization = null;
+
+        var first = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest(username, "Temp-Sup-Pass-1!"),
+            TestJson.Options);
+        first.EnsureSuccessStatusCode();
+        var firstBody = (await first.Content.ReadFromJsonAsync<LoginResponse>(TestJson.Options))!;
+        client.SetBearer(firstBody.AccessToken);
+        const string supPass = "Test-Supervisor-Pass-1!";
+        var change = await client.PostAsJsonAsync(
+            "/api/auth/change-password",
+            new ChangePasswordRequest("Temp-Sup-Pass-1!", supPass),
+            TestJson.Options);
+        change.EnsureSuccessStatusCode();
+        client.DefaultRequestHeaders.Authorization = null;
+
+        var second = await client.PostAsJsonAsync(
+            "/api/auth/login",
+            new LoginRequest(username, supPass),
+            TestJson.Options);
         second.EnsureSuccessStatusCode();
         return (await second.Content.ReadFromJsonAsync<LoginResponse>(TestJson.Options))!;
     }
