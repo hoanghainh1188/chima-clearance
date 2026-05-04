@@ -8,4 +8,10 @@ public interface IModalService
         string accept,
         string cancel,
         CancellationToken cancellationToken = default);
+
+    Task ShowAsync(
+        string title,
+        string message,
+        string close,
+        CancellationToken cancellationToken = default);
 }

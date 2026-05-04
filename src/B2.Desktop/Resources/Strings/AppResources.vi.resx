@@ -459,4 +459,20 @@
   <data name="UserMenu_Suffix" xml:space="preserve">
     <value> ▾</value>
   </data>
+  <data name="Common_Close" xml:space="preserve">
+    <value>Đóng</value>
+  </data>
+  <data name="Shortcuts_Title" xml:space="preserve">
+    <value>Phím tắt</value>
+  </data>
+  <data name="Shortcuts_Body" xml:space="preserve">
+    <value>F1 — Mở danh sách phím tắt
+F5 — Làm mới danh sách
+/ — Đặt con trỏ vào ô tìm kiếm
+Enter — Tìm / mở chi tiết / xác nhận
+Esc — Đóng modal / xóa tìm kiếm
+Alt+1 … Alt+8 — Chuyển nhanh giữa các tab
+
+(Các phím tắt chưa kích hoạt sẽ được bổ sung ở phiên bản tiếp theo.)</value>
+  </data>
 </root>

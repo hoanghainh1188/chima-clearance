@@ -17,4 +17,19 @@ public sealed class ModalService : IModalService
 
         return page.DisplayAlert(title, message, accept, cancel);
     }
+
+    public Task ShowAsync(
+        string title,
+        string message,
+        string close,
+        CancellationToken cancellationToken = default)
+    {
+        var page = Application.Current?.MainPage;
+        if (page is null)
+        {
+            return Task.CompletedTask;
+        }
+
+        return page.DisplayAlert(title, message, close);
+    }
 }

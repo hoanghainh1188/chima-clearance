@@ -37,6 +37,7 @@ public static class AppResources
     public static string ChangePassword_Error_Generic => ResourceManager.GetString(nameof(ChangePassword_Error_Generic), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string ChangePassword_SuccessRelogin => ResourceManager.GetString(nameof(ChangePassword_SuccessRelogin), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Common_Cancel => ResourceManager.GetString(nameof(Common_Cancel), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Common_Close => ResourceManager.GetString(nameof(Common_Close), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Common_EmDash => ResourceManager.GetString(nameof(Common_EmDash), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Common_Logout => ResourceManager.GetString(nameof(Common_Logout), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Common_No => ResourceManager.GetString(nameof(Common_No), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
@@ -153,6 +154,8 @@ public static class AppResources
     public static string Status_FontSize_Normal => ResourceManager.GetString(nameof(Status_FontSize_Normal), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Status_Session_Label => ResourceManager.GetString(nameof(Status_Session_Label), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Status_Session_None => ResourceManager.GetString(nameof(Status_Session_None), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Shortcuts_Body => ResourceManager.GetString(nameof(Shortcuts_Body), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Shortcuts_Title => ResourceManager.GetString(nameof(Shortcuts_Title), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Status_Shortcuts_F1 => ResourceManager.GetString(nameof(Status_Shortcuts_F1), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Supervisor_HomeBody => ResourceManager.GetString(nameof(Supervisor_HomeBody), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Supervisor_HomeTitle => ResourceManager.GetString(nameof(Supervisor_HomeTitle), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;

@@ -20,6 +20,7 @@ public sealed class MainShellPage : ContentPage
     private readonly AuthTokenHandler _auth;
     private readonly ISessionContext _session;
     private readonly ConnectivityService _connectivity;
+    private readonly IModalService _modal;
     private readonly UserRoleDto _role;
     private readonly ContentView _contentHost = new();
     private readonly List<TabEntry> _tabs = new();
@@ -33,6 +34,7 @@ public sealed class MainShellPage : ContentPage
         _auth = services.GetRequiredService<AuthTokenHandler>();
         _session = services.GetRequiredService<ISessionContext>();
         _connectivity = services.GetRequiredService<ConnectivityService>();
+        _modal = services.GetRequiredService<IModalService>();
         _role = _session.Role;
 
         Title = AppResources.Shell_AppTitle;
@@ -209,7 +211,7 @@ public sealed class MainShellPage : ContentPage
         _active = tab;
     }
 
-    private static View BuildStatusBar(ISessionCorrelationService correlation)
+    private View BuildStatusBar(ISessionCorrelationService correlation)
     {
         var bar = new Grid
         {
@@ -244,7 +246,11 @@ public sealed class MainShellPage : ContentPage
             Text = AppResources.Status_Shortcuts_F1,
             VerticalOptions = LayoutOptions.Center,
             TextColor = muted,
+            TextDecorations = TextDecorations.Underline,
         };
+        var shortcutsTap = new TapGestureRecognizer();
+        shortcutsTap.Tapped += OnShortcutsTapped;
+        shortcuts.GestureRecognizers.Add(shortcutsTap);
         Grid.SetColumn(shortcuts, 1);
         bar.Children.Add(shortcuts);
 
@@ -320,6 +326,14 @@ public sealed class MainShellPage : ContentPage
         {
             await LogoutAsync().ConfigureAwait(false);
         }
+    }
+
+    private async void OnShortcutsTapped(object? sender, TappedEventArgs e)
+    {
+        await _modal.ShowAsync(
+            AppResources.Shortcuts_Title,
+            AppResources.Shortcuts_Body,
+            AppResources.Common_Close).ConfigureAwait(true);
     }
 
     private async Task LogoutAsync()
