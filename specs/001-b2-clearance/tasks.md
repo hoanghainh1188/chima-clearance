@@ -529,11 +529,16 @@ on a second client the row reverts color within 1 s without manual refresh.
   wireframe § 8, virtualized `CollectionView`. Subscribe to `ConnectivityState`.
   Vietnamese copy verbatim. **Dep**: T-S3-09. **LOC**: ~500. **DoD**: §DoD-6.
   *Status (2026-05-04)*: Page + VM + filters + status badges + four
-  list-view states + connectivity banners landed in `7ba1069`. Drawer chi
-  tiết (right-side detail), child-vehicle expand/collapse, context menu,
-  300 ms color animation / 400 ms highlight pulse on SignalR push remain
-  — Round 3d. Loading-state skeleton + empty-state action button + error
-  banner with correlationId across every list page is Round 3e.
+  list-view states + connectivity banners landed in `7ba1069`. PR #15
+  (`14c39b2`) added the drawer chi tiết (420 px right-side panel,
+  double-tap → `GET /api/declarations/{id}`) plus the in-list keyboard
+  shortcuts `F5` / `/` / `Esc`. PR #16 swept list-view skeletons
+  (`Views/Common/SkeletonRows`) and the correlationId banner
+  (`Views/Common/ErrorCodeBanner`) across every list page (Ledger /
+  Kvgs / Users / MasterData / Exit). Remaining items are low-priority
+  polish: child-vehicle expand/collapse on parent rows, right-click
+  context menu, 300 ms color animation / 400 ms highlight pulse on
+  SignalR push, ↑↓ row navigation in `CollectionView`.
 - [X] **T-S3-11** [F-10] Implement `AppShell.xaml` + `AppShellViewModel.cs`
   per [wireframe § 5](../05-ui-wireframes.md) — top bar with tri-state
   connectivity badge + user menu, sidebar (`Alt+1`..`Alt+8` accelerators), F1

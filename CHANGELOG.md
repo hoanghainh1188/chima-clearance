@@ -6,14 +6,17 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 
-Sprint S3 is substantially shipped through 7 merged PRs (#6 backend +
-desktop chrome partial, #7 Round 1 audit follow-up, #8 Round 2 modal /
-toast spec, #9 Round 3a sidebar + Windows accelerators, #11 Round 3b
-functional Cỡ chữ dropdown, #12 Round 3c KVGS row fade + Đã xác nhận
-hôm nay widget, #13 Windows CI shell-bash flake fix). Round 3d/e
-remain (ledger drawer chi tiết + child expand/collapse + 300/400 ms
-animations, list-view skeletons across pages). Sprints S4..S6 not
-started.
+Sprint S3 is substantially shipped through 9 merged + 1 in-flight PRs
+(#6 backend + desktop chrome partial, #7 Round 1 audit follow-up, #8
+Round 2 modal / toast spec, #9 Round 3a sidebar + Windows accelerators,
+#11 Round 3b functional Cỡ chữ dropdown, #12 Round 3c KVGS row fade +
+Đã xác nhận hôm nay widget, #13 Windows CI shell-bash flake fix, #15
+Round 3d ledger drawer chi tiết + F5 / `/` / Esc shortcuts, #16
+Round 3e list-view skeletons + correlationId on error banners).
+Remaining low-priority polish: ledger child-vehicle expand/collapse,
+right-click context menu, 300/400 ms animations on SignalR push,
+sidebar collapse toggle, focus-ring style sweep, ⚙️ quick-settings
+menu, top-right toast position. Sprints S4..S6 not started.
 
 ### Added
 
@@ -108,6 +111,43 @@ started.
 - **LedgerVM `OnPageChanged`** also notifies `DisplayRangeText`
   (pagination summary "Hiển thị X–Y của N") so the value isn't
   stale-by-default on page navigation.
+
+#### PR #15 — Round 3d: ledger drawer chi tiết + keyboard shortcuts (`14c39b2`)
+
+- **Right-side detail drawer (420 px)** — `LedgerPage` outer Grid wraps
+  the existing content into a 2-column layout with a drawer in col 1
+  (`IsVisible` bound to a new `IsDrawerOpen` ObservableProperty).
+  Double-tap a data row → fires `OpenDetailCommand` which calls
+  `GET /api/declarations/{id}` and shows declaration details
+  (number / status / processor / yard / company / goods) plus a
+  per-vehicle list with Trong cổng / Đã ra status tags.
+- **`LedgerViewModel`** — new `SelectedDeclarationDetail`,
+  `IsDrawerOpen`, `IsDrawerLoading`, `DrawerErrorMessage`
+  ObservableProperties; computed `HasDrawerData` for the inner
+  content visibility; `OpenDetail` / `CloseDetail` RelayCommands.
+- **Keyboard shortcuts on `LedgerPage`** —
+  `Microsoft.UI.Xaml.Input.KeyboardAccelerator` registered on first
+  `Loaded`: `F5` → refresh; `/` (`VK_OEM_2` = 0xBF) → focuses the
+  search Entry; `Esc` → closes the drawer if open, else clears the
+  search.
+- 14 new `Ledger_Drawer_*` strings in resx. Mirrors the
+  `MainShellPage` accelerator pattern from R3a.
+
+#### PR #16 — Round 3e: list-view skeletons + correlationId on error banners
+
+- **`Views/Common/SkeletonRows`** — shared `ContentView` with five
+  staggered-opacity grey bars (32 px tall) replacing the previous
+  spinner. Constitution VIII: defined once, dropped into every list
+  page's loading branch (Ledger / Kvgs / Users / MasterData / Exit).
+- **`Views/Common/ErrorCodeBanner`** — shared "Mã lỗi: {id}"
+  HorizontalStackLayout that hides itself when there's no correlation
+  id. Hosting page binds `BindingContext="{Binding Correlation}"` to
+  attach to its VM's `ISessionCorrelationService`.
+- **VM constructors** — Ledger / Kvgs / Users / MasterData / Exit
+  ViewModels now take `ISessionCorrelationService` and expose it as
+  a `Correlation` property for the banner. Same singleton the status
+  bar already uses.
+- New resx `Common_ErrorCode_Prefix` ("Mã lỗi:").
 
 #### PR #13 — CI workflow Windows shell-bash fix (`2068373`)
 
