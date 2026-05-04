@@ -1,4 +1,5 @@
 using B2.Desktop.Resources.Strings;
+using B2.Desktop.Services;
 using B2.Desktop.Services.Api;
 using B2.Shared.Contracts.MasterData;
 using CommunityToolkit.Mvvm.ComponentModel;
@@ -10,6 +11,7 @@ namespace B2.Desktop.ViewModels.Admin;
 public partial class MasterDataViewModel : ObservableObject
 {
     private readonly IB2Api _api;
+    private readonly IModalService _modal;
 
     [ObservableProperty]
     private bool _isProcessorsTab = true;
@@ -26,7 +28,11 @@ public partial class MasterDataViewModel : ObservableObject
     [ObservableProperty]
     private IReadOnlyList<YardDto> _yards = Array.Empty<YardDto>();
 
-    public MasterDataViewModel(IB2Api api) => _api = api;
+    public MasterDataViewModel(IB2Api api, IModalService modal)
+    {
+        _api = api;
+        _modal = modal;
+    }
 
     [RelayCommand]
     private void SelectProcessorsTab() => IsProcessorsTab = true;
@@ -143,7 +149,7 @@ public partial class MasterDataViewModel : ObservableObject
         var activate = !dto.IsActive;
         if (!activate)
         {
-            var confirm = await page.DisplayAlert(
+            var confirm = await _modal.ConfirmAsync(
                 AppResources.MasterData_DeactivateTitle,
                 AppResources.MasterData_DeactivateProcessorMessage,
                 AppResources.Common_Yes,
@@ -279,7 +285,7 @@ public partial class MasterDataViewModel : ObservableObject
         var activate = !dto.IsActive;
         if (!activate)
         {
-            var confirm = await page.DisplayAlert(
+            var confirm = await _modal.ConfirmAsync(
                 AppResources.MasterData_DeactivateTitle,
                 AppResources.MasterData_DeactivateYardMessage,
                 AppResources.Common_Yes,

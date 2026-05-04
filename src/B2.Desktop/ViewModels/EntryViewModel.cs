@@ -2,10 +2,10 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using B2.Desktop.Resources.Strings;
+using B2.Desktop.Services;
 using B2.Desktop.Services.Api;
 using B2.Shared.Contracts.Declarations;
 using B2.Shared.Contracts.MasterData;
-using CommunityToolkit.Maui.Alerts;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Refit;
@@ -19,6 +19,7 @@ public partial class EntryViewModel : ObservableObject
     private static readonly CompositeFormat AddChildBannerFormat = CompositeFormat.Parse(AppResources.Entry_AddChildBanner_Format);
 
     private readonly IB2Api _api;
+    private readonly IToastService _toast;
 
     [ObservableProperty]
     private bool _isLoading;
@@ -65,7 +66,11 @@ public partial class EntryViewModel : ObservableObject
     [ObservableProperty]
     private string _addChildBannerDeclarationLabel = string.Empty;
 
-    public EntryViewModel(IB2Api api) => _api = api;
+    public EntryViewModel(IB2Api api, IToastService toast)
+    {
+        _api = api;
+        _toast = toast;
+    }
 
     [RelayCommand]
     public async Task InitAsync()
@@ -137,7 +142,7 @@ public partial class EntryViewModel : ObservableObject
                         key)
                     .ConfigureAwait(false);
                 ClearVehicleFields();
-                await Toast.Make(AppResources.Entry_Toast_VehicleAdded).Show().ConfigureAwait(false);
+                await _toast.ShowAsync(AppResources.Entry_Toast_VehicleAdded).ConfigureAwait(false);
             }
             catch (ApiException)
             {
@@ -193,7 +198,7 @@ public partial class EntryViewModel : ObservableObject
                 ResetEntireForm();
             }
 
-            await Toast.Make(AppResources.Entry_Toast_Saved).Show().ConfigureAwait(false);
+            await _toast.ShowAsync(AppResources.Entry_Toast_Saved).ConfigureAwait(false);
         }
         catch (ApiException)
         {

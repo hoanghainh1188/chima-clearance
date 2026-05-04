@@ -2,9 +2,9 @@ using System.Collections.ObjectModel;
 using System.Globalization;
 using System.Text;
 using B2.Desktop.Resources.Strings;
+using B2.Desktop.Services;
 using B2.Desktop.Services.Api;
 using B2.Shared.Contracts.Declarations;
-using CommunityToolkit.Maui.Alerts;
 using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 using Refit;
@@ -20,6 +20,7 @@ public partial class ExitViewModel : ObservableObject, IDisposable
     private static readonly CompositeFormat ExitToastExitMarkedFormat = CompositeFormat.Parse(AppResources.Exit_Toast_ExitMarked_Format);
 
     private readonly IB2Api _api;
+    private readonly IToastService _toast;
     private CancellationTokenSource? _debounceCts;
     private bool _disposed;
 
@@ -40,7 +41,11 @@ public partial class ExitViewModel : ObservableObject, IDisposable
 
     public ObservableCollection<VehicleSearchResultDto> Results { get; } = new();
 
-    public ExitViewModel(IB2Api api) => _api = api;
+    public ExitViewModel(IB2Api api, IToastService toast)
+    {
+        _api = api;
+        _toast = toast;
+    }
 
     partial void OnSuffixChanged(string value) => _ = DebouncedSearchAsync();
 
@@ -131,11 +136,11 @@ public partial class ExitViewModel : ObservableObject, IDisposable
             var key = Guid.NewGuid().ToString("N");
             var response = await _api.MarkVehicleExitAsync(target.VehicleId, key).ConfigureAwait(false);
             var toast = string.Format(CultureInfo.CurrentCulture, ExitToastExitMarkedFormat, target.PlateNumber);
-            await Toast.Make(toast).Show().ConfigureAwait(false);
+            await _toast.ShowAsync(toast).ConfigureAwait(false);
 
             if (string.Equals(response.DeclarationStatus, "AllExited", StringComparison.OrdinalIgnoreCase))
             {
-                await Toast.Make(AppResources.Exit_Toast_DeclarationAllExited).Show().ConfigureAwait(false);
+                await _toast.ShowAsync(AppResources.Exit_Toast_DeclarationAllExited).ConfigureAwait(false);
             }
 
             Suffix = string.Empty;
