@@ -1,4 +1,4 @@
-﻿using System.Collections.ObjectModel;
+using System.Collections.ObjectModel;
 using B2.Desktop.Resources.Strings;
 using B2.Desktop.Services.Api;
 using B2.Shared.Contracts.Declarations;

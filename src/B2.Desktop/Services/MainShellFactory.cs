@@ -1,4 +1,4 @@
-﻿using B2.Shared.Contracts.Users;
+using B2.Shared.Contracts.Users;
 
 namespace B2.Desktop.Services;
 

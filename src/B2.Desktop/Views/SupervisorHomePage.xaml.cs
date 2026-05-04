@@ -1,4 +1,4 @@
-﻿namespace B2.Desktop.Views;
+namespace B2.Desktop.Views;
 
 public partial class SupervisorHomePage : ContentPage
 {

@@ -1,4 +1,4 @@
-﻿using B2.Shared.Contracts.Auth;
+using B2.Shared.Contracts.Auth;
 using B2.Shared.Contracts.Declarations;
 using B2.Shared.Contracts.MasterData;
 using B2.Shared.Contracts.Users;

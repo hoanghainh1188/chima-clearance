@@ -1,4 +1,4 @@
-﻿using B2.Desktop.Resources.Strings;
+using B2.Desktop.Resources.Strings;
 using B2.Desktop.Services.Api;
 using B2.Desktop.Views;
 using B2.Desktop.Views.Admin;

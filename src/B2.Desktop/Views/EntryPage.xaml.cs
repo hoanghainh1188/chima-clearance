@@ -1,4 +1,4 @@
-﻿using B2.Desktop.ViewModels;
+using B2.Desktop.ViewModels;
 
 namespace B2.Desktop.Views;
 

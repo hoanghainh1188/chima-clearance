@@ -1,4 +1,4 @@
-﻿using System.Text.Json;
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using B2.Desktop.Services;
 using B2.Desktop.Services.Api;

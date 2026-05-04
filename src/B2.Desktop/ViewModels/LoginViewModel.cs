@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using B2.Desktop.Resources.Strings;
 using B2.Desktop.Services;
 using B2.Desktop.Services.Api;
