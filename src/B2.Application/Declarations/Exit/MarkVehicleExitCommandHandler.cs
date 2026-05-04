@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.Json;
 using B2.Application.Abstractions;
+using B2.Application.DomainEvents;
 using B2.Domain;
 using B2.Domain.Audit;
 using B2.Domain.Declarations;
@@ -13,15 +14,18 @@ public sealed class MarkVehicleExitCommandHandler
     private readonly IDeclarationRepository _declarations;
     private readonly IClock _clock;
     private readonly IAuditContext _audit;
+    private readonly ISignalRDomainEventDispatcher _realtime;
 
     public MarkVehicleExitCommandHandler(
         IDeclarationRepository declarations,
         IClock clock,
-        IAuditContext audit)
+        IAuditContext audit,
+        ISignalRDomainEventDispatcher realtime)
     {
         _declarations = declarations;
         _clock = clock;
         _audit = audit;
+        _realtime = realtime;
     }
 
     public async Task<VehicleExitResponse> HandleAsync(Guid vehicleId, Guid actorUserId, CancellationToken cancellationToken)
@@ -35,6 +39,7 @@ public sealed class MarkVehicleExitCommandHandler
                 {
                     var after = JsonSerializer.Serialize(new { a.ExitTime, DeclarationStatus = a.DeclarationStatus });
                     _audit.Set(new AuditEnvelope(actorUserId, AuditAction.Update, nameof(Vehicle), a.VehicleId, null, after, null));
+                    await _realtime.PublishDeclarationLedgerChangedAsync(a.DeclarationId, cancellationToken);
                     return new VehicleExitResponse(a.VehicleId, a.ExitTime, a.DeclarationId, a.DeclarationStatus);
                 }
 

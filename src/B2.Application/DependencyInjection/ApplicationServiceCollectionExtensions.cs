@@ -1,6 +1,8 @@
 using B2.Application.Auth;
 using B2.Application.Declarations;
+using B2.Application.Declarations.ConfirmKvgs;
 using B2.Application.Declarations.Exit;
+using B2.Application.Declarations.List;
 using B2.Application.MasterData;
 using B2.Application.Users;
 using B2.Application.Vehicles;
@@ -22,6 +24,9 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<AddVehicleCommandHandler>();
         services.AddScoped<MarkVehicleExitCommandHandler>();
         services.AddScoped<UnExitVehicleCommandHandler>();
+        services.AddScoped<ConfirmKvgsCommandHandler>();
+        services.AddScoped<ListDeclarationsQueryHandler>();
+        services.AddScoped<GetDeclarationDetailQueryHandler>();
         services.AddScoped<SearchVehiclesBySuffixQueryHandler>();
         services.AddValidatorsFromAssemblyContaining<Auth.Validators.LoginRequestValidator>();
         return services;

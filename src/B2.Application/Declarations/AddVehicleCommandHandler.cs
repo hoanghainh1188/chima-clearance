@@ -1,5 +1,6 @@
 using System.Text.Json;
 using B2.Application.Abstractions;
+using B2.Application.DomainEvents;
 using B2.Domain;
 using B2.Domain.Audit;
 using B2.Domain.Declarations;
@@ -13,17 +14,20 @@ public sealed class AddVehicleCommandHandler
     private readonly IClock _clock;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditContext _audit;
+    private readonly ISignalRDomainEventDispatcher _realtime;
 
     public AddVehicleCommandHandler(
         IDeclarationRepository declarations,
         IClock clock,
         IUnitOfWork unitOfWork,
-        IAuditContext audit)
+        IAuditContext audit,
+        ISignalRDomainEventDispatcher realtime)
     {
         _declarations = declarations;
         _clock = clock;
         _unitOfWork = unitOfWork;
         _audit = audit;
+        _realtime = realtime;
     }
 
     public async Task HandleAsync(
@@ -51,5 +55,6 @@ public sealed class AddVehicleCommandHandler
 
         var after = JsonSerializer.Serialize(new { vehicle.PlateNumber, vehicle.EntryTime });
         _audit.Set(new AuditEnvelope(actorUserId, AuditAction.Create, nameof(Vehicle), vehicle.Id, null, after, null));
+        await _realtime.PublishDeclarationLedgerChangedAsync(declarationId, cancellationToken);
     }
 }

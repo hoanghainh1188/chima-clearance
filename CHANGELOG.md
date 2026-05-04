@@ -1,4 +1,4 @@
-# Changelog
+﻿# Changelog
 
 All notable changes to this project are documented here. Format follows
 [Keep a Changelog 1.1.0](https://keepachangelog.com/en/1.1.0/) and the project
@@ -17,6 +17,17 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 - `specs/001-b2-clearance/quickstart.md` § 7 — two new troubleshooting rows
   (UTF-8 BOM `error CHARSET` and the macOS-vs-CI Desktop analyzer divergence)
   with concrete remediation steps.
+
+### Fixed
+
+- **Sprint S3 (backend slice)**: `GET /api/declarations` reads query parameters
+  via `HttpRequest.Query` (avoids minimal-API binding returning HTTP 400 with an
+  empty body). `DeclarationRepository.ListDeclarationsAsync` avoids SQLite EF
+  limitations on `DateTimeOffset` in `ORDER BY` and on `since` / vehicle time
+  predicates (in-memory sort + `since` filter, plate filter via `IN` subquery).
+  SignalR integration test connects through `WebApplicationFactory.Server` with
+  `HttpMessageHandlerFactory` so negotiation uses the in-memory test server
+  instead of `localhost:80`.
 
 ### Changed
 

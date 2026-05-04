@@ -1,5 +1,6 @@
 using System.Text.Json;
 using B2.Application.Abstractions;
+using B2.Application.DomainEvents;
 using B2.Domain;
 using B2.Domain.Audit;
 using B2.Domain.Declarations;
@@ -10,11 +11,16 @@ public sealed class UnExitVehicleCommandHandler
 {
     private readonly IDeclarationRepository _declarations;
     private readonly IAuditContext _audit;
+    private readonly ISignalRDomainEventDispatcher _realtime;
 
-    public UnExitVehicleCommandHandler(IDeclarationRepository declarations, IAuditContext audit)
+    public UnExitVehicleCommandHandler(
+        IDeclarationRepository declarations,
+        IAuditContext audit,
+        ISignalRDomainEventDispatcher realtime)
     {
         _declarations = declarations;
         _audit = audit;
+        _realtime = realtime;
     }
 
     public async Task HandleAsync(Guid vehicleId, Guid actorUserId, string reason, CancellationToken cancellationToken)
@@ -27,6 +33,7 @@ public sealed class UnExitVehicleCommandHandler
                 {
                     var after = JsonSerializer.Serialize(new { a.DeclarationStatus, ExitMarked = false });
                     _audit.Set(new AuditEnvelope(actorUserId, AuditAction.UnExit, nameof(Vehicle), a.VehicleId, null, after, reason));
+                    await _realtime.PublishDeclarationLedgerChangedAsync(a.DeclarationId, cancellationToken);
                     return;
                 }
 

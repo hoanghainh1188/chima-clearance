@@ -465,16 +465,16 @@ on a second client the row reverts color within 1 s without manual refresh.
 
 ### F-09 KVGS Confirmation
 
-- [ ] **T-S3-01** [P] [F-09] Write Gherkin tests in
+- [X] **T-S3-01** [P] [F-09] Write Gherkin tests in
   `tests/B2.Server.Api.Tests/Declarations/KvgsConfirmEndpointTests.cs` verbatim
   from `spec.md` F-09 (Confirm KVGS, Operator-cannot-confirm, cannot-confirm-
   before-AllExited). Tag `[Trait("Feature","F-09")]`. **Dep**: T-S2-22.
   **LOC**: ~200.
-- [ ] **T-S3-02** [F-09] Implement `ConfirmKvgsCommandHandler` in
+- [X] **T-S3-02** [F-09] Implement `ConfirmKvgsCommandHandler` in
   `src/B2.Application/Declarations/ConfirmKvgs/` calling
   `Declaration.ConfirmKvgs(actorRole, actorId, clock)` (INV-6 + state-machine
   guard). **Dep**: T-S2-07. **LOC**: ~150.
-- [ ] **T-S3-03** [F-09] Wire `POST /api/declarations/{id}/kvgs-confirm` in
+- [X] **T-S3-03** [F-09] Wire `POST /api/declarations/{id}/kvgs-confirm` in
   `DeclarationsEndpoints.cs` with `SupervisorOrAbove` policy. Make T-S3-01
   green. **Dep**: T-S3-02. **LOC**: ~80.
 - [ ] **T-S3-04** [F-09] Implement `KvgsPage.xaml` + `KvgsViewModel.cs` per
@@ -484,20 +484,20 @@ on a second client the row reverts color within 1 s without manual refresh.
 
 ### F-10 Ledger + FR-027 / FR-028 (realtime)
 
-- [ ] **T-S3-05** [P] [F-10] Write Gherkin tests in
+- [X] **T-S3-05** [P] [F-10] Write Gherkin tests in
   `tests/B2.Server.Api.Tests/Declarations/ListDeclarationsEndpointTests.cs`
   verbatim from `spec.md` F-10 (default-today / live-updates / pagination /
   writes-permitted-in-🟡 from UI Q4). Tag `[Trait("Feature","F-10")]`.
   **Dep**: T-S2-22. **LOC**: ~280.
-- [ ] **T-S3-06** [F-10] Implement `ListDeclarationsQueryHandler` in
+- [X] **T-S3-06** [F-10] Implement `ListDeclarationsQueryHandler` in
   `src/B2.Application/Declarations/List/` with paginated filtering (date /
   status / plate / processor / yard / officer / since-for-polling /
   includeCancelled). **Dep**: T-S2-08. **LOC**: ~250.
-- [ ] **T-S3-07** [F-10] Wire `GET /api/declarations` and
+- [X] **T-S3-07** [F-10] Wire `GET /api/declarations` and
   `GET /api/declarations/{id}` (detail + child vehicles) in
   `DeclarationsEndpoints.cs`. Make T-S3-05 partly green (live-updates land in
   T-S3-08..09). **Dep**: T-S3-06. **LOC**: ~120.
-- [ ] **T-S3-08** [F-10] Implement `EventsHub` SignalR hub at
+- [X] **T-S3-08** [F-10] Implement `EventsHub` SignalR hub at
   `src/B2.Server.Api/Realtime/EventsHub.cs` and a `ISignalRDomainEventDispatcher`
   in `B2.Application/DomainEvents/`. Wire it so successful Create / Exit /
   KvgsConfirm / Cancel / OfficerNameChanged commands publish events. **Dep**:

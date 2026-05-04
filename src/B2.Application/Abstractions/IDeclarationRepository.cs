@@ -1,5 +1,7 @@
 using B2.Application.Declarations.Exit;
+using B2.Application.Declarations.List;
 using B2.Domain.Declarations;
+using B2.Shared.Contracts.Declarations;
 
 namespace B2.Application.Abstractions;
 
@@ -20,4 +22,10 @@ public interface IDeclarationRepository
         CancellationToken cancellationToken);
 
     Task<UnExitVehicleResult> UnExitVehicleAsync(Guid vehicleId, CancellationToken cancellationToken);
+
+    Task<(IReadOnlyList<DeclarationSummaryRow> Items, int TotalCount)> ListDeclarationsAsync(
+        ListDeclarationsRepositoryQuery query,
+        CancellationToken cancellationToken);
+
+    Task<DeclarationDetailResponse?> GetDeclarationDetailAsync(Guid id, CancellationToken cancellationToken);
 }
