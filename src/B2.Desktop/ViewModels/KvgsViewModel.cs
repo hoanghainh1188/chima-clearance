@@ -122,7 +122,7 @@ public sealed partial class KvgsViewModel : ObservableObject, IDisposable
         {
             await _api.ConfirmKvgsAsync(row.Dto.Id).ConfigureAwait(true);
             var toast = string.Format(CultureInfo.CurrentCulture, KvgsToastFormat, row.DeclarationMasked);
-            await _toast.ShowAsync(toast).ConfigureAwait(true);
+            await _toast.ShowAsync(toast, ToastSeverity.Success).ConfigureAwait(true);
             await LoadAsync().ConfigureAwait(true);
         }
         catch (ApiException ex)

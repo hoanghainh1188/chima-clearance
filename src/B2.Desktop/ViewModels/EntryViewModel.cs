@@ -142,7 +142,7 @@ public partial class EntryViewModel : ObservableObject
                         key)
                     .ConfigureAwait(false);
                 ClearVehicleFields();
-                await _toast.ShowAsync(AppResources.Entry_Toast_VehicleAdded).ConfigureAwait(false);
+                await _toast.ShowAsync(AppResources.Entry_Toast_VehicleAdded, ToastSeverity.Success).ConfigureAwait(false);
             }
             catch (ApiException)
             {
@@ -198,7 +198,7 @@ public partial class EntryViewModel : ObservableObject
                 ResetEntireForm();
             }
 
-            await _toast.ShowAsync(AppResources.Entry_Toast_Saved).ConfigureAwait(false);
+            await _toast.ShowAsync(AppResources.Entry_Toast_Saved, ToastSeverity.Success).ConfigureAwait(false);
         }
         catch (ApiException)
         {
