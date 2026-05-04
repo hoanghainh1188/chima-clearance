@@ -61,7 +61,7 @@ jobs:
 
       - name: Build (Release; TreatWarningsAsErrors=true)
         shell: bash
-        run: dotnet build B2.sln -c Release --no-restore /p:TreatWarningsAsErrors=true
+        run: dotnet build B2.sln -c Release --no-restore -p:TreatWarningsAsErrors=true
 
       - name: Test (Release) with coverage
         shell: bash
@@ -126,7 +126,7 @@ jobs:
         run: dotnet format B2.NoMaui.slnf --verify-no-changes --no-restore
 
       - name: Build (Release; TreatWarningsAsErrors=true)
-        run: dotnet build B2.NoMaui.slnf -c Release --no-restore /p:TreatWarningsAsErrors=true
+        run: dotnet build B2.NoMaui.slnf -c Release --no-restore -p:TreatWarningsAsErrors=true
 
       - name: Test (Release)
         run: dotnet test B2.NoMaui.slnf -c Release --no-build
