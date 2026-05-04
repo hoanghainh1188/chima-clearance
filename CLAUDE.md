@@ -18,10 +18,12 @@ Auto-generated from all feature plans. Last updated: 2026-05-04
 
 Active phase: **Sprint S3 wrapping up** — F-09 confirmation, F-10 always-on
 ledger with SignalR push, FR-027 role matrix, FR-028 tri-state connectivity,
-and the wireframe § 5 desktop chrome are all on `main` after PRs #6, #7, #8
-and #9. Sprint S4 (Quartz + reports + officer-name edit) starts once the
-remaining Round 3b/c/d/e polish items (functional `Cỡ chữ` dropdown, KVGS
-animations, ledger drawer chi tiết, list-view skeletons across pages) are
+the wireframe § 5 desktop chrome (sidebar + accelerators + functional Cỡ
+chữ dropdown), and the wireframe § 6.5 KVGS animations + self-monitoring
+counter are all on `main` after PRs #6, #7, #8, #9, #11, #12 (plus the
+#13 CI fix). Sprint S4 (Quartz + reports + officer-name edit) starts once
+the remaining Round 3d/e polish items (ledger drawer chi tiết +
+child-vehicle expand/collapse, list-view skeletons across pages) are
 either shipped or formally deferred.
 
 **Done**: S0 (scaffold, ADRs 0001–0006), S1 (F-01/F-02/F-03/F-04 — auth,
@@ -29,7 +31,8 @@ users, master data, force-rotate password), S2 (F-05/F-06/F-07/F-08 —
 declaration entry, add child vehicle, suffix search, mark exit), S3 core
 (F-09 KVGS + F-10 ledger + SignalR realtime + wireframe § 5 sidebar shell
 + Modal popup focus-trap + Toast severity timing + FR-028 Serilog logging
-+ Constitution VI tokens). All merged to `main`.
++ Constitution VI tokens + functional Cỡ chữ dropdown + KVGS row fade-out
+animation + self-monitoring counter). All merged to `main`.
 
 ---
 
@@ -155,6 +158,21 @@ dotnet test   B2.NoMaui.slnf -c Release --no-build                      # endpoi
 >   BOM, or strip it after creation:
 >   `perl -i -pe 'BEGIN{$f=1} s/^\xef\xbb\xbf// if $f; $f=0' <file>`.
 
+> **Windows CI workflow convention** (`.github/workflows/ci.yml`): every
+> dotnet step in the `build-and-test` job is pinned to `shell: bash` after
+> `setup-dotnet@v5` was observed losing PATH propagation on the default
+> pwsh shell three times in a row. Two follow-up rules for editing the
+> workflow:
+>
+> - **MSBuild args use `-p:` (dash), never `/p:` (slash)** — Git Bash's
+>   MSYS2 layer would otherwise translate the leading `/` and you get
+>   `MSB1008: Only one project can be specified`.
+> - **New dotnet steps in the Windows job MUST keep `shell: bash`** —
+>   dropping it re-opens the PATH flake.
+>
+> The local pre-push gates above stay on macOS / Linux bash where `/p:`
+> works fine; the Windows-specific rules only apply to CI yaml.
+
 ---
 
 ## Code Style (Constitution III — non-negotiable)
@@ -226,6 +244,26 @@ Yellow / red banners stay persistent in their respective states (no toast spam).
 
 ## Recent Changes
 
+- **2026-05-04** — **CI workflow fix** merged via PR #13 (`2068373`):
+  pinned every Windows job's dotnet step to `shell: bash` to defeat the
+  recurring `setup-dotnet@v5` PATH flake on `windows-2022` pwsh
+  ("Unable to locate dotnet CLI" hit three times across PR #9 first
+  run + R3b post-merge twice). Switched MSBuild args from `/p:` to
+  `-p:` to avoid Git Bash MSYS2 path translation (MSB1008
+  "Only one project can be specified" otherwise).
+- **2026-05-04** — Sprint S3 **Round 3c** merged via PR #12 (`d0d47de`):
+  KVGS row fade-out (300 ms / 12-frame VM tween via a new bindable
+  `Opacity` on `LedgerRowViewModel` — promoted to `ObservableObject`)
+  + per-session "Đã xác nhận hôm nay: X tờ khai" counter; LedgerVM
+  `OnPageChanged` notifies `DisplayRangeText` so pagination summary
+  doesn't lag a refresh. Closes T-S3-04.
+- **2026-05-04** — Sprint S3 **Round 3b** merged via PR #11 (`90d6b00`):
+  functional `Cỡ chữ` dropdown (Bình thường / Lớn / Rất lớn) backed by
+  a new `IUserSettingsService` (MAUI Preferences-backed). App.xaml.cs
+  mutates `Application.Current.Resources` `FontSize*` tokens at
+  startup (offsets +0 / +4 / +8 per wireframe § 3); status bar Picker
+  on change saves the preference + shows a Warning toast
+  "Đăng nhập lại để áp dụng".
 - **2026-05-04** — Sprint S3 **Round 3a** merged via PR #9 (`577d388`):
   wireframe § 5 vertical sidebar (220 px) replaces the temporary tab strip;
   Windows `F1` + `Alt+1..Alt+8` accelerators wired via

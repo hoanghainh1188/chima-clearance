@@ -6,11 +6,14 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 
-Sprint S3 is substantially shipped through 4 merged PRs (#6 backend +
+Sprint S3 is substantially shipped through 7 merged PRs (#6 backend +
 desktop chrome partial, #7 Round 1 audit follow-up, #8 Round 2 modal /
-toast spec, #9 Round 3a sidebar + Windows accelerators). Round 3b/c/d/e
-remain (functional Cỡ chữ dropdown, KVGS animations, ledger drawer chi
-tiết, list-view skeletons across pages). Sprints S4..S6 not started.
+toast spec, #9 Round 3a sidebar + Windows accelerators, #11 Round 3b
+functional Cỡ chữ dropdown, #12 Round 3c KVGS row fade + Đã xác nhận
+hôm nay widget, #13 Windows CI shell-bash flake fix). Round 3d/e
+remain (ledger drawer chi tiết + child expand/collapse + 300/400 ms
+animations, list-view skeletons across pages). Sprints S4..S6 not
+started.
 
 ### Added
 
@@ -75,6 +78,50 @@ tiết, list-view skeletons across pages). Sprints S4..S6 not started.
   CT.Maui's Popup natively. `ConfirmAsync` gets a `destructive` bool
   (default false) that suppresses backdrop dismissal for destructive
   flows per § 7.
+
+#### PR #11 — Round 3b: functional Cỡ chữ dropdown (`90d6b00`)
+
+- **`IUserSettingsService` + `FontScaleMode`** — singleton MAUI
+  Preferences-backed service under `Services/UserSettings/`. Three
+  modes: Normal / Large / ExtraLarge per wireframe § 5 + § 9.
+- **App.xaml.cs startup** mutates `Application.Current.Resources`
+  `FontSize*` tokens BEFORE resolving AppShell, so the first XAML
+  parse sees scaled values. Offsets +0 / +4 / +8 across the token
+  set per wireframe § 3 (body 16 → 20 → 24).
+- **Status bar Cỡ chữ Picker** in `MainShellPage` replaces the static
+  Label. On change: save preference + show Warning toast
+  "Đăng nhập lại để áp dụng" (StaticResource bindings already
+  parsed in the current session can't pick up the new value).
+
+#### PR #12 — Round 3c: KVGS row fade + self-monitoring counter (`d0d47de`)
+
+- **`LedgerRowViewModel` → `ObservableObject`** with a bindable
+  `Opacity` property (default 1.0). KvgsPage row template binds
+  `Opacity="{Binding Opacity}"` so a VM-driven tween drives the visual
+  fade.
+- **KvgsViewModel** runs a 300 ms / 12-frame VM tween on the
+  confirmed row before refreshing the list (wireframe § 6.5 animated
+  row removal). Per-session counter `ConfirmedTodayCount` increments
+  on success and surfaces via `ConfirmedTodayLabel` (resx
+  `Kvgs_ConfirmedToday_Format`). KvgsPage refresh-button row becomes
+  a 3-column Grid with the counter aligned right.
+- **LedgerVM `OnPageChanged`** also notifies `DisplayRangeText`
+  (pagination summary "Hiển thị X–Y của N") so the value isn't
+  stale-by-default on page navigation.
+
+#### PR #13 — CI workflow Windows shell-bash fix (`2068373`)
+
+- The Windows `build-and-test` job hit
+  "Unable to locate dotnet CLI" three times in a row (PR #9 first
+  run, post-merge R3b, post-merge R3b re-run) at the
+  "Verify formatting" step even when the immediately preceding
+  "Restore" step ran dotnet successfully. `setup-dotnet@v5` writes
+  to `GITHUB_PATH`, but the default pwsh shell on `windows-2022`
+  intermittently loses the propagated PATH between steps.
+- Pinned every dotnet step in the Windows job to `shell: bash`
+  (Git Bash). Switched MSBuild args from `/p:` to `-p:` everywhere
+  to avoid Git Bash MSYS2 path translation
+  (MSB1008 "Only one project can be specified" otherwise).
 
 #### PR #9 — Round 3a audit follow-up (`577d388`)
 
