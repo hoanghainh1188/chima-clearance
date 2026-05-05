@@ -326,19 +326,40 @@ artifact, not a technology change.
 
 ---
 
-## Sprint S4 progress (2026-05-05)
+## Sprint S4 progress (2026-05-05) — merged via PR #18 (`9f0d15b`)
 
-**Done**: `T-S4-01`–`T-S4-15` are implemented in this branch:
+**Done**: `T-S4-01`–`T-S4-15` shipped on `main`:
 
-- Quartz scheduling now wires daily header (`0 1 0 * * ?`) and summary (`0 0 23 * * ?`) jobs.
+- Quartz scheduling wires daily header (`0 1 0 * * ?` Asia/Ho_Chi_Minh) and summary (`0 0 23 * * ?`) jobs.
 - `DailyHeader` repository + handlers cover ensure-header, recompute-summary, and officer-name edit.
-- New endpoints: `POST /api/daily-headers/{date}/recompute`, `PATCH /api/daily-headers/{date}/officer`,
-  and `GET /api/reports/{by-processor|by-yard|by-hour|by-officer|pending}`.
+  Audit handlers branch by `isNew` so the append-only AuditLog records `Create` vs
+  `Update`/`OfficerNameChanged` accurately.
+- New endpoints: `POST /api/daily-headers/{date}/recompute` (Admin),
+  `PATCH /api/daily-headers/{date}/officer` (any-authenticated, INV-11 today-only),
+  `GET /api/daily-headers/?from=&to=` (officer-name overlay for ledger), and
+  `GET /api/reports/{by-processor|by-yard|by-hour|by-officer|pending}` (`SupervisorOrAbove`).
+- New SignalR broadcast `DailyHeaderOfficerChanged` on `EventsHub` so other clients
+  converge on officer-name edits without a full reload.
 - Reports query handlers + repository projections for F-14 are live and covered by API tests.
-- Desktop now includes inline officer edit on ledger daily-header rows and a new reports view.
-- Policy-alignment architecture test added for mapped `/api/*` endpoints.
+- Desktop ledger now includes inline officer edit (optimistic + revert-on-failure)
+  and an Admin-only `Tính lại` button on each daily-header row. Rebuilt `ReportsPage`
+  per wireframe § 6.6: date-range pickers, IncludeCancelled toggle, sortable column grids
+  per section, `Sao chép` (TSV → clipboard), `Xuất Excel` (ClosedXML to
+  `~/Documents/B2-Reports-yyyyMMdd-HHmmss.xlsx`, off the UI thread).
+- Policy-alignment architecture test added for mapped `/api/*` endpoints (carry-over
+  `T-S4-CO-01` strengthens this to verify specific FR-027 policies).
+- `HttpAuditContext.Set` now no-ops outside the HTTP pipeline so Quartz cron jobs
+  and the startup catch-up host don't crash the Windows Service on boot. Audit per
+  FR-003 binds to "successful mutating requests"; cron-driven runs leave their trail
+  in the data itself.
 
-**Validation**: `dotnet format B2.NoMaui.slnf --verify-no-changes`, `dotnet build B2.NoMaui.slnf -c Release /p:TreatWarningsAsErrors=true`, and `dotnet test B2.NoMaui.slnf -c Release --no-build` are green locally on macOS for non-MAUI projects.
+**Validation**: green on Windows MAUI CI (`build-and-test`) + Ubuntu NoMaui +
+`gitleaks`. Local pre-push gates (`dotnet format B2.NoMaui.slnf`,
+`dotnet build B2.NoMaui.slnf -c Release /p:TreatWarningsAsErrors=true`,
+`dotnet test B2.NoMaui.slnf -c Release --no-build`) all pass on macOS.
+
+**Carry-over** (`T-S4-CO-01..09`): items intentionally deferred from the PR-18
+review pass — see `tasks.md` Phase 5 tail for the enumerated list.
 
 ---
 
