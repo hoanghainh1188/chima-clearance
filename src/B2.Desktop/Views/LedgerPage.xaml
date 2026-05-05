@@ -124,9 +124,24 @@
                 <Border IsVisible="{Binding IsDateHeader}"
                         Padding="{StaticResource SpacingS}"
                         BackgroundColor="{StaticResource ColorLedgerDailyHeaderBg}">
-                  <Label Text="{Binding HeaderText}"
-                         TextColor="{StaticResource ColorOnSurface}"
-                         LineBreakMode="WordWrap" />
+                  <Grid ColumnDefinitions="*,220,Auto,Auto" ColumnSpacing="{StaticResource SpacingS}">
+                    <Label Grid.Column="0"
+                           Text="{Binding HeaderText}"
+                           TextColor="{StaticResource ColorOnSurface}"
+                           LineBreakMode="WordWrap" />
+                    <Entry Grid.Column="1"
+                           Text="{Binding OfficerName}"
+                           Placeholder="{x:Static s:AppResources.Ledger_Header_OfficerPlaceholder}" />
+                    <Button Grid.Column="2"
+                            Text="{x:Static s:AppResources.Common_Save}"
+                            Command="{Binding Source={x:Reference LedgerRoot}, Path=BindingContext.SaveOfficerNameCommand}"
+                            CommandParameter="{Binding .}" />
+                    <Button Grid.Column="3"
+                            Text="{x:Static s:AppResources.Ledger_Recompute_Action}"
+                            IsVisible="{Binding Source={x:Reference LedgerRoot}, Path=BindingContext.IsAdmin}"
+                            Command="{Binding Source={x:Reference LedgerRoot}, Path=BindingContext.RecomputeDailySummaryCommand}"
+                            CommandParameter="{Binding .}" />
+                  </Grid>
                 </Border>
                 <Grid IsVisible="{Binding IsDataRow}"
                       Padding="{StaticResource SpacingS}"

@@ -133,6 +133,8 @@ public static class B2ApiHost
         app.MapMasterDataEndpoints();
         app.MapDeclarationEndpoints();
         app.MapVehiclesEndpoints();
+        app.MapDailyHeadersEndpoints();
+        app.MapReportsEndpoints();
         app.MapHub<EventsHub>("/hubs/events").RequireAuthorization();
     }
 }

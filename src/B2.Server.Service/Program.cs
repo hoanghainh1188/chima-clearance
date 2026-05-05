@@ -1,4 +1,5 @@
 using B2.Server.Api.Hosting;
+using B2.Server.Service.Quartz;
 using B2.Server.Service.Serilog;
 using Serilog;
 
@@ -14,6 +15,7 @@ if (OperatingSystem.IsWindows())
 }
 
 B2ApiHost.ConfigureServices(builder);
+builder.Services.AddB2QuartzStartup();
 var app = builder.Build();
 await B2ApiHost.InitializeDatabaseAsync(app);
 B2ApiHost.MapPipeline(app);

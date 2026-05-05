@@ -31,9 +31,12 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IYardRepository, YardRepository>();
         services.AddScoped<IDeclarationRepository, DeclarationRepository>();
         services.AddScoped<IVehicleSuffixSearchRepository, VehicleSuffixSearchRepository>();
+        services.AddScoped<IDailyHeaderRepository, DailyHeaderRepository>();
+        services.AddScoped<IReportsRepository, ReportsRepository>();
 
         if (enableBackgroundJobs)
         {
+            var vietnamTimeZone = ResolveVietnamTimeZone();
             services.AddQuartz(q =>
             {
                 var jobKey = new JobKey("IdempotencyKeyEviction");
@@ -43,12 +46,38 @@ public static class InfrastructureServiceCollectionExtensions
                     .WithIdentity("IdempotencyKeyEviction-trigger")
                     .WithSimpleSchedule(x => x.WithIntervalInMinutes(30).RepeatForever())
                     .StartNow());
+
+                var headerJobKey = new JobKey("CreateDailyHeader");
+                q.AddJob<CreateDailyHeaderJob>(opts => opts.WithIdentity(headerJobKey));
+                q.AddTrigger(opts => opts
+                    .ForJob(headerJobKey)
+                    .WithIdentity("CreateDailyHeader-trigger")
+                    .WithCronSchedule("0 1 0 * * ?", x => x.InTimeZone(vietnamTimeZone)));
+
+                var summaryJobKey = new JobKey("GenerateDailySummary");
+                q.AddJob<GenerateDailySummaryJob>(opts => opts.WithIdentity(summaryJobKey));
+                q.AddTrigger(opts => opts
+                    .ForJob(summaryJobKey)
+                    .WithIdentity("GenerateDailySummary-trigger")
+                    .WithCronSchedule("0 0 23 * * ?", x => x.InTimeZone(vietnamTimeZone)));
             });
 
             services.AddQuartzHostedService(options => options.WaitForJobsToComplete = true);
         }
 
         return services;
+    }
+
+    private static TimeZoneInfo ResolveVietnamTimeZone()
+    {
+        try
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
+        }
+        catch (TimeZoneNotFoundException)
+        {
+            return TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+        }
     }
 
     public static async Task EnsureDatabaseAsync(this IServiceProvider services, CancellationToken cancellationToken = default)

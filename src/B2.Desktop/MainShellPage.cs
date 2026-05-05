@@ -292,6 +292,10 @@ public sealed class MainShellPage : ContentPage
                 stack,
                 AppResources.Sidebar_Item_Kvgs,
                 _services.GetRequiredService<KvgsPage>());
+            AddSidebarItem(
+                stack,
+                AppResources.Sidebar_Item_Reports,
+                _services.GetRequiredService<ReportsPage>());
         }
 
         if (_role == UserRoleDto.Admin)

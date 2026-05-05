@@ -591,22 +591,22 @@ reports return numbers matching a hand count of seeded data.
 
 ### Quartz infrastructure
 
-- [ ] **T-S4-01** [P] Implement Quartz hosted service registration in
+- [X] **T-S4-01** [P] Implement Quartz hosted service registration in
   `src/B2.Server.Service/Quartz/QuartzStartup.cs`. Job store: in-memory
   (jobs are idempotent + cron-only). Files: `QuartzStartup.cs`. **Dep**:
   T-S0-04. **LOC**: ~120.
 
 ### F-11 Daily Header Auto-Creation
 
-- [ ] **T-S4-02** [P] [F-11] Write Gherkin tests in
+- [X] **T-S4-02** [P] [F-11] Write Gherkin tests in
   `tests/B2.Application.Tests/Jobs/CreateDailyHeaderJobTests.cs` verbatim from
   `spec.md` F-11 (header-at-00:01 / catch-up-on-startup / idempotent). Tag
   `[Trait("Feature","F-11")]`. **Dep**: T-S4-01. **LOC**: ~180.
-- [ ] **T-S4-03** [F-11] Implement `DailyHeader` aggregate +
+- [X] **T-S4-03** [F-11] Implement `DailyHeader` aggregate +
   `DailyHeaderRepository` in `src/B2.Domain/DailyHeaders/` and
   `src/B2.Infrastructure/Persistence/Repositories/`. **Dep**: T-S1-06. **LOC**:
   ~150.
-- [ ] **T-S4-04** [F-11] Implement `CreateDailyHeaderJob` (Quartz cron
+- [X] **T-S4-04** [F-11] Implement `CreateDailyHeaderJob` (Quartz cron
   `0 1 0 * * ?`) + `EnsureTodayHeaderCommandHandler` in
   `src/B2.Infrastructure/Jobs/` and `src/B2.Application/DailyHeaders/`. On
   service startup, run a catch-up check. **Dep**: T-S4-01, T-S4-03. **LOC**:
@@ -614,31 +614,31 @@ reports return numbers matching a hand count of seeded data.
 
 ### F-12 Daily Summary (23:00)
 
-- [ ] **T-S4-05** [P] [F-12] Write Gherkin tests in
+- [X] **T-S4-05** [P] [F-12] Write Gherkin tests in
   `tests/B2.Application.Tests/Jobs/GenerateDailySummaryJobTests.cs` verbatim
   from `spec.md` F-12 (summary-at-23:00 / re-run-on-demand). Tag
   `[Trait("Feature","F-12")]`. **Dep**: T-S4-01. **LOC**: ~150.
-- [ ] **T-S4-06** [F-12] Implement `GenerateDailySummaryJob` (Quartz cron
+- [X] **T-S4-06** [F-12] Implement `GenerateDailySummaryJob` (Quartz cron
   `0 0 23 * * ?`) + `RecomputeDailySummaryCommandHandler` (Admin can re-run on
   demand) in `src/B2.Infrastructure/Jobs/` and
   `src/B2.Application/DailyHeaders/`. Catch-up logic for missed runs. **Dep**:
   T-S4-04. **LOC**: ~200.
-- [ ] **T-S4-07** [F-12] Wire Admin "Recompute today's summary" button
+- [X] **T-S4-07** [F-12] Wire Admin "Recompute today's summary" button
   endpoint `POST /api/daily-headers/{date}/recompute` (Admin only) in
   `DailyHeadersEndpoints.cs`. Surface in `LedgerPage.xaml` row context-menu
   per wireframe § 6.2. **Dep**: T-S4-06. **LOC**: ~150.
 
 ### FR-025 Officer name (inline edit on daily-header row)
 
-- [ ] **T-S4-08** [P] [F-11] Write integration test for
+- [X] **T-S4-08** [P] [F-11] Write integration test for
   `PATCH /api/daily-headers/{date}/officer` covering INV-11 (today only),
   audit row presence, and any-role access (FR-027). Tag
   `[Trait("Feature","F-11")]` + `[Trait("Requirement","FR-025")]`. **Dep**:
   T-S4-04. **LOC**: ~150.
-- [ ] **T-S4-09** [F-11] Implement `UpdateOfficerNameCommandHandler` and
+- [X] **T-S4-09** [F-11] Implement `UpdateOfficerNameCommandHandler` and
   PATCH endpoint in `src/B2.Application/DailyHeaders/UpdateOfficer/` and
   `DailyHeadersEndpoints.cs`. **Dep**: T-S4-04. **LOC**: ~150.
-- [ ] **T-S4-10** [F-11] Implement inline edit on
+- [X] **T-S4-10** [F-11] Implement inline edit on
   `LedgerPage.xaml` daily-header row + `EditableCell<string>` control with
   optimistic update / revert-on-failure. SignalR `DailyHeaderOfficerChanged`
   push converges other clients. **Dep**: T-S4-09, T-S3-10, T-S3-08. **LOC**:
@@ -646,25 +646,25 @@ reports return numbers matching a hand count of seeded data.
 
 ### F-14 Reports
 
-- [ ] **T-S4-11** [P] [F-14] Write Gherkin tests in
+- [X] **T-S4-11** [P] [F-14] Write Gherkin tests in
   `tests/B2.Server.Api.Tests/Reports/ReportsEndpointsTests.cs` verbatim from
   `spec.md` F-14 (hour-buckets-configurable, pending-counts-vehicles). Add
   five role-403 tests for Operator-on-each-report (FR-027). Tag
   `[Trait("Feature","F-14")]`. **Dep**: T-S4-04. **LOC**: ~280.
-- [ ] **T-S4-12** [F-14] Implement five report query handlers in
+- [X] **T-S4-12** [F-14] Implement five report query handlers in
   `src/B2.Application/Reports/`: `ByProcessorReportQueryHandler`,
   `ByYardReportQueryHandler`, `ByHourReportQueryHandler`,
   `ByOfficerReportQueryHandler`, `PendingReportQueryHandler`. All respect
   `includeCancelled` (FR-023). **Dep**: T-S2-08, T-S4-03. **LOC**: ~400.
-- [ ] **T-S4-13** [F-14] Wire five `GET /api/reports/*` endpoints in
+- [X] **T-S4-13** [F-14] Wire five `GET /api/reports/*` endpoints in
   `src/B2.Server.Api/Endpoints/ReportsEndpoints.cs` with `SupervisorOrAbove`
   policy. Make T-S4-11 green. **Dep**: T-S4-12. **LOC**: ~150.
-- [ ] **T-S4-14** [F-14] Implement `ReportsPage.xaml` + `ReportsViewModel.cs`
+- [X] **T-S4-14** [F-14] Implement `ReportsPage.xaml` + `ReportsViewModel.cs`
   per [wireframe § 6.6](../05-ui-wireframes.md). Sortable columns; bar viz
   using `█` characters; copy-to-clipboard + simple Excel export (ClosedXML
   generic, **not** the Sổ B2 template — that's F-13). Vietnamese copy verbatim.
   **Dep**: T-S4-13. **LOC**: ~400. **DoD**: §DoD-6.
-- [ ] **T-S4-15** Implement `ArchUnit` test in `tests/B2.Server.Api.Tests/`
+- [X] **T-S4-15** Implement `ArchUnit` test in `tests/B2.Server.Api.Tests/`
   verifying every endpoint declared in `contracts/openapi.yaml` is wired with a
   matching policy from FR-027 (no endpoint left without a `[Authorize]`
   attribute or anonymous + reason). **Dep**: T-S4-13. **LOC**: ~120.

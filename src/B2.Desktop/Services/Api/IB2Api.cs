@@ -1,6 +1,7 @@
 using B2.Shared.Contracts.Auth;
 using B2.Shared.Contracts.Declarations;
 using B2.Shared.Contracts.MasterData;
+using B2.Shared.Contracts.Reports;
 using B2.Shared.Contracts.Users;
 using Refit;
 
@@ -101,4 +102,50 @@ public interface IB2Api
 
     [Post("/api/declarations/{id}/kvgs-confirm")]
     Task ConfirmKvgsAsync(Guid id, CancellationToken cancellationToken = default);
+
+    [Patch("/api/daily-headers/{date}/officer")]
+    Task UpdateOfficerNameAsync(string date, [Body] UpdateOfficerNameRequest request, CancellationToken cancellationToken = default);
+
+    [Post("/api/daily-headers/{date}/recompute")]
+    Task RecomputeDailySummaryAsync(string date, [Body] RecomputeDailySummaryRequest request, CancellationToken cancellationToken = default);
+
+    [Get("/api/daily-headers/")]
+    Task<List<DailyHeaderDto>> ListDailyHeadersAsync(
+        [Query] string from,
+        [Query] string to,
+        CancellationToken cancellationToken = default);
+
+    [Get("/api/reports/by-processor")]
+    Task<List<ProcessorReportItemDto>> GetByProcessorReportAsync(
+        [Query] string from,
+        [Query] string to,
+        [Query] bool includeCancelled = false,
+        CancellationToken cancellationToken = default);
+
+    [Get("/api/reports/by-yard")]
+    Task<List<YardReportItemDto>> GetByYardReportAsync(
+        [Query] string from,
+        [Query] string to,
+        [Query] bool includeCancelled = false,
+        CancellationToken cancellationToken = default);
+
+    [Get("/api/reports/by-hour")]
+    Task<List<HourReportItemDto>> GetByHourReportAsync(
+        [Query] string date,
+        [Query] int? bucketMinutes = null,
+        [Query] bool includeCancelled = false,
+        CancellationToken cancellationToken = default);
+
+    [Get("/api/reports/by-officer")]
+    Task<List<OfficerReportItemDto>> GetByOfficerReportAsync(
+        [Query] string from,
+        [Query] string to,
+        [Query] bool includeCancelled = false,
+        CancellationToken cancellationToken = default);
+
+    [Get("/api/reports/pending")]
+    Task<List<PendingReportItemDto>> GetPendingReportAsync(
+        [Query] DateTimeOffset? asOf = null,
+        [Query] bool includeCancelled = false,
+        CancellationToken cancellationToken = default);
 }

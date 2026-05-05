@@ -11,4 +11,10 @@ public sealed class SignalRLedgerDispatcher : ISignalRDomainEventDispatcher
 
     public Task PublishDeclarationLedgerChangedAsync(Guid declarationId, CancellationToken cancellationToken = default) =>
         _hubContext.Clients.All.SendAsync("LedgerChanged", new { declarationId }, cancellationToken);
+
+    public Task PublishDailyHeaderOfficerChangedAsync(DateOnly date, string officerName, CancellationToken cancellationToken = default) =>
+        _hubContext.Clients.All.SendAsync(
+            "DailyHeaderOfficerChanged",
+            new { date = date.ToString("yyyy-MM-dd", System.Globalization.CultureInfo.InvariantCulture), officerName },
+            cancellationToken);
 }
