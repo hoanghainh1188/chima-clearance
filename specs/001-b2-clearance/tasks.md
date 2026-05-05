@@ -96,16 +96,16 @@ integration sweeps where appropriate.
 
 ## Sprint overview table
 
-| Sprint | Tasks | Feature IDs | Approx. LOC |
-| --- | --- | --- | --- |
-| S0 | T-S0-01 .. T-S0-12 (12) | infra | ~600 |
-| S1 | T-S1-01 .. T-S1-21 (21) | F-01, F-02, F-03, F-04 | ~3 500 |
-| S2 | T-S2-01 .. T-S2-22 (22) | F-05, F-06, F-07, F-08 + FR-019/024 | ~4 500 |
-| S3 | T-S3-01 .. T-S3-12 (12) | F-09, F-10 + FR-027/FR-028 | ~2 500 |
-| S4 | T-S4-01 .. T-S4-15 (15) | F-11, F-12, F-14 + FR-025 | ~2 800 |
-| S5 | T-S5-01 .. T-S5-19 (19) | F-13, F-15, F-16, F-18 + FR-022/026 | ~3 800 |
-| S6 | T-S6-01 .. T-S6-12 (12) | F-17 simple v1 + a11y + runbook + UAT | ~1 800 |
-| **Total** | **113 tasks** | 18 features + 7 cross-cutting FRs | **~19 500 LOC** |
+| Sprint | Tasks | Feature IDs | Approx. LOC | Status |
+| --- | --- | --- | --- | --- |
+| S0 | T-S0-01 .. T-S0-12 (12) | infra | ~600 | ✅ Merged (PR #2 `fab8c55`) |
+| S1 | T-S1-01 .. T-S1-21 (21) | F-01, F-02, F-03, F-04 | ~3 500 | ✅ Merged (PR #4 `3407a5c`) |
+| S2 | T-S2-01 .. T-S2-22 (22) | F-05, F-06, F-07, F-08 + FR-019/024 | ~4 500 | ✅ Merged (PR #5 `de24ec5`) |
+| S3 | T-S3-01 .. T-S3-12 (12) | F-09, F-10 + FR-027/FR-028 | ~2 500 | ✅ Merged (PRs #6/#7/#8/#9/#11/#12/#15/#16, #13 CI fix) |
+| S4 | T-S4-01 .. T-S4-15 (15) | F-11, F-12, F-14 + FR-025 | ~2 800 | ✅ Merged (PR #18 `9f0d15b` + docs PR #19 `6514c2e`); 9 carry-overs `T-S4-CO-01..09` deferred to S5 |
+| S5 | T-S5-01 .. T-S5-19 (19) | F-13, F-15, F-16, F-18 + FR-022/026 | ~3 800 | ⏳ Pending |
+| S6 | T-S6-01 .. T-S6-12 (12) | F-17 simple v1 + a11y + runbook + UAT | ~1 800 | ⏳ Pending |
+| **Total** | **113 tasks** | 18 features + 7 cross-cutting FRs | **~19 500 LOC** | **75/113 tasks merged (S0–S4 done)** |
 
 > Per directive rule 1: every task is PR-sized (≤ 1 dev-day or ≤ 400 LOC diff).
 
