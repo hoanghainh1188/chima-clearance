@@ -6,38 +6,94 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 
-Sprint S3 is merged on `main`; Sprint S4 is implemented in the current
-working branch for review (Quartz jobs + daily-header officer edit +
-reports API + desktop reports surface). Remaining low-priority polish from
-S3: ledger child-vehicle expand/collapse, right-click context menu,
+Sprints S0 through S4 are merged on `main`. Remaining low-priority polish
+from S3: ledger child-vehicle expand/collapse, right-click context menu,
 300/400 ms animations on SignalR push, sidebar collapse toggle, focus-ring
-style sweep, ⚙️ quick-settings menu, top-right toast position.
+style sweep, ⚙️ quick-settings menu, top-right toast position. S4 review
+carry-over items (`T-S4-CO-01..09`) tracked under Phase 5 of `tasks.md`
+and slated for early Sprint S5.
 
 ### Added
 
-#### Sprint S4 — Background jobs + reports (`unreleased branch`)
+#### PR #18 — Sprint S4: Quartz jobs + reports + officer name (`9f0d15b`)
+
+Squash-merged 2026-05-05 after 5 commits. Combines Cursor's first-pass
+S4 implementation with a review-fix layer. CI green on `windows-2022` +
+`ubuntu-latest`; gitleaks transient runner-acquisition failure on the
+post-merge run was cleared by re-running the failed job.
 
 - **F-11 Daily Header**:
-  - `EnsureTodayHeaderCommandHandler` + `CreateDailyHeaderJob` (cron `0 1 0 * * ?`).
-  - `IDailyHeaderRepository` + `DailyHeaderRepository` for date-based header lookups.
+  - `EnsureTodayHeaderCommandHandler` + `CreateDailyHeaderJob` (cron `0 1 0 * * ?` Asia/Ho_Chi_Minh).
+  - `DailyHeaderCatchupHostedService` runs ensure-today + recompute-today on Windows Service start.
+  - `IDailyHeaderRepository` (`GetByDateAsync`, `GetByDateRangeAsync`, `CountVehiclesEnteredOnDateAsync`).
 - **F-12 Daily Summary**:
   - `RecomputeDailySummaryCommandHandler` + `GenerateDailySummaryJob` (cron `0 0 23 * * ?`).
   - Admin endpoint `POST /api/daily-headers/{date}/recompute`.
+  - Ledger daily-header row gets an Admin-only `Tính lại` button (ConfirmPopup → POST → toast).
 - **FR-025 Officer name inline edit**:
-  - `UpdateOfficerNameCommandHandler` + validator and endpoint
-    `PATCH /api/daily-headers/{date}/officer`.
-  - Ledger daily-header row now has inline officer input + save action.
+  - `UpdateOfficerNameCommandHandler` + validator (today-only INV-11) + endpoint
+    `PATCH /api/daily-headers/{date}/officer` (any-authenticated per FR-027).
+  - SignalR `DailyHeaderOfficerChanged` broadcast on `EventsHub` so other clients converge.
+  - Desktop optimistic edit with revert-on-failure; cache `_officerByDate` so existing
+    officer names render after a refresh and the user's typed value isn't blanked
+    on validation errors.
 - **F-14 Reports**:
   - `IReportsRepository` + `ReportsRepository` projections:
     by-processor / by-yard / by-hour / by-officer / pending.
-  - New API endpoints under `/api/reports/*` with `SupervisorOrAbove` policy.
-  - New desktop `ReportsPage` + `ReportsViewModel` and sidebar navigation entry.
+  - Five `GET /api/reports/*` endpoints with `SupervisorOrAbove`.
+  - Five role-403 tests for Operator-on-each-report.
+  - Rebuilt `ReportsPage` (wireframe § 6.6): date-range pickers,
+    IncludeCancelled toggle, sortable columns per section, Sao chép (TSV
+    → clipboard), Xuất Excel (ClosedXML to `~/Documents/B2-Reports-*.xlsx`).
+  - Snapshot collections + `Task.Run` around `workbook.SaveAs` so a large
+    export doesn't freeze the MAUI UI thread or stall SignalR delivery.
+- **GET /api/daily-headers** — `ListDailyHeadersQueryHandler` returns
+  `DailyHeaderDto[]` for a date range so the ledger can render the existing
+  officer-name overlay (previously a blank field on every render).
+- **ArchUnit**: `EndpointPolicyAlignmentTests` ensures mapped `/api/*`
+  endpoints declare authorization or explicit anonymous policy. (Carry-over
+  T-S4-CO-01 strengthens this to specific FR-027 policy alignment.)
+- **Audit accuracy**: `UpdateOfficerNameCommandHandler` and
+  `RecomputeDailySummaryCommandHandler` now branch by `isNew` so the
+  immutable AuditLog records `Create` on first-of-day insertion and the
+  appropriate Update / `OfficerNameChanged` on subsequent edits — no
+  more `Update` rows on what is actually an `INSERT`.
 - **Testing**:
   - `B2.Application.Tests/Jobs/DailyHeaderJobTests.cs` for F-11/F-12 scenarios.
-  - `B2.Server.Api.Tests/Declarations/DailyHeadersEndpointTests.cs` for FR-025 + recompute.
+  - `B2.Server.Api.Tests/Declarations/DailyHeadersEndpointTests.cs` covers
+    FR-025 PATCH (today + audit row) and the new GET range endpoint.
   - `B2.Server.Api.Tests/Reports/ReportsEndpointsTests.cs` for F-14 scenarios + role-403 checks.
-  - `EndpointPolicyAlignmentTests` ensures mapped `/api/*` endpoints declare
-    authorization or explicit anonymous policy.
+
+##### Round-2 review fixes folded into the same PR
+
+- **CRITICAL — host crash**: `HttpAuditContext.Set` used to throw
+  `InvalidOperationException("No HttpContext.")` when called outside the
+  HTTP pipeline. The Quartz cron jobs and the startup catch-up host both
+  call audit-emitting handlers — production Windows Service would have
+  crashed at boot. Now no-ops gracefully outside HTTP per FR-003 ("audit
+  binds to successful mutating requests"; cron-driven runs leave their
+  trail in the data itself).
+- **CRITICAL — Designer.cs sync**: 35+ resource keys (Reports_*,
+  Sidebar_Item_Reports, Ledger_Header_OfficerPlaceholder, Common_Save)
+  were only in `AppResources.vi.resx`. Designer.cs is the static accessor
+  compiled into B2.Desktop, so the missing entries surfaced as Windows-only
+  XamlC `XFC0101` and CS errors. Added all of them.
+- **CRITICAL — UTF-8 BOM regression**: 7 Desktop files had BOMs introduced
+  by Cursor's editor; `.editorconfig charset = utf-8` is enforced by
+  `dotnet format` against the full B2.sln on Windows CI. Stripped them.
+- **HIGH — analyzer cleanup**:
+  - CA1305 in `ReportsViewModel.WriteSheet`: replaced
+    `XLCellValue.FromObject(object)` with typed implicit conversions
+    (no `IFormatProvider` dependency since values are already typed).
+  - CA1859 in `LedgerViewModel.RebuildDisplayItems`: parameter type
+    tightened from `IReadOnlyDictionary<DateOnly, string?>` to
+    `Dictionary<DateOnly, string?>`.
+- **Audit JSON consistency**: `RecomputeDailySummaryCommandHandler` and
+  `UpdateOfficerNameCommandHandler` both emit before/after JSON via
+  `JsonSerializer.Serialize` instead of hand-rolled string concat.
+- **Carry-over** (`T-S4-CO-01..09`): items intentionally deferred from the
+  PR-18 review — see `specs/001-b2-clearance/tasks.md` Phase 5 tail for the
+  full enumerated list.
 
 #### PR #6 — Sprint S3 partial (`e926982`)
 

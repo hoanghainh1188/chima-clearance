@@ -16,14 +16,16 @@ Auto-generated from all feature plans. Last updated: 2026-05-04
 | --- | --- | --- | --- |
 | `001-b2-clearance` — Customs Gate B2 vehicle clearance log replacement | [spec.md](specs/001-b2-clearance/spec.md) | [plan.md](specs/001-b2-clearance/plan.md) | [v1.1.0](.specify/memory/constitution.md) |
 
-Active phase: **Sprint S4 complete on branch** — F-11/F-12 background jobs
-(daily-header create + daily-summary recompute), FR-025 daily-header
-officer-name inline edit, and F-14 report endpoints (processor/yard/hour/
-officer/pending) are implemented with test coverage in this working branch.
-Next phase is Sprint S5 unless S3 visual-polish backlog items get prioritized
-(child-vehicle expand/collapse, right-click context menu, 300/400 ms
-SignalR animations, sidebar collapse toggle, focus-ring sweep, quick-settings
-menu, top-right toast position).
+Active phase: **Sprint S4 merged on `main`** (PR #18 / `9f0d15b`). Next is
+Sprint S5 (Sổ B2 Excel export + Litestream backup + on-demand snapshot +
+audit viewer + admin health). S3 visual-polish backlog (child-vehicle
+expand/collapse, right-click context menu, 300/400 ms SignalR animations,
+sidebar collapse toggle, focus-ring sweep, quick-settings menu, top-right
+toast position) and S4 review carry-overs (`T-S4-CO-01..09`) remain in
+the pool of low-priority items. Carry-over highlights: strengthen
+`EndpointPolicyAlignmentTests` to FR-027 specificity, multi-day catch-up
+in `DailyHeaderCatchupHostedService`, GetByOfficerAsync transaction
++ KVGS-only-officer fix, ConnectivityService.Dispose hub teardown.
 
 **Done**: S0 (scaffold, ADRs 0001–0006), S1 (F-01/F-02/F-03/F-04 — auth,
 users, master data, force-rotate password), S2 (F-05/F-06/F-07/F-08 —
@@ -31,8 +33,12 @@ declaration entry, add child vehicle, suffix search, mark exit), S3 core
 (F-09 KVGS + F-10 ledger + SignalR realtime + wireframe § 5 sidebar shell
 + Modal popup focus-trap + Toast severity timing + FR-028 Serilog logging
 + Constitution VI tokens + functional Cỡ chữ dropdown + KVGS row fade-out
-animation + self-monitoring counter). **S4 (F-11/F-12/F-14 + FR-025) is
-implemented and validated on this branch, pending review/merge.**
+animation + self-monitoring counter), **S4 (F-11/F-12/F-14 + FR-025 —
+Quartz daily-header + daily-summary jobs, officer-name inline edit with
+SignalR `DailyHeaderOfficerChanged` push and optimistic edit, full
+ReportsPage rebuild with sortable columns + clipboard + ClosedXML export,
+Admin recompute action, GET /api/daily-headers list endpoint).** All
+merged to `main`.
 
 ---
 
@@ -244,6 +250,27 @@ Yellow / red banners stay persistent in their respective states (no toast spam).
 
 ## Recent Changes
 
+- **2026-05-05** — Sprint S4 merged via PR #18 (`9f0d15b`): Quartz cron
+  jobs (`CreateDailyHeader` 0 1 0 * * ? + `GenerateDailySummary` 0 0 23
+  * * ? in `Asia/Ho_Chi_Minh`); five `/api/reports/*` endpoints
+  (`SupervisorOrAbove`); `PATCH /api/daily-headers/{date}/officer`
+  (any-authenticated, INV-11 today-only) + new `DailyHeaderOfficerChanged`
+  SignalR event so other clients converge live; `POST
+  /api/daily-headers/{date}/recompute` (Admin) surfaced as the ledger
+  daily-header `Tính lại` button; new `GET /api/daily-headers/?from=&to=`
+  feeds the ledger officer-name overlay; rebuilt `ReportsPage` (date
+  pickers + IncludeCancelled toggle + sortable column grids per section
+  + `Sao chép` TSV → clipboard + `Xuất Excel` ClosedXML to
+  `~/Documents/B2-Reports-*.xlsx`); audit handlers branch by `isNew` so
+  the immutable AuditLog records `Create` vs `Update`/`OfficerNameChanged`
+  correctly; `HttpAuditContext.Set` no-ops outside HTTP so Quartz cron
+  + startup catch-up don't crash the Windows Service. Round-2 fixes
+  folded in: stripped 7 UTF-8 BOMs Cursor introduced into Desktop files,
+  added 35+ missing `AppResources.Designer.cs` accessors (`Reports_*`,
+  `Sidebar_Item_Reports`, `Common_Save`, `Ledger_Header_OfficerPlaceholder`),
+  cleared CA1305 (XLCellValue.FromObject) and CA1859 (concrete
+  `Dictionary` parameter) analyzer errors. Carry-overs `T-S4-CO-01..09`
+  documented at the tail of `tasks.md` Phase 5.
 - **2026-05-04** — Sprint S3 **Round 3e** merged via PR #16: list-view
   skeletons (`Views/Common/SkeletonRows`) + correlationId on every
   error banner (`Views/Common/ErrorCodeBanner`) across Ledger / Kvgs /
