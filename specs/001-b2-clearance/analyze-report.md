@@ -245,3 +245,71 @@ FR/NFR, infrastructure (S0), or quality gates (S6 polish/UAT/runbook).
 **None.** Implementation may proceed to `/speckit.implement` Sprint S0. W2 and W3
 should be resolved during S0 (alongside the existing ADR-0006 authoring task
 T-S0-11) before any task that depends on them ships.
+
+---
+
+## Resolution Log (updated 2026-05-05 — post-S4 merge)
+
+The findings below have a status snapshot now that Sprints S0–S4 have all
+merged to `main`. The original 2026-05-03 audit text is left intact above for
+historical traceability; this section is the authoritative current state.
+
+| ID | Original verdict | Status (2026-05-05) | Evidence |
+| --- | --- | --- | --- |
+| **W1** | HIGH — 5 sprints exceed 2 000 LOC budget | 🟢 ACCEPTED | S0–S4 actuals tracked. Re-baseline KPI per-sprint review; no scope dilution. |
+| **W2** | HIGH — ArchUnitNET added without ADR | 🟢 RESOLVED (alt) | T-S0-04 + T-S4-15 shipped using `Microsoft.AspNetCore.Routing.EndpointDataSource` reflection in `tests/B2.Server.Api.Tests/Architecture/{LayerRulesTests,EndpointPolicyAlignmentTests}.cs`. ArchUnitNET dependency was **not** added; no new ADR needed. The "ArchUnit" label in `tasks.md` is naming-only. (Strengthening to FR-027 specificity is tracked as `T-S4-CO-01`.) |
+| **W3** | HIGH — T-S4-07 endpoint undeclared | 🟢 RESOLVED | `POST /api/daily-headers/{date}/recompute` shipped in PR #18 (`9f0d15b`) under `B2Policies.AdminOnly`. Endpoint lives in `src/B2.Server.Api/Endpoints/DailyHeadersEndpoints.cs`; openapi.yaml + ADR-0006 still need a parity update — captured below as **doc-A1**. |
+| **M1** | MEDIUM — F-03/F-04 impl tasks labeled S2 | 🟢 ACCEPTED | Doc nit. Tasks shipped on schedule under S2 IDs. |
+| **M2** | MEDIUM — NFR-001 design tokens lack bootstrap task | 🟢 RESOLVED | `Resources/Styles/Colors.xaml` + `Typography.xaml` shipped in S3 (PRs #6, #7). Constitution VI compliance asserted by manual review — no hard-coded hex/sizes outside the token files. |
+| **M3** | MEDIUM — NFR-003 list-view states not reusable | 🟡 PARTIAL | PR #16 (R3e) shipped `Views/Common/SkeletonRows` + `Views/Common/ErrorCodeBanner` as reusable building blocks across Ledger/Kvgs/Users/MasterData/Exit. A single end-to-end `ListStateView<T>` wrapper is **not** present; each page composes the four states manually. Consider follow-up under `T-S5-CO` if Audit/Logs lists in S5 grow the duplication. |
+| **M4** | MEDIUM — system-wide audit-sweep test | 🔴 OPEN | Targeted at S5 audit-viewer task T-S5-17. Carry-over. |
+| **M5** | MEDIUM — 401-after-deactivation untested | 🔴 OPEN | Carry-over to S5 hardening. |
+| **M6** | MEDIUM — cancel-vs-exit race untested | 🔴 OPEN | Targeted at S5 cancel task T-S5-14. Carry-over. |
+| **M7** | MEDIUM — 3 missing Supervisor-403 tests | 🔴 OPEN | Extend T-S2-06 / T-S2-13 / T-S2-19. Sprint S5 hardening. |
+| **L1** | LOW — `01-overview.md § 6` doc nit | 🟢 ACCEPTED | No code impact. |
+| **D-caveat** | LOW — UAT depth | 🟢 ACCEPTED | Inherent. |
+
+### S4 carry-overs surfaced after the original audit
+
+These items came out of the PR #18 code-review pass and live as
+`T-S4-CO-01..09` in `tasks.md` Phase 5 tail. They are slated for early
+Sprint S5:
+
+- **T-S4-CO-01** Strengthen `EndpointPolicyAlignmentTests` to verify each
+  route maps to the *specific* FR-027 policy (not just any auth attribute).
+- **T-S4-CO-02** Add F-11 catch-up-on-startup Gherkin test.
+- **T-S4-CO-03** Multi-day catch-up in `DailyHeaderCatchupHostedService`
+  (currently catches up *today* only).
+- **T-S4-CO-04** `ReportsRepository.GetByOfficerAsync` — wrap two
+  `ToListAsync` calls in a snapshot transaction; surface officers who only
+  KVGS-confirmed (currently dropped from the projection).
+- **T-S4-CO-05** Drop redundant `.Include(v => v.Declaration)` from
+  `BaseVehicleQuery`.
+- **T-S4-CO-06** Consolidate `ResolveVietnamTimeZone` (3 duplicates → 1).
+- **T-S4-CO-07** Move `UpdateOfficerNameCommandValidator` English literal
+  to a resource key (Constitution VI).
+- **T-S4-CO-08** Parallelise `ReportsViewModel.LoadAsync` with `Task.WhenAll`.
+- **T-S4-CO-09** `ConnectivityService.Dispose` should also dispose the
+  `HubConnection`.
+
+### Doc-only follow-ups
+
+- **doc-A1** Update `contracts/openapi.yaml` and `ADR-0006` to declare the
+  three S4 endpoints (`POST /api/daily-headers/{date}/recompute`,
+  `PATCH /api/daily-headers/{date}/officer`, `GET /api/daily-headers`) as
+  shipped. Currently they live in code only. Cleanup, no behavioural impact.
+
+### Sprint completion status (2026-05-05)
+
+| Sprint | Tasks | PRs | Status |
+| --- | --- | --- | --- |
+| S0 | T-S0-01..11 | #2 (`fab8c55`) | ✅ Merged |
+| S1 | T-S1-01..21 | #4 (`3407a5c`) | ✅ Merged |
+| S2 | T-S2-01..22 | #5 (`de24ec5`) | ✅ Merged |
+| S3 | T-S3-01..12 | #6, #7, #8, #9, #11, #12, #15, #16 (+ #13 CI fix) | ✅ Merged |
+| **S4** | **T-S4-01..15** | **#18 (`9f0d15b`) + #19 docs (`6514c2e`)** | ✅ **Merged** |
+| S5 | T-S5-01..19 | — | ⏳ Pending |
+| S6 | T-S6-01..12 | — | ⏳ Pending |
+
+Carry-overs (`T-S4-CO-01..09`) are tracked at the tail of Phase 5 in
+`tasks.md` and will be picked up alongside Sprint S5 planning.

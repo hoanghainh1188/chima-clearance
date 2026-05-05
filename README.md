@@ -104,10 +104,10 @@ Phase 1 ships in 6 × 2-week sprints (S0..S6) per
 | **S0** | Bootstrap (scaffold, CI, ADRs 0001–0006) | ✅ done — PR #2 |
 | **S1** | Core domain + auth (F-01..F-04) | ✅ done — PR #4 |
 | **S2** | Entry & exit happy path (F-05..F-08) | ✅ done — PR #5 |
-| **S3** | KVGS + ledger + realtime (F-09, F-10) | 🟡 substantially shipped — PRs #6 (core), #7 (R1: FR-028 logging + F-10 test + tokens), #8 (R2: modal popup focus-trap + Toast severity), #9 (R3a: wireframe § 5 sidebar + Alt+1..8 + F1), #11 (R3b: functional Cỡ chữ dropdown), #12 (R3c: KVGS row fade + Đã xác nhận hôm nay widget), #15 (R3d: ledger drawer chi tiết + F5 / `/` / Esc shortcuts), #16 (R3e: list-view skeletons + correlationId on error banners). Remaining low-priority polish: ledger child-vehicle expand/collapse, right-click context menu, 300/400 ms animations on SignalR push, sidebar collapse toggle, focus-ring style sweep, ⚙️ quick-settings menu, top-right toast position. |
-| S4 | Background jobs + reports (F-11, F-12, F-14) | ⬜ not started |
-| S5 | Export, backup, audit (F-13, F-15, F-16, F-18) | ⬜ |
-| S6 | Hardening (F-17 simple v1 + a11y + runbook + UAT) | ⬜ |
+| **S3** | KVGS + ledger + realtime (F-09, F-10) | ✅ done — PRs #6 (core), #7 (R1: FR-028 logging + F-10 test + tokens), #8 (R2: modal popup focus-trap + Toast severity), #9 (R3a: wireframe § 5 sidebar + Alt+1..8 + F1), #11 (R3b: functional Cỡ chữ dropdown), #12 (R3c: KVGS row fade + Đã xác nhận hôm nay widget), #15 (R3d: ledger drawer chi tiết + F5 / `/` / Esc shortcuts), #16 (R3e: list-view skeletons + correlationId on error banners). Low-priority visual polish carries to a backlog: ledger child-vehicle expand/collapse, right-click context menu, 300/400 ms animations on SignalR push, sidebar collapse toggle, focus-ring style sweep, ⚙️ quick-settings menu, top-right toast position. |
+| **S4** | Background jobs + reports (F-11, F-12, F-14 + FR-025) | ✅ done — PR #18 (`9f0d15b`: Quartz daily-header `0 1 0 * * ?` + daily-summary `0 0 23 * * ?` jobs in `Asia/Ho_Chi_Minh`; five `/api/reports/*` endpoints with `SupervisorOrAbove`; PATCH `/api/daily-headers/{date}/officer` + SignalR `DailyHeaderOfficerChanged` push; Admin POST `/api/daily-headers/{date}/recompute` exposed as the ledger `Tính lại` button; rebuilt `ReportsPage` per wireframe § 6.6 with sortable columns + clipboard + ClosedXML export; HttpAuditContext no-ops outside HTTP so cron jobs no longer crash the Windows Service host). Docs follow-up in PR #19 (`6514c2e`) and PR #20 (status rollup). 9 carry-overs `T-S4-CO-01..09` deferred to S5 hardening — see [`specs/001-b2-clearance/tasks.md`](./specs/001-b2-clearance/tasks.md) Phase 5 tail. |
+| S5 | Export, backup, audit (F-13, F-15, F-16, F-18) | ⬜ not started |
+| S6 | Hardening (F-17 simple v1 + a11y + runbook + UAT) | ⬜ not started |
 
 ---
 
