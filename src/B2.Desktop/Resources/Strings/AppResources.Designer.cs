@@ -43,6 +43,7 @@ public static class AppResources
     public static string Common_Logout => ResourceManager.GetString(nameof(Common_Logout), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Common_No => ResourceManager.GetString(nameof(Common_No), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Common_Retry => ResourceManager.GetString(nameof(Common_Retry), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Common_Save => ResourceManager.GetString(nameof(Common_Save), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Common_Yes => ResourceManager.GetString(nameof(Common_Yes), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Connectivity_Offline => ResourceManager.GetString(nameof(Connectivity_Offline), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Connectivity_OfflineBanner => ResourceManager.GetString(nameof(Connectivity_OfflineBanner), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
