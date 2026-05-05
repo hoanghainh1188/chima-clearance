@@ -492,7 +492,7 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
         IReadOnlyList<DeclarationSummaryDto> items,
         int page,
         int pageSize,
-        IReadOnlyDictionary<DateOnly, string?> officerByDate,
+        Dictionary<DateOnly, string?> officerByDate,
         ObservableCollection<LedgerUiItem> target)
     {
         target.Clear();

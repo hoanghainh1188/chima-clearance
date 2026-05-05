@@ -268,16 +268,28 @@ public sealed partial class ReportsViewModel : ObservableObject
             var values = rowFn(item);
             for (var i = 0; i < values.Length; i++)
             {
-                var v = values[i];
-                ws.Cell(r, i + 1).Value = v switch
+                var cell = ws.Cell(r, i + 1);
+                switch (values[i])
                 {
-                    int n => XLCellValue.FromObject(n),
-                    double d => XLCellValue.FromObject(d),
-                    DateTimeOffset dto => XLCellValue.FromObject(dto.LocalDateTime),
-                    DateTime dt => XLCellValue.FromObject(dt),
-                    null => Blank.Value,
-                    _ => XLCellValue.FromObject(v.ToString() ?? string.Empty),
-                };
+                    case null:
+                        cell.Value = Blank.Value;
+                        break;
+                    case int n:
+                        cell.Value = n;
+                        break;
+                    case double d:
+                        cell.Value = d;
+                        break;
+                    case DateTimeOffset dto:
+                        cell.Value = dto.LocalDateTime;
+                        break;
+                    case DateTime dt:
+                        cell.Value = dt;
+                        break;
+                    default:
+                        cell.Value = values[i].ToString() ?? string.Empty;
+                        break;
+                }
             }
 
             r++;
