@@ -3,7 +3,9 @@ using B2.Application.Declarations;
 using B2.Application.Declarations.ConfirmKvgs;
 using B2.Application.Declarations.Exit;
 using B2.Application.Declarations.List;
+using B2.Application.DailyHeaders;
 using B2.Application.MasterData;
+using B2.Application.Reports;
 using B2.Application.Users;
 using B2.Application.Vehicles;
 using FluentValidation;
@@ -28,6 +30,15 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<ListDeclarationsQueryHandler>();
         services.AddScoped<GetDeclarationDetailQueryHandler>();
         services.AddScoped<SearchVehiclesBySuffixQueryHandler>();
+        services.AddScoped<EnsureTodayHeaderCommandHandler>();
+        services.AddScoped<RecomputeDailySummaryCommandHandler>();
+        services.AddScoped<UpdateOfficerNameCommandHandler>();
+        services.AddScoped<ListDailyHeadersQueryHandler>();
+        services.AddScoped<ByProcessorReportQueryHandler>();
+        services.AddScoped<ByYardReportQueryHandler>();
+        services.AddScoped<ByHourReportQueryHandler>();
+        services.AddScoped<ByOfficerReportQueryHandler>();
+        services.AddScoped<PendingReportQueryHandler>();
         services.AddValidatorsFromAssemblyContaining<Auth.Validators.LoginRequestValidator>();
         return services;
     }

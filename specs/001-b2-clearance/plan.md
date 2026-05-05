@@ -326,15 +326,19 @@ artifact, not a technology change.
 
 ---
 
-## Sprint S3 progress (2026-05-04)
+## Sprint S4 progress (2026-05-05)
 
-**Done (backend + API tests)**: `T-S3-01`–`T-S3-03` (KVGS), `T-S3-05`–`T-S3-08`
-(ledger list/detail, SignalR hub + dispatcher hooks, integration tests including
-SignalR over `WebApplicationFactory.Server`). `dotnet format` / `dotnet build` /
-`dotnet test` on `B2.NoMaui.slnf` are green on macOS CI subset.
+**Done**: `T-S4-01`–`T-S4-15` are implemented in this branch:
 
-**Remaining for S3 exit**: `T-S3-04` (Kvgs MAUI page), `T-S3-09`–`T-S3-12`
-(SignalR client + connectivity, Ledger/AppShell, Toast/Modal services on Desktop).
+- Quartz scheduling now wires daily header (`0 1 0 * * ?`) and summary (`0 0 23 * * ?`) jobs.
+- `DailyHeader` repository + handlers cover ensure-header, recompute-summary, and officer-name edit.
+- New endpoints: `POST /api/daily-headers/{date}/recompute`, `PATCH /api/daily-headers/{date}/officer`,
+  and `GET /api/reports/{by-processor|by-yard|by-hour|by-officer|pending}`.
+- Reports query handlers + repository projections for F-14 are live and covered by API tests.
+- Desktop now includes inline officer edit on ledger daily-header rows and a new reports view.
+- Policy-alignment architecture test added for mapped `/api/*` endpoints.
+
+**Validation**: `dotnet format B2.NoMaui.slnf --verify-no-changes`, `dotnet build B2.NoMaui.slnf -c Release /p:TreatWarningsAsErrors=true`, and `dotnet test B2.NoMaui.slnf -c Release --no-build` are green locally on macOS for non-MAUI projects.
 
 ---
 

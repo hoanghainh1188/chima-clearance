@@ -525,6 +525,9 @@
   <data name="Sidebar_Item_Kvgs" xml:space="preserve">
     <value>✅ KVGS</value>
   </data>
+  <data name="Sidebar_Item_Reports" xml:space="preserve">
+    <value>📊 Báo cáo</value>
+  </data>
   <data name="Sidebar_Item_MasterData" xml:space="preserve">
     <value>🗂️ Danh mục</value>
   </data>
@@ -552,6 +555,9 @@
   <data name="Common_Close" xml:space="preserve">
     <value>Đóng</value>
   </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>Lưu</value>
+  </data>
   <data name="Shortcuts_Title" xml:space="preserve">
     <value>Phím tắt</value>
   </data>
@@ -564,5 +570,110 @@ Esc — Đóng modal / xóa tìm kiếm
 Alt+1 … Alt+8 — Chuyển nhanh giữa các tab
 
 (Các phím tắt chưa kích hoạt sẽ được bổ sung ở phiên bản tiếp theo.)</value>
+  </data>
+  <data name="Ledger_Header_OfficerPlaceholder" xml:space="preserve">
+    <value>Nhập tên trực chính</value>
+  </data>
+  <data name="Reports_Title" xml:space="preserve">
+    <value>Báo cáo</value>
+  </data>
+  <data name="Reports_ByProcessor_Title" xml:space="preserve">
+    <value>Theo người làm thủ tục</value>
+  </data>
+  <data name="Reports_ByYard_Title" xml:space="preserve">
+    <value>Theo bãi</value>
+  </data>
+  <data name="Reports_ByHour_Title" xml:space="preserve">
+    <value>Theo giờ xuất</value>
+  </data>
+  <data name="Reports_ByOfficer_Title" xml:space="preserve">
+    <value>Theo cán bộ</value>
+  </data>
+  <data name="Reports_Pending_Title" xml:space="preserve">
+    <value>Xe còn trong cổng</value>
+  </data>
+  <data name="Reports_Error_Format" xml:space="preserve">
+    <value>Tải báo cáo thất bại (mã {0}).</value>
+  </data>
+  <data name="Reports_Error_Network" xml:space="preserve">
+    <value>Tải báo cáo thất bại (lỗi mạng).</value>
+  </data>
+  <data name="Ledger_Recompute_Action" xml:space="preserve">
+    <value>Tính lại</value>
+  </data>
+  <data name="Ledger_Recompute_ConfirmTitle" xml:space="preserve">
+    <value>Tính lại số liệu ngày</value>
+  </data>
+  <data name="Ledger_Recompute_ConfirmMessage" xml:space="preserve">
+    <value>Bạn có chắc chắn muốn tính lại tổng số xe và lưu lại Sổ B2 cho ngày {0}?</value>
+  </data>
+  <data name="Ledger_Recompute_Success" xml:space="preserve">
+    <value>Đã tính lại số liệu (tổng xe: {0}).</value>
+  </data>
+  <data name="Ledger_Recompute_ErrorFormat" xml:space="preserve">
+    <value>Tính lại thất bại (mã {0}).</value>
+  </data>
+  <data name="Reports_Filter_From" xml:space="preserve">
+    <value>Từ ngày</value>
+  </data>
+  <data name="Reports_Filter_To" xml:space="preserve">
+    <value>Đến ngày</value>
+  </data>
+  <data name="Reports_IncludeCancelled" xml:space="preserve">
+    <value>Bao gồm tờ khai đã huỷ</value>
+  </data>
+  <data name="Reports_Action_Refresh" xml:space="preserve">
+    <value>Tải lại</value>
+  </data>
+  <data name="Reports_Action_Copy" xml:space="preserve">
+    <value>Sao chép</value>
+  </data>
+  <data name="Reports_Action_Export" xml:space="preserve">
+    <value>Xuất Excel</value>
+  </data>
+  <data name="Reports_Copy_Success" xml:space="preserve">
+    <value>Đã sao chép báo cáo vào bộ nhớ tạm.</value>
+  </data>
+  <data name="Reports_Export_Success" xml:space="preserve">
+    <value>Đã xuất Excel: {0}</value>
+  </data>
+  <data name="Reports_Column_Processor" xml:space="preserve">
+    <value>Người làm thủ tục</value>
+  </data>
+  <data name="Reports_Column_Yard" xml:space="preserve">
+    <value>Bãi</value>
+  </data>
+  <data name="Reports_Column_HourBucket" xml:space="preserve">
+    <value>Khoảng giờ</value>
+  </data>
+  <data name="Reports_Column_Officer" xml:space="preserve">
+    <value>Cán bộ</value>
+  </data>
+  <data name="Reports_Column_TotalVehicles" xml:space="preserve">
+    <value>Tổng xe</value>
+  </data>
+  <data name="Reports_Column_VehiclesEntered" xml:space="preserve">
+    <value>Xe vào</value>
+  </data>
+  <data name="Reports_Column_KvgsConfirmed" xml:space="preserve">
+    <value>KVGS đã xác nhận</value>
+  </data>
+  <data name="Reports_Column_DeclarationNo" xml:space="preserve">
+    <value>Số tờ khai</value>
+  </data>
+  <data name="Reports_Column_Plate" xml:space="preserve">
+    <value>Biển số</value>
+  </data>
+  <data name="Reports_Column_EntryTime" xml:space="preserve">
+    <value>Giờ vào</value>
+  </data>
+  <data name="Reports_Column_HoursInside" xml:space="preserve">
+    <value>Giờ trong cổng</value>
+  </data>
+  <data name="Reports_Column_ExitedCount" xml:space="preserve">
+    <value>Xe ra</value>
+  </data>
+  <data name="Reports_Empty" xml:space="preserve">
+    <value>Không có dữ liệu cho khoảng thời gian đã chọn.</value>
   </data>
 </root>

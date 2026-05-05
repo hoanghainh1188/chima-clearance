@@ -41,6 +41,8 @@ public sealed class ConnectivityService : IDisposable
 
     public event Action<Guid>? DeclarationLedgerChanged;
 
+    public event Action<DateOnly, string>? DailyHeaderOfficerChanged;
+
     public ConnectivityMode Mode
     {
         get
@@ -156,6 +158,16 @@ public sealed class ConnectivityService : IDisposable
                 payload =>
                 {
                     MainThread.BeginInvokeOnMainThread(() => DeclarationLedgerChanged?.Invoke(payload.DeclarationId));
+                });
+
+            hub.On<DailyHeaderOfficerChangedPayload>(
+                "DailyHeaderOfficerChanged",
+                payload =>
+                {
+                    if (DateOnly.TryParse(payload.Date, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.None, out var date))
+                    {
+                        MainThread.BeginInvokeOnMainThread(() => DailyHeaderOfficerChanged?.Invoke(date, payload.OfficerName));
+                    }
                 });
 
             hub.Reconnecting += _ =>

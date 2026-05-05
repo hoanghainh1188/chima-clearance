@@ -14,7 +14,17 @@ public sealed class HttpAuditContext : IAuditContext
 
     public void Set(AuditEnvelope envelope)
     {
-        var ctx = _httpContextAccessor.HttpContext ?? throw new InvalidOperationException("No HttpContext.");
+        // Quartz jobs (CreateDailyHeader, GenerateDailySummary) and the startup
+        // catch-up host invoke handlers outside the HTTP pipeline. FR-003 binds
+        // the AuditLog to "successful mutating requests"; cron-driven runs leave
+        // their trail in the data itself (the header row appears at midnight).
+        // No-op without HttpContext rather than crashing the host.
+        var ctx = _httpContextAccessor.HttpContext;
+        if (ctx is null)
+        {
+            return;
+        }
+
         ctx.Items[ItemKey] = envelope;
     }
 

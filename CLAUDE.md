@@ -16,18 +16,14 @@ Auto-generated from all feature plans. Last updated: 2026-05-04
 | --- | --- | --- | --- |
 | `001-b2-clearance` — Customs Gate B2 vehicle clearance log replacement | [spec.md](specs/001-b2-clearance/spec.md) | [plan.md](specs/001-b2-clearance/plan.md) | [v1.1.0](.specify/memory/constitution.md) |
 
-Active phase: **Sprint S3 wrapping up** — F-09 confirmation, F-10 always-on
-ledger with SignalR push, FR-027 role matrix, FR-028 tri-state connectivity,
-the wireframe § 5 desktop chrome (sidebar + accelerators + functional Cỡ
-chữ dropdown), wireframe § 6.5 KVGS animations + self-monitoring counter,
-the wireframe § 6.2 ledger drawer chi tiết + in-list shortcuts, and the
-wireframe § 8 list-view skeletons + correlationId on error banners are
-all on `main` after PRs #6, #7, #8, #9, #11, #12, #15, #16 (plus the
-#13 CI fix). Sprint S4 (Quartz + reports + officer-name edit) starts now
-unless the remaining low-priority polish items (child-vehicle
-expand/collapse, right-click context menu, 300/400 ms animations on
-SignalR push, sidebar collapse toggle, focus-ring style sweep,
-⚙️ quick-settings menu, top-right toast position) get prioritised.
+Active phase: **Sprint S4 complete on branch** — F-11/F-12 background jobs
+(daily-header create + daily-summary recompute), FR-025 daily-header
+officer-name inline edit, and F-14 report endpoints (processor/yard/hour/
+officer/pending) are implemented with test coverage in this working branch.
+Next phase is Sprint S5 unless S3 visual-polish backlog items get prioritized
+(child-vehicle expand/collapse, right-click context menu, 300/400 ms
+SignalR animations, sidebar collapse toggle, focus-ring sweep, quick-settings
+menu, top-right toast position).
 
 **Done**: S0 (scaffold, ADRs 0001–0006), S1 (F-01/F-02/F-03/F-04 — auth,
 users, master data, force-rotate password), S2 (F-05/F-06/F-07/F-08 —
@@ -35,7 +31,8 @@ declaration entry, add child vehicle, suffix search, mark exit), S3 core
 (F-09 KVGS + F-10 ledger + SignalR realtime + wireframe § 5 sidebar shell
 + Modal popup focus-trap + Toast severity timing + FR-028 Serilog logging
 + Constitution VI tokens + functional Cỡ chữ dropdown + KVGS row fade-out
-animation + self-monitoring counter). All merged to `main`.
+animation + self-monitoring counter). **S4 (F-11/F-12/F-14 + FR-025) is
+implemented and validated on this branch, pending review/merge.**
 
 ---
 

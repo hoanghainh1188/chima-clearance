@@ -1,14 +1,23 @@
+using CommunityToolkit.Mvvm.ComponentModel;
+
 namespace B2.Desktop.ViewModels;
 
 /// <summary>Flattened item for ledger <see cref="CollectionView"/> (data row or daily header).
 /// </summary>
-public sealed class LedgerUiItem
+public sealed partial class LedgerUiItem : ObservableObject
 {
-    private LedgerUiItem(bool isDateHeader, string? headerText, LedgerRowViewModel? row)
+    private LedgerUiItem(
+        bool isDateHeader,
+        string? headerText,
+        LedgerRowViewModel? row,
+        DateOnly? headerDate,
+        string? officerName)
     {
         IsDateHeader = isDateHeader;
         HeaderText = headerText;
         Row = row;
+        HeaderDate = headerDate;
+        _officerName = officerName;
     }
 
     public bool IsDateHeader { get; }
@@ -19,7 +28,13 @@ public sealed class LedgerUiItem
 
     public LedgerRowViewModel? Row { get; }
 
-    public static LedgerUiItem ForHeader(string headerText) => new(true, headerText, null);
+    public DateOnly? HeaderDate { get; }
 
-    public static LedgerUiItem ForRow(LedgerRowViewModel row) => new(false, null, row);
+    [ObservableProperty]
+    private string? _officerName;
+
+    public static LedgerUiItem ForHeader(string headerText, DateOnly headerDate, string? officerName) =>
+        new(true, headerText, null, headerDate, officerName);
+
+    public static LedgerUiItem ForRow(LedgerRowViewModel row) => new(false, null, row, null, null);
 }

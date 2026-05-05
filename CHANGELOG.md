@@ -6,19 +6,38 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 
-Sprint S3 is substantially shipped through 9 merged + 1 in-flight PRs
-(#6 backend + desktop chrome partial, #7 Round 1 audit follow-up, #8
-Round 2 modal / toast spec, #9 Round 3a sidebar + Windows accelerators,
-#11 Round 3b functional Cỡ chữ dropdown, #12 Round 3c KVGS row fade +
-Đã xác nhận hôm nay widget, #13 Windows CI shell-bash flake fix, #15
-Round 3d ledger drawer chi tiết + F5 / `/` / Esc shortcuts, #16
-Round 3e list-view skeletons + correlationId on error banners).
-Remaining low-priority polish: ledger child-vehicle expand/collapse,
-right-click context menu, 300/400 ms animations on SignalR push,
-sidebar collapse toggle, focus-ring style sweep, ⚙️ quick-settings
-menu, top-right toast position. Sprints S4..S6 not started.
+Sprint S3 is merged on `main`; Sprint S4 is implemented in the current
+working branch for review (Quartz jobs + daily-header officer edit +
+reports API + desktop reports surface). Remaining low-priority polish from
+S3: ledger child-vehicle expand/collapse, right-click context menu,
+300/400 ms animations on SignalR push, sidebar collapse toggle, focus-ring
+style sweep, ⚙️ quick-settings menu, top-right toast position.
 
 ### Added
+
+#### Sprint S4 — Background jobs + reports (`unreleased branch`)
+
+- **F-11 Daily Header**:
+  - `EnsureTodayHeaderCommandHandler` + `CreateDailyHeaderJob` (cron `0 1 0 * * ?`).
+  - `IDailyHeaderRepository` + `DailyHeaderRepository` for date-based header lookups.
+- **F-12 Daily Summary**:
+  - `RecomputeDailySummaryCommandHandler` + `GenerateDailySummaryJob` (cron `0 0 23 * * ?`).
+  - Admin endpoint `POST /api/daily-headers/{date}/recompute`.
+- **FR-025 Officer name inline edit**:
+  - `UpdateOfficerNameCommandHandler` + validator and endpoint
+    `PATCH /api/daily-headers/{date}/officer`.
+  - Ledger daily-header row now has inline officer input + save action.
+- **F-14 Reports**:
+  - `IReportsRepository` + `ReportsRepository` projections:
+    by-processor / by-yard / by-hour / by-officer / pending.
+  - New API endpoints under `/api/reports/*` with `SupervisorOrAbove` policy.
+  - New desktop `ReportsPage` + `ReportsViewModel` and sidebar navigation entry.
+- **Testing**:
+  - `B2.Application.Tests/Jobs/DailyHeaderJobTests.cs` for F-11/F-12 scenarios.
+  - `B2.Server.Api.Tests/Declarations/DailyHeadersEndpointTests.cs` for FR-025 + recompute.
+  - `B2.Server.Api.Tests/Reports/ReportsEndpointsTests.cs` for F-14 scenarios + role-403 checks.
+  - `EndpointPolicyAlignmentTests` ensures mapped `/api/*` endpoints declare
+    authorization or explicit anonymous policy.
 
 #### PR #6 — Sprint S3 partial (`e926982`)
 

@@ -6,4 +6,6 @@ namespace B2.Application.DomainEvents;
 public interface ISignalRDomainEventDispatcher
 {
     Task PublishDeclarationLedgerChangedAsync(Guid declarationId, CancellationToken cancellationToken = default);
+
+    Task PublishDailyHeaderOfficerChangedAsync(DateOnly date, string officerName, CancellationToken cancellationToken = default);
 }

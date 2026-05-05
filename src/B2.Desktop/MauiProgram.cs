@@ -66,6 +66,8 @@ public static class MauiProgram
         builder.Services.AddTransient<MasterDataPage>();
         builder.Services.AddTransient<LedgerViewModel>();
         builder.Services.AddTransient<LedgerPage>();
+        builder.Services.AddTransient<ReportsViewModel>();
+        builder.Services.AddTransient<ReportsPage>();
         builder.Services.AddTransient<KvgsViewModel>();
         builder.Services.AddTransient<KvgsPage>();
         builder.Services.AddTransient<AppShell>();
