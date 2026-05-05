@@ -594,19 +594,32 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
         }
         catch (ApiException ex)
         {
-            // Revert: restore previous officer name on failure.
-            _officerByDate[date] = previous;
-            item.OfficerName = previous;
+            // Revert only if there was a prior officer name; otherwise keep the user's
+            // typed value in the Entry so they can correct a validation error (e.g. 422
+            // from FluentValidation) without losing the text they were composing.
+            RevertOfficerName(item, date, previous);
             ErrorMessage = string.Format(CultureInfo.CurrentCulture, ErrorLoadFormat, (int)ex.StatusCode);
             NotifyViewStates();
         }
         catch (HttpRequestException)
         {
-            _officerByDate[date] = previous;
-            item.OfficerName = previous;
+            RevertOfficerName(item, date, previous);
             ErrorMessage = AppResources.Ledger_Error_Network;
             NotifyViewStates();
         }
+    }
+
+    private void RevertOfficerName(LedgerUiItem item, DateOnly date, string? previous)
+    {
+        if (previous is null)
+        {
+            // First-time edit failed: leave the user's typed value in the Entry so they
+            // don't have to re-type after fixing the underlying issue.
+            return;
+        }
+
+        _officerByDate[date] = previous;
+        item.OfficerName = previous;
     }
 
     private async Task LoadAsync(bool useSince)

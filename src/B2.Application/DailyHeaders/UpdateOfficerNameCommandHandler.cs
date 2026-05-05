@@ -29,6 +29,7 @@ public sealed class UpdateOfficerNameCommandHandler
     public async Task HandleAsync(UpdateOfficerNameCommand command, CancellationToken cancellationToken)
     {
         var header = await _dailyHeaders.GetByDateAsync(command.Date, cancellationToken);
+        var isNew = header is null;
         if (header is null)
         {
             header = new Domain.DailyHeaders.DailyHeader
@@ -44,7 +45,10 @@ public sealed class UpdateOfficerNameCommandHandler
         var trimmed = command.Name.Trim();
         header.OnDutyOfficerName = trimmed;
         var after = JsonSerializer.Serialize(new { officerName = trimmed });
-        _audit.Set(new AuditEnvelope(command.ActorUserId, Domain.Audit.AuditAction.Update, nameof(Domain.DailyHeaders.DailyHeader), header.Id, before, after, null));
+        // Audit the row's existence delta accurately: Create on first PATCH-of-the-day
+        // (cron didn't fire / catch-up didn't run); OfficerNameChanged on subsequent edits.
+        var action = isNew ? Domain.Audit.AuditAction.Create : Domain.Audit.AuditAction.OfficerNameChanged;
+        _audit.Set(new AuditEnvelope(command.ActorUserId, action, nameof(Domain.DailyHeaders.DailyHeader), header.Id, before, after, null));
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         await _realtime.PublishDailyHeaderOfficerChangedAsync(command.Date, trimmed, cancellationToken);
     }

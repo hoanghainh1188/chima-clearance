@@ -1,5 +1,5 @@
 using B2.Application.Abstractions;
-using System.Globalization;
+using System.Text.Json;
 
 namespace B2.Application.DailyHeaders;
 
@@ -25,6 +25,7 @@ public sealed class RecomputeDailySummaryCommandHandler
     public async Task<int> HandleAsync(RecomputeDailySummaryCommand command, CancellationToken cancellationToken)
     {
         var header = await _dailyHeaders.GetByDateAsync(command.Date, cancellationToken);
+        var isNew = header is null;
         if (header is null)
         {
             header = new Domain.DailyHeaders.DailyHeader
@@ -37,11 +38,13 @@ public sealed class RecomputeDailySummaryCommandHandler
         }
 
         var totalVehicles = await _dailyHeaders.CountVehiclesEnteredOnDateAsync(command.Date, cancellationToken);
-        var before = $$"""{"totalVehicles":{{(header.TotalVehicles?.ToString(CultureInfo.InvariantCulture) ?? "null")}}}""";
+        var before = JsonSerializer.Serialize(new { totalVehicles = header.TotalVehicles });
         header.TotalVehicles = totalVehicles;
         header.LastSummaryComputedAt = _clock.UtcNow;
-        var after = $$"""{"totalVehicles":{{totalVehicles}}}""";
-        _audit.Set(new AuditEnvelope(command.ActorUserId, Domain.Audit.AuditAction.Update, nameof(Domain.DailyHeaders.DailyHeader), header.Id, before, after, command.Reason));
+        var after = JsonSerializer.Serialize(new { totalVehicles });
+        // First-of-day Admin recompute creates the row; subsequent recomputes update it.
+        var action = isNew ? Domain.Audit.AuditAction.Create : Domain.Audit.AuditAction.Update;
+        _audit.Set(new AuditEnvelope(command.ActorUserId, action, nameof(Domain.DailyHeaders.DailyHeader), header.Id, before, after, command.Reason));
         await _unitOfWork.SaveChangesAsync(cancellationToken);
         return totalVehicles;
     }

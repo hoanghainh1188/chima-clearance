@@ -221,28 +221,41 @@ public sealed partial class ReportsViewModel : ObservableObject
     [RelayCommand]
     private async Task ExportExcelAsync()
     {
+        // Snapshot the collections on the UI thread; the export itself runs on the
+        // thread pool so a large export (months of pending vehicles) does not freeze
+        // MAUI's main thread, which would also stall SignalR push delivery in the
+        // meantime.
+        var processorsSnapshot = Processors.ToList();
+        var yardsSnapshot = Yards.ToList();
+        var hoursSnapshot = Hours.ToList();
+        var officersSnapshot = Officers.ToList();
+        var pendingSnapshot = Pending.ToList();
+        var folder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        var fileName = string.Create(CultureInfo.InvariantCulture, $"B2-Reports-{DateTime.Now:yyyyMMdd-HHmmss}.xlsx");
+        var path = Path.Combine(folder, fileName);
+
         try
         {
-            var folder = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-            var fileName = $"B2-Reports-{DateTime.Now:yyyyMMdd-HHmmss}.xlsx";
-            var path = Path.Combine(folder, fileName);
-            using var workbook = new XLWorkbook();
-            WriteSheet(workbook, AppResources.Reports_ByProcessor_Title, Processors,
-                new[] { AppResources.Reports_Column_Processor, AppResources.Reports_Column_TotalVehicles },
-                p => new object[] { p.ProcessorName, p.TotalVehicles });
-            WriteSheet(workbook, AppResources.Reports_ByYard_Title, Yards,
-                new[] { AppResources.Reports_Column_Yard, AppResources.Reports_Column_TotalVehicles },
-                y => new object[] { $"{y.YardCode} — {y.YardName}", y.TotalVehicles });
-            WriteSheet(workbook, AppResources.Reports_ByHour_Title, Hours,
-                new[] { AppResources.Reports_Column_HourBucket, AppResources.Reports_Column_ExitedCount },
-                h => new object[] { h.BucketLabel, h.ExitedCount });
-            WriteSheet(workbook, AppResources.Reports_ByOfficer_Title, Officers,
-                new[] { AppResources.Reports_Column_Officer, AppResources.Reports_Column_VehiclesEntered, AppResources.Reports_Column_KvgsConfirmed },
-                o => new object[] { o.OfficerName, o.VehiclesEntered, o.DeclarationsKvgsConfirmed });
-            WriteSheet(workbook, AppResources.Reports_Pending_Title, Pending,
-                new[] { AppResources.Reports_Column_DeclarationNo, AppResources.Reports_Column_Plate, AppResources.Reports_Column_EntryTime, AppResources.Reports_Column_HoursInside },
-                p => new object[] { p.DeclarationNumber, p.PlateNumber, p.EntryTime, p.HoursInside });
-            workbook.SaveAs(path);
+            await Task.Run(() =>
+            {
+                using var workbook = new XLWorkbook();
+                WriteSheet(workbook, AppResources.Reports_ByProcessor_Title, processorsSnapshot,
+                    new[] { AppResources.Reports_Column_Processor, AppResources.Reports_Column_TotalVehicles },
+                    p => new object[] { p.ProcessorName, p.TotalVehicles });
+                WriteSheet(workbook, AppResources.Reports_ByYard_Title, yardsSnapshot,
+                    new[] { AppResources.Reports_Column_Yard, AppResources.Reports_Column_TotalVehicles },
+                    y => new object[] { $"{y.YardCode} — {y.YardName}", y.TotalVehicles });
+                WriteSheet(workbook, AppResources.Reports_ByHour_Title, hoursSnapshot,
+                    new[] { AppResources.Reports_Column_HourBucket, AppResources.Reports_Column_ExitedCount },
+                    h => new object[] { h.BucketLabel, h.ExitedCount });
+                WriteSheet(workbook, AppResources.Reports_ByOfficer_Title, officersSnapshot,
+                    new[] { AppResources.Reports_Column_Officer, AppResources.Reports_Column_VehiclesEntered, AppResources.Reports_Column_KvgsConfirmed },
+                    o => new object[] { o.OfficerName, o.VehiclesEntered, o.DeclarationsKvgsConfirmed });
+                WriteSheet(workbook, AppResources.Reports_Pending_Title, pendingSnapshot,
+                    new[] { AppResources.Reports_Column_DeclarationNo, AppResources.Reports_Column_Plate, AppResources.Reports_Column_EntryTime, AppResources.Reports_Column_HoursInside },
+                    p => new object[] { p.DeclarationNumber, p.PlateNumber, p.EntryTime, p.HoursInside });
+                workbook.SaveAs(path);
+            }).ConfigureAwait(true);
             await _toast.ShowAsync(string.Format(CultureInfo.CurrentCulture, ExportSuccessFormat, path), ToastSeverity.Success).ConfigureAwait(true);
         }
         catch (IOException ex)
