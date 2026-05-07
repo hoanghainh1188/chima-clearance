@@ -138,6 +138,34 @@ public sealed class ExitEndpointTests
 
     [Fact]
     [Trait("Feature", "F-08")]
+    public async Task Should_reject_same_idempotency_key_on_different_exit_paths_using_409()
+    {
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+        var (_, v1, v2, _) = await CreateThreeVehicleDeclarationAsync(client, factory);
+
+        client.DefaultRequestHeaders.Remove("Authorization");
+        var op = await client.LoginAsNewOperatorAsync();
+        client.SetBearer(op.AccessToken);
+        var key = "exit-key-reuse-" + Guid.NewGuid().ToString("N");
+
+        var first = await client.SendAsync(ExitRequest(v1, key));
+        first.EnsureSuccessStatusCode();
+
+        var second = await client.SendAsync(ExitRequest(v2, key));
+        second.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        var json = JsonDocument.Parse(await second.Content.ReadAsStringAsync());
+        json.RootElement.GetProperty("code").GetString().Should().Be("IDEMPOTENCY_KEY_CONFLICT");
+
+        using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+        (await db.Vehicles.AsNoTracking().SingleAsync(x => x.Id == v2)).ExitMarked.Should().BeFalse();
+    }
+
+    [Fact]
+    [Trait("Feature", "F-08")]
     public async Task Should_operator_receive_409_when_marking_exit_twice_with_different_idempotency_keys()
     {
         await using var factory = new B2ApiFactory();

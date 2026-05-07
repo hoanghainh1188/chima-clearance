@@ -118,4 +118,37 @@ public sealed class CreateDeclarationEndpointTests
         (await AuditLogQuery.CountForEntityAsync(factory, "Declaration", firstDto.Id))
             .Should().Be(1);
     }
+
+    [Fact]
+    [Trait("Feature", "F-05")]
+    public async Task Should_reject_same_idempotency_key_with_different_body_using_409()
+    {
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+        var key = "idem-conflict-" + Guid.NewGuid().ToString("N");
+        var firstReq = new DeclarationCreateRequest(
+            "222222222222",
+            SeedIds.ProcessorId,
+            "C1",
+            "G1",
+            SeedIds.YardId,
+            new VehicleAddRequest("29A10001", null, null));
+        var secondReq = firstReq with { CompanyName = "C2" };
+        client.DefaultRequestHeaders.TryAddWithoutValidation("Idempotency-Key", key);
+
+        var first = await client.PostAsJsonAsync("/api/declarations", firstReq, TestJson.Options);
+        first.StatusCode.Should().Be(HttpStatusCode.Created);
+
+        var second = await client.PostAsJsonAsync("/api/declarations", secondReq, TestJson.Options);
+        second.StatusCode.Should().Be(HttpStatusCode.Conflict);
+        var json = JsonDocument.Parse(await second.Content.ReadAsStringAsync());
+        json.RootElement.GetProperty("code").GetString().Should().Be("IDEMPOTENCY_KEY_CONFLICT");
+
+        using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+        (await db.Declarations.AsNoTracking().CountAsync(d => d.DeclarationNumber == "222222222222"))
+            .Should().Be(1);
+    }
 }

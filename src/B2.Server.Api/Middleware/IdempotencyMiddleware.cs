@@ -57,6 +57,22 @@ public sealed class IdempotencyMiddleware(RequestDelegate next)
                 await context.Response.WriteAsync(existing.ResponseBody, context.RequestAborted);
                 return;
             }
+
+            // Same key must not be reused with a different request fingerprint — otherwise we would
+            // execute a second mutating operation while clients assume the key dedupes one logical action.
+            var keyReuseConflict = await dbLookup.IdempotencyKeys.AsNoTracking()
+                .AnyAsync(k => k.Key == key, context.RequestAborted);
+            if (keyReuseConflict)
+            {
+                context.Response.StatusCode = StatusCodes.Status409Conflict;
+                await context.Response.WriteAsJsonAsync(
+                    new
+                    {
+                        code = "IDEMPOTENCY_KEY_CONFLICT",
+                        detail = "Idempotency-Key was already used with a different request.",
+                    });
+                return;
+            }
         }
 
         var originalBody = context.Response.Body;
