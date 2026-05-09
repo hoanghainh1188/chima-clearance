@@ -1,3 +1,4 @@
+using System.Data;
 using B2.Application.Abstractions;
 using B2.Domain.Declarations;
 using B2.Shared.Contracts.Reports;
@@ -68,6 +69,9 @@ public sealed class ReportsRepository : IReportsRepository
         bool includeCancelled,
         CancellationToken cancellationToken)
     {
+        // Snapshot both aggregates under one isolation level so counts cannot drift mid-report.
+        await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+
         var entered = await _db.Declarations
             .Where(d => d.BusinessDate >= fromDate && d.BusinessDate <= toDate)
             .Where(d => includeCancelled || d.Status != DeclarationStatus.Cancelled)
@@ -88,12 +92,32 @@ public sealed class ReportsRepository : IReportsRepository
             .Select(g => new { OfficerUserId = g.Key, Count = g.Count() })
             .ToListAsync(cancellationToken);
 
-        var kvgsMap = kvgs.ToDictionary(x => x.OfficerUserId, x => x.Count);
-        return entered.Select(x => new OfficerReportItemDto(
-                x.EnteredByUserId,
-                x.FullName,
-                x.VehiclesEntered,
-                kvgsMap.GetValueOrDefault(x.EnteredByUserId)))
+        var vehiclesEnteredByOfficer = entered.ToDictionary(x => x.EnteredByUserId, x => x.VehiclesEntered);
+        var namesByOfficer = entered.ToDictionary(x => x.EnteredByUserId, x => x.FullName);
+        var kvgsByOfficer = kvgs.ToDictionary(x => x.OfficerUserId, x => x.Count);
+
+        var officerIds = vehiclesEnteredByOfficer.Keys.Union(kvgsByOfficer.Keys).ToArray();
+        var missingNameIds = officerIds.Where(id => !namesByOfficer.ContainsKey(id)).ToArray();
+        if (missingNameIds.Length > 0)
+        {
+            var extraNames = await _db.Users.AsNoTracking()
+                .Where(u => missingNameIds.Contains(u.Id))
+                .Select(u => new { u.Id, u.FullName })
+                .ToListAsync(cancellationToken);
+            foreach (var row in extraNames)
+            {
+                namesByOfficer[row.Id] = row.FullName;
+            }
+        }
+
+        await tx.CommitAsync(cancellationToken);
+
+        return officerIds
+            .Select(id => new OfficerReportItemDto(
+                id,
+                namesByOfficer.GetValueOrDefault(id, string.Empty),
+                vehiclesEnteredByOfficer.GetValueOrDefault(id),
+                kvgsByOfficer.GetValueOrDefault(id)))
             .OrderByDescending(x => x.VehiclesEntered)
             .ThenBy(x => x.OfficerName)
             .ToList();
