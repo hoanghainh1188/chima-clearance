@@ -118,4 +118,51 @@ public sealed class CreateDeclarationEndpointTests
         (await AuditLogQuery.CountForEntityAsync(factory, "Declaration", firstDto.Id))
             .Should().Be(1);
     }
+
+    [Fact]
+    [Trait("Feature", "F-05")]
+    public async Task Should_parallel_idempotent_posts_with_same_key_create_single_declaration()
+    {
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+
+        var declNumber = Random.Shared.Next(100_000_000_000, 999_999_999_999).ToString(System.Globalization.CultureInfo.InvariantCulture);
+        var key = "idem-parallel-" + Guid.NewGuid().ToString("N");
+        var req = new DeclarationCreateRequest(
+            declNumber,
+            SeedIds.ProcessorId,
+            "C1",
+            "G1",
+            SeedIds.YardId,
+            new VehicleAddRequest("29A12345", null, null));
+
+        static Task<HttpResponseMessage> PostWithIdempotencyKey(
+            HttpClient httpClient,
+            DeclarationCreateRequest body,
+            string idemKey)
+        {
+            var msg = new HttpRequestMessage(HttpMethod.Post, "/api/declarations")
+            {
+                Content = JsonContent.Create(body, options: TestJson.Options),
+            };
+            msg.Headers.TryAddWithoutValidation("Idempotency-Key", idemKey);
+            return httpClient.SendAsync(msg);
+        }
+
+        var first = PostWithIdempotencyKey(client, req, key);
+        var second = PostWithIdempotencyKey(client, req, key);
+        var responses = await Task.WhenAll(first, second);
+
+        responses[0].StatusCode.Should().Be(HttpStatusCode.Created);
+        responses[1].StatusCode.Should().Be(HttpStatusCode.Created);
+        var dtoA = await responses[0].Content.ReadFromJsonAsync<DeclarationDto>(TestJson.Options);
+        var dtoB = await responses[1].Content.ReadFromJsonAsync<DeclarationDto>(TestJson.Options);
+        dtoA!.Id.Should().Be(dtoB!.Id);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+        (await db.Declarations.CountAsync(d => d.DeclarationNumber == declNumber)).Should().Be(1);
+    }
 }
