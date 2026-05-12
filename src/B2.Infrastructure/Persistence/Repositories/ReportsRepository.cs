@@ -1,4 +1,4 @@
-using B2.Application.Abstractions;
+using System.Data;
 using B2.Domain.Declarations;
 using B2.Shared.Contracts.Reports;
 using Microsoft.EntityFrameworkCore;
@@ -68,35 +68,78 @@ public sealed class ReportsRepository : IReportsRepository
         bool includeCancelled,
         CancellationToken cancellationToken)
     {
-        var entered = await _db.Declarations
-            .Where(d => d.BusinessDate >= fromDate && d.BusinessDate <= toDate)
-            .Where(d => includeCancelled || d.Status != DeclarationStatus.Cancelled)
-            .Join(
-                _db.Users.AsNoTracking(),
-                d => d.EnteredByUserId,
-                u => u.Id,
-                (d, u) => new { Declaration = d, User = u })
-            .GroupBy(x => new { x.User.Id, x.User.FullName })
-            .Select(g => new { EnteredByUserId = g.Key.Id, g.Key.FullName, VehiclesEntered = g.Sum(x => x.Declaration.Vehicles.Count) })
-            .ToListAsync(cancellationToken);
+        // Serializable snapshot so entered-vehicle sums and KVGS counts cannot skew across WAL readers,
+        // and officers who only KVGS-confirmed (never EnteredBy on declarations in range) stay visible.
+        await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        try
+        {
+            var entered = await _db.Declarations
+                .Where(d => d.BusinessDate >= fromDate && d.BusinessDate <= toDate)
+                .Where(d => includeCancelled || d.Status != DeclarationStatus.Cancelled)
+                .Join(
+                    _db.Users.AsNoTracking(),
+                    d => d.EnteredByUserId,
+                    u => u.Id,
+                    (d, u) => new { Declaration = d, User = u })
+                .GroupBy(x => new { x.User.Id, x.User.FullName })
+                .Select(g => new { EnteredByUserId = g.Key.Id, g.Key.FullName, VehiclesEntered = g.Sum(x => x.Declaration.Vehicles.Count) })
+                .ToListAsync(cancellationToken);
 
-        var kvgs = await _db.Declarations
-            .Where(d => d.BusinessDate >= fromDate && d.BusinessDate <= toDate)
-            .Where(d => includeCancelled || d.Status != DeclarationStatus.Cancelled)
-            .Where(d => d.KvgsConfirmedByUserId != null)
-            .GroupBy(d => d.KvgsConfirmedByUserId!.Value)
-            .Select(g => new { OfficerUserId = g.Key, Count = g.Count() })
-            .ToListAsync(cancellationToken);
+            var kvgs = await _db.Declarations
+                .Where(d => d.BusinessDate >= fromDate && d.BusinessDate <= toDate)
+                .Where(d => includeCancelled || d.Status != DeclarationStatus.Cancelled)
+                .Where(d => d.KvgsConfirmedByUserId != null)
+                .GroupBy(d => d.KvgsConfirmedByUserId!.Value)
+                .Select(g => new { OfficerUserId = g.Key, Count = g.Count() })
+                .ToListAsync(cancellationToken);
 
-        var kvgsMap = kvgs.ToDictionary(x => x.OfficerUserId, x => x.Count);
-        return entered.Select(x => new OfficerReportItemDto(
-                x.EnteredByUserId,
-                x.FullName,
-                x.VehiclesEntered,
-                kvgsMap.GetValueOrDefault(x.EnteredByUserId)))
-            .OrderByDescending(x => x.VehiclesEntered)
-            .ThenBy(x => x.OfficerName)
-            .ToList();
+            var kvgsMap = kvgs.ToDictionary(x => x.OfficerUserId, x => x.Count);
+            var enteredIds = entered.Select(x => x.EnteredByUserId).ToHashSet();
+
+            var kvgsOnlyIds = kvgs
+                .Where(k => !enteredIds.Contains(k.OfficerUserId))
+                .Select(k => k.OfficerUserId)
+                .Distinct()
+                .ToList();
+
+            Dictionary<Guid, string> kvgsOnlyNames = kvgsOnlyIds.Count == 0
+                ? new Dictionary<Guid, string>()
+                : await _db.Users.AsNoTracking()
+                    .Where(u => kvgsOnlyIds.Contains(u.Id))
+                    .ToDictionaryAsync(u => u.Id, u => u.FullName, cancellationToken);
+
+            var rows = new List<OfficerReportItemDto>(entered.Count + kvgsOnlyIds.Count);
+            foreach (var x in entered)
+            {
+                rows.Add(new OfficerReportItemDto(
+                    x.EnteredByUserId,
+                    x.FullName,
+                    x.VehiclesEntered,
+                    kvgsMap.GetValueOrDefault(x.EnteredByUserId)));
+            }
+
+            foreach (var k in kvgs.Where(k => !enteredIds.Contains(k.OfficerUserId)))
+            {
+                rows.Add(new OfficerReportItemDto(
+                    k.OfficerUserId,
+                    kvgsOnlyNames.GetValueOrDefault(k.OfficerUserId, string.Empty),
+                    0,
+                    k.Count));
+            }
+
+            var ordered = rows
+                .OrderByDescending(x => x.VehiclesEntered)
+                .ThenBy(x => x.OfficerName)
+                .ToList();
+
+            await tx.CommitAsync(cancellationToken);
+            return ordered;
+        }
+        catch
+        {
+            await tx.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
 
     public async Task<IReadOnlyList<PendingReportItemDto>> GetPendingAsync(
