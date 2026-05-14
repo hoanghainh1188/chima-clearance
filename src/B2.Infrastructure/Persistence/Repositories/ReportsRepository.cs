@@ -89,11 +89,25 @@ public sealed class ReportsRepository : IReportsRepository
             .ToListAsync(cancellationToken);
 
         var kvgsMap = kvgs.ToDictionary(x => x.OfficerUserId, x => x.Count);
-        return entered.Select(x => new OfficerReportItemDto(
-                x.EnteredByUserId,
-                x.FullName,
-                x.VehiclesEntered,
-                kvgsMap.GetValueOrDefault(x.EnteredByUserId)))
+        var enteredDict = entered.ToDictionary(x => x.EnteredByUserId);
+
+        var kvgsOnlyIds = kvgsMap.Keys.Where(id => !enteredDict.ContainsKey(id)).ToArray();
+        var extraNames = kvgsOnlyIds.Length == 0
+            ? new Dictionary<Guid, string>()
+            : await _db.Users.AsNoTracking()
+                .Where(u => kvgsOnlyIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id, u => u.FullName, cancellationToken);
+
+        var allOfficerIds = enteredDict.Keys.Concat(kvgsMap.Keys).Distinct();
+        return allOfficerIds
+            .Select(id =>
+            {
+                enteredDict.TryGetValue(id, out var ent);
+                var vehiclesEntered = ent?.VehiclesEntered ?? 0;
+                var name = ent?.FullName ?? extraNames.GetValueOrDefault(id, string.Empty);
+                var kvgsCount = kvgsMap.GetValueOrDefault(id);
+                return new OfficerReportItemDto(id, name, vehiclesEntered, kvgsCount);
+            })
             .OrderByDescending(x => x.VehiclesEntered)
             .ThenBy(x => x.OfficerName)
             .ToList();

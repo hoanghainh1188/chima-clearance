@@ -1,10 +1,14 @@
 using System.Net;
 using System.Net.Http.Json;
 using System.Globalization;
+using B2.Domain.Declarations;
+using B2.Infrastructure.Persistence;
 using B2.Server.Api.Tests.Support;
 using B2.Shared.Contracts.Declarations;
 using B2.Shared.Contracts.Reports;
 using FluentAssertions;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace B2.Server.Api.Tests.Reports;
 
@@ -66,6 +70,85 @@ public sealed class ReportsEndpointsTests
         var pending = await client.GetFromJsonAsync<List<PendingReportItemDto>>("/api/reports/pending", TestJson.Options);
         pending.Should().Contain(x => x.DeclarationId == dto.Id);
         pending!.Count(x => x.DeclarationId == dto.Id).Should().Be(2);
+    }
+
+    [Fact]
+    [Trait("Feature", "F-14")]
+    public async Task Should_by_officer_report_includes_kvgs_only_officer()
+    {
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+        var no = TestDeclarationNumbers.Next();
+        var create = await client.PostAsJsonAsync(
+            "/api/declarations",
+            new DeclarationCreateRequest(
+                no,
+                SeedIds.ProcessorId,
+                "C1",
+                "G1",
+                SeedIds.YardId,
+                new VehicleAddRequest("31A20001", null, null)),
+            TestJson.Options);
+        create.EnsureSuccessStatusCode();
+        var dto = await create.Content.ReadFromJsonAsync<DeclarationDto>(TestJson.Options);
+        var declId = dto!.Id;
+
+        Guid vehicleId;
+        using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+            vehicleId = await db.Vehicles.AsNoTracking()
+                .Where(v => v.DeclarationId == declId)
+                .Select(v => v.Id)
+                .SingleAsync();
+        }
+
+        client.DefaultRequestHeaders.Remove("Authorization");
+        var op = await client.LoginAsNewOperatorAsync();
+        client.SetBearer(op.AccessToken);
+        var exitMsg = new HttpRequestMessage(HttpMethod.Post, $"/api/vehicles/{vehicleId}/exit");
+        exitMsg.Headers.TryAddWithoutValidation("Idempotency-Key", Guid.NewGuid().ToString("N"));
+        (await client.SendAsync(exitMsg)).EnsureSuccessStatusCode();
+
+        using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+            var status = await db.Declarations.AsNoTracking()
+                .Where(d => d.Id == declId)
+                .Select(d => d.Status)
+                .SingleAsync();
+            status.Should().Be(DeclarationStatus.AllExited);
+        }
+
+        client.DefaultRequestHeaders.Remove("Authorization");
+        var sup = await client.LoginAsNewSupervisorAsync();
+        client.SetBearer(sup.AccessToken);
+        (await client.PostAsync($"/api/declarations/{declId}/kvgs-confirm", null)).EnsureSuccessStatusCode();
+
+        Guid kvgsOfficerId;
+        DateOnly businessDate;
+        using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+            var row = await db.Declarations.AsNoTracking().SingleAsync(d => d.Id == declId);
+            row.KvgsConfirmedByUserId.Should().NotBeNull();
+            kvgsOfficerId = row.KvgsConfirmedByUserId!.Value;
+            businessDate = row.BusinessDate;
+        }
+
+        var adminClient = factory.CreateClient();
+        var adminLogin = await adminClient.LoginAsAdminAsync();
+        adminClient.SetBearer(adminLogin.AccessToken);
+        var from = businessDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        var report = await adminClient.GetFromJsonAsync<List<OfficerReportItemDto>>(
+            $"/api/reports/by-officer?from={from}&to={from}",
+            TestJson.Options);
+
+        var kvgsOnlyRow = report.Should().ContainSingle(x => x.OfficerUserId == kvgsOfficerId).Subject;
+        kvgsOnlyRow.VehiclesEntered.Should().Be(0);
+        kvgsOnlyRow.DeclarationsKvgsConfirmed.Should().Be(1);
     }
 
     [Theory]
