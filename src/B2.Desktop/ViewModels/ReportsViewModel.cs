@@ -28,7 +28,8 @@ public sealed partial class ReportsViewModel : ObservableObject
     {
         _api = api;
         _toast = toast;
-        var today = DateTime.Today;
+        // Match Ledger + server: business day is Vietnam (ICT), not Windows local midnight.
+        var today = VietnamBusinessDate.Today().ToDateTime(TimeOnly.MinValue);
         FromDate = today;
         ToDate = today;
     }

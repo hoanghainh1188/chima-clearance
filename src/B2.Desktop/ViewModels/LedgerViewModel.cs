@@ -420,21 +420,7 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
             VietnamToday().ToString("dd/MM/yyyy", culture));
     }
 
-    private static DateOnly VietnamToday()
-    {
-        TimeZoneInfo tz;
-        try
-        {
-            tz = TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
-        }
-        catch (TimeZoneNotFoundException)
-        {
-            tz = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-        }
-
-        var local = TimeZoneInfo.ConvertTimeFromUtc(DateTime.UtcNow, tz);
-        return DateOnly.FromDateTime(local);
-    }
+    private static DateOnly VietnamToday() => VietnamBusinessDate.Today();
 
     private (string from, string to, string? status, bool includeCancelled, string? plate, string? yardIds) BuildQuery()
     {
