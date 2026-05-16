@@ -1,3 +1,4 @@
+using System.Data;
 using B2.Application.Abstractions;
 using B2.Domain.Declarations;
 using B2.Shared.Contracts.Reports;
@@ -68,6 +69,9 @@ public sealed class ReportsRepository : IReportsRepository
         bool includeCancelled,
         CancellationToken cancellationToken)
     {
+        // Two aggregate reads must see the same snapshot (T-S4-CO-04) and the result must list
+        // every officer with KVGS confirmations even when they never created a declaration.
+        await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         var entered = await _db.Declarations
             .Where(d => d.BusinessDate >= fromDate && d.BusinessDate <= toDate)
             .Where(d => includeCancelled || d.Status != DeclarationStatus.Cancelled)
@@ -88,12 +92,32 @@ public sealed class ReportsRepository : IReportsRepository
             .Select(g => new { OfficerUserId = g.Key, Count = g.Count() })
             .ToListAsync(cancellationToken);
 
-        var kvgsMap = kvgs.ToDictionary(x => x.OfficerUserId, x => x.Count);
-        return entered.Select(x => new OfficerReportItemDto(
-                x.EnteredByUserId,
-                x.FullName,
-                x.VehiclesEntered,
-                kvgsMap.GetValueOrDefault(x.EnteredByUserId)))
+        await tx.CommitAsync(cancellationToken);
+
+        var vehiclesByUser = entered.ToDictionary(x => x.EnteredByUserId, x => x.VehiclesEntered);
+        var namesByUser = entered.ToDictionary(x => x.EnteredByUserId, x => x.FullName);
+        var kvgsByUser = kvgs.ToDictionary(x => x.OfficerUserId, x => x.Count);
+
+        var onlyKvgsUserIds = kvgsByUser.Keys.Where(id => !namesByUser.ContainsKey(id)).ToArray();
+        if (onlyKvgsUserIds.Length > 0)
+        {
+            var extraNames = await _db.Users.AsNoTracking()
+                .Where(u => onlyKvgsUserIds.Contains(u.Id))
+                .Select(u => new { u.Id, u.FullName })
+                .ToListAsync(cancellationToken);
+            foreach (var row in extraNames)
+            {
+                namesByUser[row.Id] = row.FullName;
+            }
+        }
+
+        var allUserIds = vehiclesByUser.Keys.Union(kvgsByUser.Keys).Distinct().ToList();
+        return allUserIds
+            .Select(id => new OfficerReportItemDto(
+                id,
+                namesByUser.TryGetValue(id, out var name) ? name : string.Empty,
+                vehiclesByUser.GetValueOrDefault(id),
+                kvgsByUser.GetValueOrDefault(id)))
             .OrderByDescending(x => x.VehiclesEntered)
             .ThenBy(x => x.OfficerName)
             .ToList();
