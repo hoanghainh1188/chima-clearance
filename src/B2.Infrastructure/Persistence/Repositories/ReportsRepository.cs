@@ -68,6 +68,7 @@ public sealed class ReportsRepository : IReportsRepository
         bool includeCancelled,
         CancellationToken cancellationToken)
     {
+        await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
         var entered = await _db.Declarations
             .Where(d => d.BusinessDate >= fromDate && d.BusinessDate <= toDate)
             .Where(d => includeCancelled || d.Status != DeclarationStatus.Cancelled)
@@ -88,14 +89,48 @@ public sealed class ReportsRepository : IReportsRepository
             .Select(g => new { OfficerUserId = g.Key, Count = g.Count() })
             .ToListAsync(cancellationToken);
 
+        var enteredIds = entered.Select(e => e.EnteredByUserId).ToHashSet();
+        var kvgsOnlyIds = kvgs
+            .Select(k => k.OfficerUserId)
+            .Where(id => !enteredIds.Contains(id))
+            .Distinct()
+            .ToArray();
+
+        var kvgsOnlyNames = new Dictionary<Guid, string>();
+        if (kvgsOnlyIds.Length > 0)
+        {
+            kvgsOnlyNames = await _db.Users.AsNoTracking()
+                .Where(u => kvgsOnlyIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id, u => u.FullName, cancellationToken);
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+
         var kvgsMap = kvgs.ToDictionary(x => x.OfficerUserId, x => x.Count);
-        return entered.Select(x => new OfficerReportItemDto(
+        var items = new List<OfficerReportItemDto>(entered.Count + kvgsOnlyIds.Length);
+        foreach (var x in entered)
+        {
+            items.Add(new OfficerReportItemDto(
                 x.EnteredByUserId,
                 x.FullName,
                 x.VehiclesEntered,
-                kvgsMap.GetValueOrDefault(x.EnteredByUserId)))
+                kvgsMap.GetValueOrDefault(x.EnteredByUserId)));
+        }
+
+        foreach (var kv in kvgs)
+        {
+            if (enteredIds.Contains(kv.OfficerUserId))
+            {
+                continue;
+            }
+
+            var name = kvgsOnlyNames.GetValueOrDefault(kv.OfficerUserId) ?? string.Empty;
+            items.Add(new OfficerReportItemDto(kv.OfficerUserId, name, 0, kv.Count));
+        }
+
+        return items
             .OrderByDescending(x => x.VehiclesEntered)
-            .ThenBy(x => x.OfficerName)
+            .ThenBy(x => x.OfficerName, StringComparer.Ordinal)
             .ToList();
     }
 
