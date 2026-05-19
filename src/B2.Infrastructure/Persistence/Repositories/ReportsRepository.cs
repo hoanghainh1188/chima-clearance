@@ -89,11 +89,39 @@ public sealed class ReportsRepository : IReportsRepository
             .ToListAsync(cancellationToken);
 
         var kvgsMap = kvgs.ToDictionary(x => x.OfficerUserId, x => x.Count);
-        return entered.Select(x => new OfficerReportItemDto(
-                x.EnteredByUserId,
-                x.FullName,
-                x.VehiclesEntered,
-                kvgsMap.GetValueOrDefault(x.EnteredByUserId)))
+        var enteredById = entered.ToDictionary(x => x.EnteredByUserId, x => x);
+
+        var officerIds = entered
+            .Select(x => x.EnteredByUserId)
+            .Concat(kvgs.Select(x => x.OfficerUserId))
+            .Distinct()
+            .ToList();
+
+        var nameById = new Dictionary<Guid, string>();
+        foreach (var row in entered)
+        {
+            nameById[row.EnteredByUserId] = row.FullName;
+        }
+
+        var missingNameIds = officerIds.Where(id => !enteredById.ContainsKey(id)).ToList();
+        if (missingNameIds.Count > 0)
+        {
+            var extra = await _db.Users.AsNoTracking()
+                .Where(u => missingNameIds.Contains(u.Id))
+                .Select(u => new { u.Id, u.FullName })
+                .ToListAsync(cancellationToken);
+            foreach (var row in extra)
+            {
+                nameById[row.Id] = row.FullName;
+            }
+        }
+
+        return officerIds
+            .Select(id => new OfficerReportItemDto(
+                id,
+                nameById[id],
+                enteredById.TryGetValue(id, out var en) ? en.VehiclesEntered : 0,
+                kvgsMap.GetValueOrDefault(id)))
             .OrderByDescending(x => x.VehiclesEntered)
             .ThenBy(x => x.OfficerName)
             .ToList();
