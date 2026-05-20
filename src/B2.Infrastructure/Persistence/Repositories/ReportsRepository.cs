@@ -68,35 +68,72 @@ public sealed class ReportsRepository : IReportsRepository
         bool includeCancelled,
         CancellationToken cancellationToken)
     {
-        var entered = await _db.Declarations
-            .Where(d => d.BusinessDate >= fromDate && d.BusinessDate <= toDate)
-            .Where(d => includeCancelled || d.Status != DeclarationStatus.Cancelled)
-            .Join(
-                _db.Users.AsNoTracking(),
-                d => d.EnteredByUserId,
-                u => u.Id,
-                (d, u) => new { Declaration = d, User = u })
-            .GroupBy(x => new { x.User.Id, x.User.FullName })
-            .Select(g => new { EnteredByUserId = g.Key.Id, g.Key.FullName, VehiclesEntered = g.Sum(x => x.Declaration.Vehicles.Count) })
-            .ToListAsync(cancellationToken);
+        // Single read transaction so entry aggregates, KVGS counts, and officer names for KVGS-only rows
+        // share one SQLite snapshot — WAL writers cannot advance one query ahead of the other.
+        await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
+        try
+        {
+            var enteredRows = await _db.Declarations
+                .Where(d => d.BusinessDate >= fromDate && d.BusinessDate <= toDate)
+                .Where(d => includeCancelled || d.Status != DeclarationStatus.Cancelled)
+                .Join(
+                    _db.Users.AsNoTracking(),
+                    d => d.EnteredByUserId,
+                    u => u.Id,
+                    (d, u) => new { Declaration = d, User = u })
+                .GroupBy(x => new { x.User.Id, x.User.FullName })
+                .Select(g => new
+                {
+                    EnteredByUserId = g.Key.Id,
+                    g.Key.FullName,
+                    VehiclesEntered = g.Sum(x => x.Declaration.Vehicles.Count),
+                })
+                .ToListAsync(cancellationToken);
 
-        var kvgs = await _db.Declarations
-            .Where(d => d.BusinessDate >= fromDate && d.BusinessDate <= toDate)
-            .Where(d => includeCancelled || d.Status != DeclarationStatus.Cancelled)
-            .Where(d => d.KvgsConfirmedByUserId != null)
-            .GroupBy(d => d.KvgsConfirmedByUserId!.Value)
-            .Select(g => new { OfficerUserId = g.Key, Count = g.Count() })
-            .ToListAsync(cancellationToken);
+            var kvgsRows = await _db.Declarations
+                .Where(d => d.BusinessDate >= fromDate && d.BusinessDate <= toDate)
+                .Where(d => includeCancelled || d.Status != DeclarationStatus.Cancelled)
+                .Where(d => d.KvgsConfirmedByUserId != null)
+                .GroupBy(d => d.KvgsConfirmedByUserId!.Value)
+                .Select(g => new { OfficerUserId = g.Key, Count = g.Count() })
+                .ToListAsync(cancellationToken);
 
-        var kvgsMap = kvgs.ToDictionary(x => x.OfficerUserId, x => x.Count);
-        return entered.Select(x => new OfficerReportItemDto(
+            var kvgsMap = kvgsRows.ToDictionary(x => x.OfficerUserId, x => x.Count);
+            var enteredSet = enteredRows.Select(x => x.EnteredByUserId).ToHashSet();
+            var kvgsOnlyIds = kvgsMap.Keys.Where(id => !enteredSet.Contains(id)).ToList();
+
+            var kvgsOnlyNames = new Dictionary<Guid, string>();
+            if (kvgsOnlyIds.Count > 0)
+            {
+                kvgsOnlyNames = await _db.Users.AsNoTracking()
+                    .Where(u => kvgsOnlyIds.Contains(u.Id))
+                    .ToDictionaryAsync(u => u.Id, u => u.FullName, cancellationToken);
+            }
+
+            await transaction.CommitAsync(cancellationToken);
+
+            var fromEntered = enteredRows.Select(x => new OfficerReportItemDto(
                 x.EnteredByUserId,
                 x.FullName,
                 x.VehiclesEntered,
-                kvgsMap.GetValueOrDefault(x.EnteredByUserId)))
-            .OrderByDescending(x => x.VehiclesEntered)
-            .ThenBy(x => x.OfficerName)
-            .ToList();
+                kvgsMap.GetValueOrDefault(x.EnteredByUserId)));
+
+            var fromKvgsOnly = kvgsOnlyIds.Select(id => new OfficerReportItemDto(
+                id,
+                kvgsOnlyNames[id],
+                0,
+                kvgsMap[id]));
+
+            return fromEntered.Concat(fromKvgsOnly)
+                .OrderByDescending(x => x.VehiclesEntered)
+                .ThenBy(x => x.OfficerName)
+                .ToList();
+        }
+        catch
+        {
+            await transaction.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
 
     public async Task<IReadOnlyList<PendingReportItemDto>> GetPendingAsync(
