@@ -88,12 +88,40 @@ public sealed class ReportsRepository : IReportsRepository
             .Select(g => new { OfficerUserId = g.Key, Count = g.Count() })
             .ToListAsync(cancellationToken);
 
-        var kvgsMap = kvgs.ToDictionary(x => x.OfficerUserId, x => x.Count);
-        return entered.Select(x => new OfficerReportItemDto(
-                x.EnteredByUserId,
-                x.FullName,
-                x.VehiclesEntered,
-                kvgsMap.GetValueOrDefault(x.EnteredByUserId)))
+        var enteredByUserId = entered.ToDictionary(x => x.EnteredByUserId, x => (x.FullName, x.VehiclesEntered));
+        var kvgsByUserId = kvgs.ToDictionary(x => x.OfficerUserId, x => x.Count);
+
+        var allOfficerIds = new HashSet<Guid>();
+        foreach (var e in entered)
+        {
+            allOfficerIds.Add(e.EnteredByUserId);
+        }
+
+        foreach (var k in kvgs)
+        {
+            allOfficerIds.Add(k.OfficerUserId);
+        }
+
+        if (allOfficerIds.Count == 0)
+        {
+            return [];
+        }
+
+        var nameLookup = await _db.Users.AsNoTracking()
+            .Where(u => allOfficerIds.Contains(u.Id))
+            .ToDictionaryAsync(u => u.Id, u => u.FullName, cancellationToken);
+
+        return allOfficerIds
+            .Select(id =>
+            {
+                var name = nameLookup.TryGetValue(id, out var n)
+                    ? n
+                    : enteredByUserId.TryGetValue(id, out var row)
+                        ? row.FullName
+                        : string.Empty;
+                var vehiclesEntered = enteredByUserId.TryGetValue(id, out var ent) ? ent.VehiclesEntered : 0;
+                return new OfficerReportItemDto(id, name, vehiclesEntered, kvgsByUserId.GetValueOrDefault(id));
+            })
             .OrderByDescending(x => x.VehiclesEntered)
             .ThenBy(x => x.OfficerName)
             .ToList();
