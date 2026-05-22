@@ -1,3 +1,4 @@
+using System.Data;
 using B2.Application.Abstractions;
 using B2.Domain.Declarations;
 using B2.Shared.Contracts.Reports;
@@ -68,6 +69,9 @@ public sealed class ReportsRepository : IReportsRepository
         bool includeCancelled,
         CancellationToken cancellationToken)
     {
+        // Serializable read transaction: two aggregates must see the same DB snapshot so
+        // entered-vehicle totals stay consistent with KVGS counts (T-S4-CO-04).
+        await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
         var entered = await _db.Declarations
             .Where(d => d.BusinessDate >= fromDate && d.BusinessDate <= toDate)
             .Where(d => includeCancelled || d.Status != DeclarationStatus.Cancelled)
@@ -85,15 +89,34 @@ public sealed class ReportsRepository : IReportsRepository
             .Where(d => includeCancelled || d.Status != DeclarationStatus.Cancelled)
             .Where(d => d.KvgsConfirmedByUserId != null)
             .GroupBy(d => d.KvgsConfirmedByUserId!.Value)
-            .Select(g => new { OfficerUserId = g.Key, Count = g.Count() })
+            .Select(g => new { OfficerUserId = g.Key, DeclarationsKvgsConfirmed = g.Count() })
             .ToListAsync(cancellationToken);
 
-        var kvgsMap = kvgs.ToDictionary(x => x.OfficerUserId, x => x.Count);
-        return entered.Select(x => new OfficerReportItemDto(
-                x.EnteredByUserId,
-                x.FullName,
-                x.VehiclesEntered,
-                kvgsMap.GetValueOrDefault(x.EnteredByUserId)))
+        var enteredById = entered.ToDictionary(x => x.EnteredByUserId);
+        var kvgsById = kvgs.ToDictionary(x => x.OfficerUserId, x => x.DeclarationsKvgsConfirmed);
+        var allIds = enteredById.Keys.Union(kvgsById.Keys).ToHashSet();
+        var kvgsOnlyIds = allIds.Where(id => !enteredById.ContainsKey(id)).ToArray();
+
+        Dictionary<Guid, string> kvgsOnlyNames = new();
+        if (kvgsOnlyIds.Length > 0)
+        {
+            kvgsOnlyNames = await _db.Users.AsNoTracking()
+                .Where(u => kvgsOnlyIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id, u => u.FullName, cancellationToken);
+        }
+
+        await tx.CommitAsync(cancellationToken);
+
+        return allIds
+            .Select(id =>
+            {
+                var vehiclesEntered = enteredById.TryGetValue(id, out var ent) ? ent.VehiclesEntered : 0;
+                var name = enteredById.TryGetValue(id, out var entName)
+                    ? entName.FullName
+                    : kvgsOnlyNames.GetValueOrDefault(id) ?? string.Empty;
+                var declarationsKvgs = kvgsById.GetValueOrDefault(id);
+                return new OfficerReportItemDto(id, name, vehiclesEntered, declarationsKvgs);
+            })
             .OrderByDescending(x => x.VehiclesEntered)
             .ThenBy(x => x.OfficerName)
             .ToList();
