@@ -118,4 +118,48 @@ public sealed class CreateDeclarationEndpointTests
         (await AuditLogQuery.CountForEntityAsync(factory, "Declaration", firstDto.Id))
             .Should().Be(1);
     }
+
+    [Fact]
+    [Trait("Feature", "F-05")]
+    [Trait("Requirement", "FR-019")]
+    public async Task Should_parallel_idempotent_posts_create_single_declaration_and_replay_rest()
+    {
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+        var key = "idem-concurrent-" + Guid.NewGuid().ToString("N");
+        var declNo = "222222222222";
+        var req = new DeclarationCreateRequest(
+            declNo,
+            SeedIds.ProcessorId,
+            "C1",
+            "G1",
+            SeedIds.YardId,
+            new VehicleAddRequest("29A22222", null, null));
+        client.DefaultRequestHeaders.TryAddWithoutValidation("Idempotency-Key", key);
+
+        const int parallel = 12;
+        var tasks = Enumerable.Range(0, parallel)
+            .Select(_ => client.PostAsJsonAsync("/api/declarations", req, TestJson.Options))
+            .ToArray();
+        var responses = await Task.WhenAll(tasks);
+
+        responses.Should().OnlyContain(r => r.StatusCode == HttpStatusCode.Created);
+        var ids = new HashSet<Guid>();
+        foreach (var res in responses)
+        {
+            var dto = await res.Content.ReadFromJsonAsync<DeclarationDto>(TestJson.Options);
+            ids.Add(dto!.Id);
+        }
+
+        ids.Should().HaveCount(1);
+
+        await using var scope = factory.Services.CreateAsyncScope();
+        var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+        (await db.Declarations.AsNoTracking().CountAsync(d => d.DeclarationNumber == declNo)).Should().Be(1);
+
+        (await AuditLogQuery.CountForEntityAsync(factory, "Declaration", ids.Single()))
+            .Should().Be(1);
+    }
 }

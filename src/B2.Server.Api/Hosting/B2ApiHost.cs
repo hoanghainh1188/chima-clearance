@@ -42,6 +42,7 @@ public static class B2ApiHost
         var enableJobs = !builder.Environment.IsEnvironment("Testing");
 
         builder.Services.AddHttpContextAccessor();
+        builder.Services.AddSingleton<IdempotencyConcurrencyGate>();
         builder.Services.AddScoped<IAuditContext, HttpAuditContext>();
         builder.Services.AddB2Application();
         builder.Services.AddB2Infrastructure(connectionString, dataDir, enableJobs);
