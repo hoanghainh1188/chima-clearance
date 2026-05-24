@@ -1,4 +1,5 @@
 using B2.Application.Abstractions;
+using B2.Application.Common;
 using B2.Domain.DailyHeaders;
 using B2.Domain.Declarations;
 using Microsoft.EntityFrameworkCore;
@@ -30,8 +31,14 @@ public sealed class DailyHeaderRepository : IDailyHeaderRepository
 
     public Task<int> CountVehiclesEnteredOnDateAsync(DateOnly date, CancellationToken cancellationToken)
     {
+        // F-12: count by vehicle EntryTime in Vietnam business day — not Declaration.BusinessDate,
+        // so additional vehicles on a multi-day open declaration accrue on the day they entered.
+        var (startUtc, endUtc) = VietnamTime.UtcRangeForBusinessDate(date);
         return _db.Vehicles
-            .Where(v => v.Declaration.BusinessDate == date && v.Declaration.Status != DeclarationStatus.Cancelled)
+            .Where(v =>
+                v.EntryTime >= startUtc
+                && v.EntryTime < endUtc
+                && v.Declaration.Status != DeclarationStatus.Cancelled)
             .CountAsync(cancellationToken);
     }
 }

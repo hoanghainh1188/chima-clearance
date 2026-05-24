@@ -13,6 +13,10 @@ style sweep, ⚙️ quick-settings menu, top-right toast position. S4 review
 carry-over items (`T-S4-CO-01..09`) tracked under Phase 5 of `tasks.md`
 and slated for early Sprint S5.
 
+### Fixed
+
+- **F-12 daily summary count**: `DailyHeaderRepository.CountVehiclesEnteredOnDateAsync` now counts vehicles by Vietnam calendar day of `Vehicle.EntryTime` (half-open UTC range from `VietnamTime.UtcRangeForBusinessDate`), matching Gherkin "vehicles entered today" instead of `Declaration.BusinessDate` only (which mis-attributed same-declaration vehicles added after midnight ICT).
+
 ### Added
 
 #### PR #18 — Sprint S4: Quartz jobs + reports + officer name (`9f0d15b`)
