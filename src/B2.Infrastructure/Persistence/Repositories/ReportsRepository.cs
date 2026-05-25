@@ -77,7 +77,7 @@ public sealed class ReportsRepository : IReportsRepository
                 u => u.Id,
                 (d, u) => new { Declaration = d, User = u })
             .GroupBy(x => new { x.User.Id, x.User.FullName })
-            .Select(g => new { EnteredByUserId = g.Key.Id, g.Key.FullName, VehiclesEntered = g.Sum(x => x.Declaration.Vehicles.Count) })
+            .Select(g => new { UserId = g.Key.Id, g.Key.FullName, VehiclesEntered = g.Sum(x => x.Declaration.Vehicles.Count) })
             .ToListAsync(cancellationToken);
 
         var kvgs = await _db.Declarations
@@ -85,15 +85,43 @@ public sealed class ReportsRepository : IReportsRepository
             .Where(d => includeCancelled || d.Status != DeclarationStatus.Cancelled)
             .Where(d => d.KvgsConfirmedByUserId != null)
             .GroupBy(d => d.KvgsConfirmedByUserId!.Value)
-            .Select(g => new { OfficerUserId = g.Key, Count = g.Count() })
+            .Select(g => new { UserId = g.Key, Count = g.Count() })
             .ToListAsync(cancellationToken);
 
-        var kvgsMap = kvgs.ToDictionary(x => x.OfficerUserId, x => x.Count);
-        return entered.Select(x => new OfficerReportItemDto(
-                x.EnteredByUserId,
-                x.FullName,
-                x.VehiclesEntered,
-                kvgsMap.GetValueOrDefault(x.EnteredByUserId)))
+        var vehiclesEnteredByUser = entered.ToDictionary(x => x.UserId, x => (x.FullName, x.VehiclesEntered));
+        var kvgsByUser = kvgs.ToDictionary(x => x.UserId, x => x.Count);
+
+        var allUserIds = vehiclesEnteredByUser.Keys
+            .AsEnumerable()
+            .Union(kvgsByUser.Keys)
+            .Distinct()
+            .ToList();
+
+        var kvgsOnlyIds = allUserIds.Where(id => !vehiclesEnteredByUser.ContainsKey(id)).ToList();
+        IReadOnlyDictionary<Guid, string> namesForKvgsOnly = kvgsOnlyIds.Count == 0
+            ? new Dictionary<Guid, string>()
+            : await _db.Users.AsNoTracking()
+                .Where(u => kvgsOnlyIds.Contains(u.Id))
+                .ToDictionaryAsync(u => u.Id, u => u.FullName, cancellationToken);
+
+        return allUserIds
+            .Select(id =>
+            {
+                if (vehiclesEnteredByUser.TryGetValue(id, out var row))
+                {
+                    return new OfficerReportItemDto(
+                        id,
+                        row.FullName,
+                        row.VehiclesEntered,
+                        kvgsByUser.GetValueOrDefault(id));
+                }
+
+                return new OfficerReportItemDto(
+                    id,
+                    namesForKvgsOnly.GetValueOrDefault(id, string.Empty),
+                    0,
+                    kvgsByUser.GetValueOrDefault(id));
+            })
             .OrderByDescending(x => x.VehiclesEntered)
             .ThenBy(x => x.OfficerName)
             .ToList();
