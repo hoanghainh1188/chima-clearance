@@ -68,6 +68,10 @@ public sealed class ReportsRepository : IReportsRepository
         bool includeCancelled,
         CancellationToken cancellationToken)
     {
+        // Single snapshot: two aggregate queries must agree on the same DB view,
+        // and every user who appears only as KvgsConfirmedBy must still get a row
+        // (F-14 / spec: entered-by + confirmed-by dimensions).
+        await using var transaction = await _db.Database.BeginTransactionAsync(cancellationToken);
         var entered = await _db.Declarations
             .Where(d => d.BusinessDate >= fromDate && d.BusinessDate <= toDate)
             .Where(d => includeCancelled || d.Status != DeclarationStatus.Cancelled)
@@ -89,11 +93,33 @@ public sealed class ReportsRepository : IReportsRepository
             .ToListAsync(cancellationToken);
 
         var kvgsMap = kvgs.ToDictionary(x => x.OfficerUserId, x => x.Count);
-        return entered.Select(x => new OfficerReportItemDto(
-                x.EnteredByUserId,
-                x.FullName,
-                x.VehiclesEntered,
-                kvgsMap.GetValueOrDefault(x.EnteredByUserId)))
+        var enteredById = entered.ToDictionary(x => x.EnteredByUserId, x => x);
+        var allOfficerIds = enteredById.Keys.Union(kvgsMap.Keys).ToHashSet();
+
+        var idsNeedingNames = allOfficerIds.Where(id => !enteredById.ContainsKey(id)).ToList();
+        var nameById = new Dictionary<Guid, string>();
+        if (idsNeedingNames.Count > 0)
+        {
+            var rows = await _db.Users.AsNoTracking()
+                .Where(u => idsNeedingNames.Contains(u.Id))
+                .Select(u => new { u.Id, u.FullName })
+                .ToListAsync(cancellationToken);
+            foreach (var row in rows)
+            {
+                nameById[row.Id] = row.FullName;
+            }
+        }
+
+        await transaction.CommitAsync(cancellationToken);
+
+        return allOfficerIds
+            .Select(id =>
+            {
+                enteredById.TryGetValue(id, out var ent);
+                var vehiclesEntered = ent?.VehiclesEntered ?? 0;
+                var officerName = ent?.FullName ?? nameById.GetValueOrDefault(id) ?? string.Empty;
+                return new OfficerReportItemDto(id, officerName, vehiclesEntered, kvgsMap.GetValueOrDefault(id));
+            })
             .OrderByDescending(x => x.VehiclesEntered)
             .ThenBy(x => x.OfficerName)
             .ToList();
