@@ -13,6 +13,13 @@ style sweep, ⚙️ quick-settings menu, top-right toast position. S4 review
 carry-over items (`T-S4-CO-01..09`) tracked under Phase 5 of `tasks.md`
 and slated for early Sprint S5.
 
+### Fixed
+
+- **F-14** `GET /api/reports/by-officer` omitted supervisors (or any user) who only
+  appeared as `KvgsConfirmedByUserId` because rows were built from the
+  entered-by aggregate alone. The repository now unions both dimensions and
+  resolves display names for KVGS-only officers (closes **T-S4-CO-04** behaviour).
+
 ### Added
 
 #### PR #18 — Sprint S4: Quartz jobs + reports + officer name (`9f0d15b`)
