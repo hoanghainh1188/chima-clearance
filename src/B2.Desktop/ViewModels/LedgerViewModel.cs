@@ -29,7 +29,6 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
     private readonly IModalService _modalService;
     private readonly IToastService _toastService;
     private readonly ISessionContext _session;
-    private DateTimeOffset _sinceWatermark = DateTimeOffset.UtcNow.AddMinutes(-30);
     private bool _disposed;
     private bool _filterEventsEnabled = true;
     private readonly Dictionary<DateOnly, string?> _officerByDate = new();
@@ -242,7 +241,7 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
 
     private void OnSuggestedRefresh()
     {
-        MainThread.BeginInvokeOnMainThread(async () => await LoadAsync(useSince: true).ConfigureAwait(true));
+        MainThread.BeginInvokeOnMainThread(async () => await LoadAsync().ConfigureAwait(true));
     }
 
     private void OnLedgerPush(Guid declarationId)
@@ -250,7 +249,7 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
         MainThread.BeginInvokeOnMainThread(async () =>
         {
             _ = declarationId;
-            await LoadAsync(useSince: false).ConfigureAwait(true);
+            await LoadAsync().ConfigureAwait(true);
         });
     }
 
@@ -290,17 +289,17 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
 
         _filterEventsEnabled = true;
         Page = 1;
-        await LoadAsync(useSince: false).ConfigureAwait(true);
+        await LoadAsync().ConfigureAwait(true);
     }
 
     [RelayCommand]
-    private Task RefreshAsync() => LoadAsync(useSince: false);
+    private Task RefreshAsync() => LoadAsync();
 
     [RelayCommand]
     private async Task SearchFromFilterAsync()
     {
         Page = 1;
-        await LoadAsync(useSince: false).ConfigureAwait(true);
+        await LoadAsync().ConfigureAwait(true);
     }
 
     [RelayCommand]
@@ -314,7 +313,7 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
         SelectedYard = YardPickerSource.Count > 0 ? YardPickerSource[0] : null;
         _filterEventsEnabled = true;
         Page = 1;
-        await LoadAsync(useSince: false).ConfigureAwait(true);
+        await LoadAsync().ConfigureAwait(true);
     }
 
     [RelayCommand]
@@ -326,7 +325,7 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
         }
 
         Page++;
-        await LoadAsync(useSince: false).ConfigureAwait(true);
+        await LoadAsync().ConfigureAwait(true);
     }
 
     [RelayCommand]
@@ -338,7 +337,7 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
         }
 
         Page--;
-        await LoadAsync(useSince: false).ConfigureAwait(true);
+        await LoadAsync().ConfigureAwait(true);
     }
 
     [RelayCommand]
@@ -398,7 +397,7 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
         }
 
         Page = 1;
-        await LoadAsync(useSince: false).ConfigureAwait(true);
+        await LoadAsync().ConfigureAwait(true);
     }
 
     private void RebuildYardPickerSource()
@@ -622,7 +621,7 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
         item.OfficerName = previous;
     }
 
-    private async Task LoadAsync(bool useSince)
+    private async Task LoadAsync()
     {
         if (IsLoading)
         {
@@ -635,18 +634,12 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
         NotifyViewStates();
         try
         {
-            string? sinceParam = null;
-            if (useSince)
-            {
-                sinceParam = _sinceWatermark.ToString("O", CultureInfo.InvariantCulture);
-            }
-
             var q = BuildQuery();
             var response = await _api.ListDeclarationsAsync(
                     Page,
                     PageSize,
                     q.status,
-                    sinceParam,
+                    null,
                     q.from,
                     q.to,
                     q.plate,
@@ -670,11 +663,6 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
 
             DisplayItems.Clear();
             RebuildDisplayItems(response.Items, Page, PageSize, _officerByDate, DisplayItems);
-
-            if (response.Items.Count > 0)
-            {
-                _sinceWatermark = response.Items.Max(x => x.EnteredAt);
-            }
 
             NotifyViewStates();
         }
