@@ -15,6 +15,13 @@ jobs:
   build-and-test:
     runs-on: windows-2022
     timeout-minutes: 30
+    # Static, job-level DOTNET_ROOT so every step resolves the SDK without depending on
+    # setup-dotnet's GITHUB_ENV write (which intermittently failed to propagate, surfacing
+    # as "Unable to locate dotnet CLI" at Verify formatting — PR #42's GITHUB_ENV-based
+    # pin shared that flaky mechanism and still missed on PR #46). Job-level env is plain
+    # YAML, always present.
+    env:
+      DOTNET_ROOT: 'C:\Program Files\dotnet'
 
     steps:
       - name: Checkout
@@ -33,25 +40,27 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      # setup-dotnet@v5 intermittently fails to propagate the SDK location to
-      # GITHUB_PATH on windows-2022, so a later bash step hits "Unable to locate
-      # dotnet CLI. Ensure that it is on the PATH." (observed at "Verify
-      # formatting" across PR #9 first run, R3b ×2, PR #40, PR #41 ×2). On the
-      # hosted runner the SDK (and setup-dotnet's install) live at
-      # C:\Program Files\dotnet, so pin that onto PATH + DOTNET_ROOT explicitly
-      # for every subsequent step instead of relying on the action's own write.
-      - name: Pin dotnet on PATH (setup-dotnet windows flake guard)
+      # Diagnostic (always runs): if the muxer ever goes missing again this reveals the
+      # real SDK location instead of just "Unable to locate dotnet CLI".
+      - name: Locate .NET SDK
         shell: bash
         run: |
-          echo "/c/Program Files/dotnet" >> "$GITHUB_PATH"
-          echo "DOTNET_ROOT=C:\\Program Files\\dotnet" >> "$GITHUB_ENV"
+          echo "DOTNET_ROOT=$DOTNET_ROOT"
+          command -v dotnet || echo "dotnet not found on PATH"
+          ls -la "/c/Program Files/dotnet" || true
 
-      # Every dotnet step uses `shell: bash` (Git Bash): Git Bash reads PATH via
-      # the runner's persistent env, which together with the pin step above keeps
-      # the SDK reliably resolvable between steps.
+      # Every dotnet step prepends the SDK dir to PATH in its OWN shell. Git Bash spawns a
+      # fresh shell per step, so this is immune to the setup-dotnet GITHUB_PATH/GITHUB_ENV
+      # propagation race that produced "Unable to locate dotnet CLI" at Verify formatting
+      # (PR #9 first run, R3b ×2, PR #40-#42, #46, #47). DOTNET_ROOT is the static
+      # job-level env above. Defining a reusable env var keeps the prefix DRY.
       - name: Install MAUI workload
         shell: bash
-        run: dotnet workload install maui
+        run: |
+          export PATH="$DOTNET_DIR:$PATH"
+          dotnet workload install maui
+        env:
+          DOTNET_DIR: '/c/Program Files/dotnet'
 
       # B2.Desktop declares <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
       # so restore pulls Microsoft.NETCore.App.Runtime.win-x64. Build/test stay
@@ -61,20 +70,35 @@ jobs:
       - name: Restore
         shell: bash
         run: |
+          export PATH="$DOTNET_DIR:$PATH"
           dotnet workload restore B2.sln
           dotnet restore B2.sln
+        env:
+          DOTNET_DIR: '/c/Program Files/dotnet'
 
       - name: Verify formatting (Constitution III)
         shell: bash
-        run: dotnet format B2.sln --verify-no-changes --no-restore
+        run: |
+          export PATH="$DOTNET_DIR:$PATH"
+          dotnet format B2.sln --verify-no-changes --no-restore
+        env:
+          DOTNET_DIR: '/c/Program Files/dotnet'
 
       - name: Build (Release; TreatWarningsAsErrors=true)
         shell: bash
-        run: dotnet build B2.sln -c Release --no-restore -p:TreatWarningsAsErrors=true
+        run: |
+          export PATH="$DOTNET_DIR:$PATH"
+          dotnet build B2.sln -c Release --no-restore -p:TreatWarningsAsErrors=true
+        env:
+          DOTNET_DIR: '/c/Program Files/dotnet'
 
       - name: Test (Release) with coverage
         shell: bash
-        run: dotnet test B2.sln -c Release --no-build --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx"
+        run: |
+          export PATH="$DOTNET_DIR:$PATH"
+          dotnet test B2.sln -c Release --no-build --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx"
+        env:
+          DOTNET_DIR: '/c/Program Files/dotnet'
 
       - name: Upload coverage
         if: always()

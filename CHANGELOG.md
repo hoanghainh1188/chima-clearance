@@ -14,6 +14,16 @@ style sweep, ⚙️ quick-settings menu, top-right toast position.
 
 ### Fixed
 
+#### CI — per-step SDK PATH (flake guard v2) — `ci/harden-dotnet-root`
+
+PR #42's guard wrote `DOTNET_ROOT`/PATH through `GITHUB_ENV`/`GITHUB_PATH` — the **same**
+propagation mechanism that flakes — so the `Unable to locate dotnet CLI` failure still hit
+PR #46 and #47. The robust fix: every `dotnet` step now prepends the SDK dir to `PATH`
+**in its own shell** (`export PATH="/c/Program Files/dotnet:$PATH"`), which a fresh Git
+Bash shell per step makes immune to any GITHUB_PATH/GITHUB_ENV propagation race. Plus a
+static job-level `DOTNET_ROOT` and an always-on "Locate .NET SDK" diagnostic step so a
+future regression reports the real SDK location instead of a bare error.
+
 #### CI — `setup-dotnet` windows PATH flake guard — `ci/harden-dotnet-path`
 
 The `build-and-test` job intermittently failed at "Verify formatting" with
