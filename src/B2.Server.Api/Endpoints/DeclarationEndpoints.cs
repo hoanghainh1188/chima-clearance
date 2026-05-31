@@ -1,5 +1,6 @@
 using System.Globalization;
 using B2.Application.Declarations;
+using B2.Application.Declarations.Cancel;
 using B2.Application.Declarations.ConfirmKvgs;
 using B2.Application.Declarations.List;
 using B2.Server.Api.Auth;
@@ -90,6 +91,25 @@ public static class DeclarationEndpoints
                     return Results.NoContent();
                 })
             .RequireAuthorization(B2Policies.SupervisorOrAbove);
+
+        app.MapPost(
+                "/api/declarations/{id:guid}/cancel",
+                async (
+                    Guid id,
+                    HttpContext http,
+                    CancelDeclarationRequest request,
+                    CancelDeclarationCommandHandler handler,
+                    IValidator<CancelDeclarationCommand> validator,
+                    CancellationToken ct) =>
+                {
+                    var uid = http.User.GetB2UserId() ?? throw new InvalidOperationException("Missing user id.");
+                    var role = http.User.FindFirst("role")?.Value;
+                    var cmd = new CancelDeclarationCommand(id, request.Reason);
+                    await validator.ValidateAndThrowAsync(cmd, ct);
+                    await handler.HandleAsync(cmd, role, uid, ct);
+                    return Results.NoContent();
+                })
+            .RequireAuthorization(B2Policies.AdminOnly);
     }
 
     private static bool TryParseListDeclarationsQuery(

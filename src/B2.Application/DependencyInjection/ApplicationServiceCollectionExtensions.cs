@@ -1,5 +1,6 @@
 using B2.Application.Auth;
 using B2.Application.Declarations;
+using B2.Application.Declarations.Cancel;
 using B2.Application.Declarations.ConfirmKvgs;
 using B2.Application.Declarations.Exit;
 using B2.Application.Declarations.List;
@@ -28,6 +29,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<MarkVehicleExitCommandHandler>();
         services.AddScoped<UnExitVehicleCommandHandler>();
         services.AddScoped<ConfirmKvgsCommandHandler>();
+        services.AddScoped<CancelDeclarationCommandHandler>();
         services.AddScoped<ListDeclarationsQueryHandler>();
         services.AddScoped<GetDeclarationDetailQueryHandler>();
         services.AddScoped<SearchVehiclesBySuffixQueryHandler>();

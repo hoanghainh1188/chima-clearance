@@ -103,7 +103,7 @@ integration sweeps where appropriate.
 | S2 | T-S2-01 .. T-S2-22 (22) | F-05, F-06, F-07, F-08 + FR-019/024 | ~4 500 | ✅ Merged (PR #5 `de24ec5`) |
 | S3 | T-S3-01 .. T-S3-12 (12) | F-09, F-10 + FR-027/FR-028 | ~2 500 | ✅ Merged (PRs #6/#7/#8/#9/#11/#12/#15/#16, #13 CI fix) |
 | S4 | T-S4-01 .. T-S4-15 (15) | F-11, F-12, F-14 + FR-025 | ~2 800 | ✅ Merged (PR #18 `9f0d15b` + docs PR #19 `6514c2e`); 9 carry-overs `T-S4-CO-01..09` deferred to S5 |
-| S5 | T-S5-01 .. T-S5-19 (19) | F-13, F-15, F-16, F-18 + FR-022/026 | ~3 800 | 🔄 In progress — **F-13 complete** (backend PR #41 + UI PR `feat/F-13-export-ui`; T-S5-06 perf = spec-VM placeholder); CI flake fix PR #42; 9 S4 carry-overs cleared (PR #40). Next: F-15 / F-16 / F-18 / FR-022 |
+| S5 | T-S5-01 .. T-S5-19 (19) | F-13, F-15, F-16, F-18 + FR-022/026 | ~3 800 | 🔄 In progress — **F-13 complete** (PRs #41 + #43; T-S5-06 perf = spec-VM placeholder); **FR-022 Cancel complete** (PR `feat/FR-022-cancel`, T-S5-14/15); CI flake fix PR #42; 9 S4 carry-overs cleared (PR #40). Next: F-15 / F-16 / F-18 |
 | S6 | T-S6-01 .. T-S6-12 (12) | F-17 simple v1 + a11y + runbook + UAT | ~1 800 | ⏳ Pending |
 | **Total** | **113 tasks** | 18 features + 7 cross-cutting FRs | **~19 500 LOC** | **75/113 tasks merged (S0–S4 done)** |
 
@@ -834,17 +834,35 @@ audit viewer shows every write tagged with the actor.
 
 ### FR-022 Declaration Cancellation (Admin only)
 
-- [ ] **T-S5-14** [P] [F-10] Write Gherkin tests in
+> **Landed (PR `feat/FR-022-cancel`)** — T-S5-14 / 15 done. The F-13
+> cancelled-strikethrough export test (previously EF-driven) now exercises the
+> real `POST /api/declarations/{id}/cancel` endpoint.
+
+- [X] **T-S5-14** [P] [F-10] Write Gherkin tests in
   `tests/B2.Server.Api.Tests/Declarations/CancelDeclarationEndpointTests.cs`
   for FR-022 (admin-only, only-from-Open, mandatory-reason, prevent-further-
   writes, 403 for Operator/Supervisor). Tag
   `[Trait("Requirement","FR-022")]`. **Dep**: T-S4-15. **LOC**: ~180.
-- [ ] **T-S5-15** [F-10] Extend `Declaration` aggregate with `Cancel(reason)`
+  *Done*: 7 endpoint tests (admin-cancel + audit row, no-reason 400,
+  operator/supervisor 403 via Theory, not-open 409, exit-after-cancel 409,
+  add-vehicle-after-cancel 409) + 5 `DeclarationCancelTests` domain
+  invariant tests (INV-9 only-from-Open, INV-10 reason-required, role,
+  exit-on-cancelled guard).
+- [X] **T-S5-15** [F-10] Extend `Declaration` aggregate with `Cancel(reason)`
   method (INV-9, INV-10). Implement `CancelDeclarationCommandHandler` and
   `POST /api/declarations/{id}/cancel` (Admin) in
   `src/B2.Application/Declarations/Cancel/` and `DeclarationsEndpoints.cs`.
   Update `LedgerPage.xaml` and `ExportPage` to render strike-through for
   `Cancelled` rows (FR-023). **Dep**: T-S2-07, T-S5-04. **LOC**: ~300.
+  *Done*: `Declaration.Cancel(role, userId, reason, clock)` (Admin-only,
+  Open-only, reason required) + `Vehicle.MarkExit` guard rejecting exit on a
+  cancelled declaration; `CancelDeclarationCommand`/Handler/Validator;
+  `POST /api/declarations/{id}/cancel` (`AdminOnly`, added to the FR-027
+  matrix) writing an `AuditAction.Cancel` row + ledger-changed SignalR push.
+  The exporter already strikes through cancelled rows; the ledger row now
+  renders struck-through via a `Row.IsCancelled` DataTrigger. The Admin
+  cancel-trigger UI (ledger context menu / button) is deferred S3 polish —
+  cancellation is currently API-driven.
 
 ### F-16 Audit Log Viewer
 

@@ -1,14 +1,10 @@
 using System.Globalization;
 using System.Net;
 using System.Net.Http.Json;
-using B2.Domain.Declarations;
-using B2.Infrastructure.Persistence;
 using B2.Server.Api.Tests.Support;
 using B2.Shared.Contracts.Declarations;
 using ClosedXML.Excel;
 using FluentAssertions;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.Extensions.DependencyInjection;
 
 namespace B2.Server.Api.Tests.Reports;
 
@@ -82,14 +78,10 @@ public sealed class ExcelExportEndpointTests
 
         var decl = await CreateDeclarationAsync(client, "31A30020");
 
-        // FR-022 cancel endpoint lands later in S5; drive the status directly for now.
-        using (var scope = factory.Services.CreateAsyncScope())
-        {
-            var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
-            var entity = await db.Declarations.SingleAsync(d => d.Id == decl.Id);
-            db.Entry(entity).Property(d => d.Status).CurrentValue = DeclarationStatus.Cancelled;
-            await db.SaveChangesAsync();
-        }
+        (await client.PostAsJsonAsync(
+            $"/api/declarations/{decl.Id}/cancel",
+            new CancelDeclarationRequest("Hủy để kiểm thử"),
+            TestJson.Options)).EnsureSuccessStatusCode();
 
         var date = decl.BusinessDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
         var ws = await ExportWorksheetAsync(client, date, date);

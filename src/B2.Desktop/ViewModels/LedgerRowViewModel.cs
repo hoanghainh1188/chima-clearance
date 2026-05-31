@@ -47,6 +47,9 @@ public sealed partial class LedgerRowViewModel : ObservableObject
 
     public string TimeLocal { get; }
 
+    /// <summary>FR-023: cancelled rows render struck-through in the ledger.</summary>
+    public bool IsCancelled => string.Equals(Dto.Status, "Cancelled", StringComparison.Ordinal);
+
     public string CompanyName => Dto.CompanyName;
 
     public string ProcessorName => Dto.ProcessorName;

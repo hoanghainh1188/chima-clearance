@@ -27,6 +27,29 @@ retained.
 
 ### Added
 
+#### Sprint S5 — FR-022 declaration cancellation (Admin) — `feat/FR-022-cancel`
+
+Admin-only soft-delete of an erroneous declaration (T-S5-14/15). Full
+`B2.sln -c Release` builds clean; Domain (10) + Server.Api (75) suites pass.
+
+- **Domain** — `Declaration.Cancel(role, userId, reason, clock)`: Admin-only,
+  reachable only from `Open` (INV-9), mandatory reason (INV-10), flips Status →
+  `Cancelled` with cancelled-by / at / reason. `Vehicle.MarkExit` now rejects
+  exit on a cancelled declaration (FR-022 "no further writes").
+- **Application / API** — `CancelDeclarationCommand` + Handler + Validator;
+  `POST /api/declarations/{id}/cancel` (`AdminOnly`, added to the FR-027
+  `EndpointPolicyAlignmentTests` matrix) writes an `AuditAction.Cancel` audit
+  row (with reason) and pushes a ledger-changed SignalR event.
+- **Desktop** — the ledger renders cancelled rows **struck-through** via a
+  `Row.IsCancelled` DataTrigger (the exporter already does, FR-023). The Admin
+  cancel-trigger control (ledger context menu / button) is deferred S3 polish —
+  cancellation is API-driven for now.
+- **Tests** — 7 `CancelDeclarationEndpointTests` (admin-cancel + audit,
+  no-reason 400, operator/supervisor 403, not-open 409, exit-after-cancel 409,
+  add-vehicle-after-cancel 409) + 5 `DeclarationCancelTests` domain invariants.
+  The F-13 cancelled-strikethrough export test now drives the real cancel
+  endpoint instead of an EF status mutation.
+
 #### Sprint S5 — F-13 Sổ B2 Excel export (UI) — `feat/F-13-export-ui`
 
 The desktop **Xuất Sổ B2** screen (wireframe § 6.7) on top of the F-13 backend.

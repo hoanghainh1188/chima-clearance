@@ -110,6 +110,37 @@ public sealed class Declaration
         KvgsConfirmedAt = confirmedAtUtc;
     }
 
+    /// <summary>
+    /// FR-022 — Admin-only cancellation, reachable only from <see cref="DeclarationStatus.Open"/>
+    /// (INV-9) with a mandatory reason (INV-10). Soft-delete: the row is kept for audit /
+    /// exports and rendered struck-through (FR-023); no further writes are permitted.
+    /// </summary>
+    public void Cancel(Role actorRole, Guid actorUserId, string reason, DateTimeOffset cancelledAtUtc)
+    {
+        if (actorRole != Role.Admin)
+        {
+            throw new DomainException("FORBIDDEN", "Only Admin can cancel a declaration.", 403);
+        }
+
+        if (string.IsNullOrWhiteSpace(reason))
+        {
+            throw new DomainException("CANCELLATION_REASON_REQUIRED", "A cancellation reason is required.", 400);
+        }
+
+        if (Status != DeclarationStatus.Open)
+        {
+            throw new DomainException(
+                "DECLARATION_NOT_CANCELLABLE",
+                "Only an Open declaration can be cancelled.",
+                409);
+        }
+
+        Status = DeclarationStatus.Cancelled;
+        CancelledByUserId = actorUserId;
+        CancelledAt = cancelledAtUtc;
+        CancellationReason = reason.Trim();
+    }
+
     private void EnsureCanAddVehicles()
     {
         if (Status == DeclarationStatus.KVGSConfirmed)
