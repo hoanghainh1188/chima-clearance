@@ -274,4 +274,24 @@ public static class AppResources
     public static string Audit_NextPage => ResourceManager.GetString(nameof(Audit_NextPage), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Audit_Error_Format => ResourceManager.GetString(nameof(Audit_Error_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Audit_Error_Network => ResourceManager.GetString(nameof(Audit_Error_Network), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Sidebar_Item_Health => ResourceManager.GetString(nameof(Sidebar_Item_Health), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Health_Title => ResourceManager.GetString(nameof(Health_Title), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Health_Tab_Overview => ResourceManager.GetString(nameof(Health_Tab_Overview), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Health_Tab_Logs => ResourceManager.GetString(nameof(Health_Tab_Logs), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Health_Refresh => ResourceManager.GetString(nameof(Health_Refresh), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Health_Row_Uptime => ResourceManager.GetString(nameof(Health_Row_Uptime), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Health_Row_Memory => ResourceManager.GetString(nameof(Health_Row_Memory), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Health_Row_DbSize => ResourceManager.GetString(nameof(Health_Row_DbSize), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Health_Row_FreeDisk => ResourceManager.GetString(nameof(Health_Row_FreeDisk), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Health_Row_OpenOld => ResourceManager.GetString(nameof(Health_Row_OpenOld), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Health_Status_Ok => ResourceManager.GetString(nameof(Health_Status_Ok), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Health_Status_Warn => ResourceManager.GetString(nameof(Health_Status_Warn), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Health_Uptime_Format => ResourceManager.GetString(nameof(Health_Uptime_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Health_OpenOld_Format => ResourceManager.GetString(nameof(Health_OpenOld_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Health_Logs_Level => ResourceManager.GetString(nameof(Health_Logs_Level), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Health_Logs_LevelAll => ResourceManager.GetString(nameof(Health_Logs_LevelAll), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Health_Logs_Empty => ResourceManager.GetString(nameof(Health_Logs_Empty), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Health_PageSummary_Format => ResourceManager.GetString(nameof(Health_PageSummary_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Health_Error_Format => ResourceManager.GetString(nameof(Health_Error_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Health_Error_Network => ResourceManager.GetString(nameof(Health_Error_Network), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
 }

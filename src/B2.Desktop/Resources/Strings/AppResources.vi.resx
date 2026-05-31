@@ -808,4 +808,64 @@ Alt+1 … Alt+8 — Chuyển nhanh giữa các tab
   <data name="Audit_Error_Network" xml:space="preserve">
     <value>Không tải được nhật ký (lỗi mạng).</value>
   </data>
+  <data name="Sidebar_Item_Health" xml:space="preserve">
+    <value>🩺 Sức khỏe hệ thống</value>
+  </data>
+  <data name="Health_Title" xml:space="preserve">
+    <value>Sức khỏe hệ thống</value>
+  </data>
+  <data name="Health_Tab_Overview" xml:space="preserve">
+    <value>Tổng quan</value>
+  </data>
+  <data name="Health_Tab_Logs" xml:space="preserve">
+    <value>Nhật ký</value>
+  </data>
+  <data name="Health_Refresh" xml:space="preserve">
+    <value>⟳ Làm mới</value>
+  </data>
+  <data name="Health_Row_Uptime" xml:space="preserve">
+    <value>Thời gian chạy</value>
+  </data>
+  <data name="Health_Row_Memory" xml:space="preserve">
+    <value>Bộ nhớ</value>
+  </data>
+  <data name="Health_Row_DbSize" xml:space="preserve">
+    <value>Kích thước CSDL</value>
+  </data>
+  <data name="Health_Row_FreeDisk" xml:space="preserve">
+    <value>Dung lượng trống</value>
+  </data>
+  <data name="Health_Row_OpenOld" xml:space="preserve">
+    <value>Tờ khai mở &gt; 24 giờ</value>
+  </data>
+  <data name="Health_Status_Ok" xml:space="preserve">
+    <value>🟢 OK</value>
+  </data>
+  <data name="Health_Status_Warn" xml:space="preserve">
+    <value>🟡 Cảnh báo</value>
+  </data>
+  <data name="Health_Uptime_Format" xml:space="preserve">
+    <value>{0} giờ {1} phút</value>
+  </data>
+  <data name="Health_OpenOld_Format" xml:space="preserve">
+    <value>{0} tờ khai</value>
+  </data>
+  <data name="Health_Logs_Level" xml:space="preserve">
+    <value>Mức</value>
+  </data>
+  <data name="Health_Logs_LevelAll" xml:space="preserve">
+    <value>Tất cả</value>
+  </data>
+  <data name="Health_Logs_Empty" xml:space="preserve">
+    <value>Chưa có dòng nhật ký nào.</value>
+  </data>
+  <data name="Health_PageSummary_Format" xml:space="preserve">
+    <value>Hiển thị {0} / {1}</value>
+  </data>
+  <data name="Health_Error_Format" xml:space="preserve">
+    <value>Không tải được (mã {0}).</value>
+  </data>
+  <data name="Health_Error_Network" xml:space="preserve">
+    <value>Không tải được (lỗi mạng).</value>
+  </data>
 </root>

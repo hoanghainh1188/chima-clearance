@@ -27,6 +27,32 @@ retained.
 
 ### Added
 
+#### Sprint S5 — F-18 health & logs (Admin) — `feat/F-18-health-logs`
+
+Admin diagnostics: a tabbed health dashboard + in-app log viewer (T-S5-18/19).
+Full `B2.sln -c Release` builds clean; Server.Api (85) suite passes; `B2.Desktop`
+builds clean. Completes the F-16 + F-18 admin-diagnostics pair.
+
+- **Logs** — `ILogReader` + `InMemoryLogReader` (B2.Infrastructure, bounded
+  1000-entry ring buffer). Registered via `B2ApiHost.TryAddSingleton` so the
+  standalone API + tests get a default instance; the Windows Service registers
+  the Serilog-connected instance first (its sink now forwards into the shared
+  buffer) and wins. `LogsQueryHandler` → newest-first, level-filtered, paginated
+  `GET /api/admin/logs` (`AdminOnly`).
+- **Health** — `ISystemHealthProbe` + `SystemHealthProbe` gather uptime, working
+  set, DB file bytes, free disk, and open-declarations-older-than-24h.
+  `HealthQueryHandler` applies the SC thresholds (disk < 1 GB, open-decl > 0
+  warnings) → `GET /api/admin/health/detail` (`AdminOnly`). The anonymous minimal
+  `/api/admin/health` probe is unchanged. Both new routes are in the FR-027 matrix.
+- **Desktop** — `Admin/HealthPage` + `HealthViewModel`: tabbed **Tổng quan**
+  (health rows + 🟢/🟡 status) / **Nhật ký** (level filter + paginated log list).
+  Sidebar `🩺 Sức khỏe hệ thống` (Admin); 20 vi.resx keys.
+- **Tests** — 5 `HealthLogsEndpointTests` (read-recent-newest-first,
+  filter-by-level, operator-403, health-detail-for-admin, low-disk-threshold
+  `[Theory]`) — logs injected via the host's `InMemoryLogReader`.
+- **Deferred** — the wireframe's Litestream-replica (F-15), Quartz-pending, and
+  failed-logins-1h checks need extra instrumentation.
+
 #### Sprint S5 — F-16 audit log viewer (Admin) — `feat/F16-F18-audit-health`
 
 Read-only, filterable, paginated view of the immutable audit log (T-S5-16/17).

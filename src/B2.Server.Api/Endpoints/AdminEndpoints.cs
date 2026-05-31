@@ -1,5 +1,7 @@
 using System.Globalization;
 using B2.Application.Admin.Audit;
+using B2.Application.Admin.Health;
+using B2.Application.Admin.LogViewer;
 using B2.Domain.Audit;
 using B2.Server.Api.Auth;
 
@@ -30,6 +32,23 @@ public static class AdminEndpoints
                 var pageSize = ReadPositiveInt(query, "pageSize", 50, MaxPageSize);
                 return Results.Ok(await handler.HandleAsync(filter, page, pageSize, ct));
             });
+
+        // F-18 — recent log lines, newest-first, optionally filtered by level.
+        g.MapGet(
+            "/logs",
+            (HttpRequest request, LogsQueryHandler handler) =>
+            {
+                var query = request.Query;
+                var level = NullIfWhitespace(query["level"].ToString());
+                var page = ReadPositiveInt(query, "page", 1, int.MaxValue);
+                var pageSize = ReadPositiveInt(query, "pageSize", 100, MaxPageSize);
+                return Results.Ok(handler.Handle(level, page, pageSize));
+            });
+
+        // F-18 — health dashboard detail (uptime, memory, DB size, free disk, open > 24 h).
+        g.MapGet(
+            "/health/detail",
+            async (HealthQueryHandler handler, CancellationToken ct) => Results.Ok(await handler.HandleAsync(ct)));
     }
 
     private static string? NullIfWhitespace(string? s) => string.IsNullOrWhiteSpace(s) ? null : s;

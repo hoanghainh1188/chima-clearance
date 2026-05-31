@@ -9,7 +9,9 @@ using B2.Server.Api.Auth;
 using B2.Server.Api.Middleware;
 using B2.Server.Api.Realtime;
 using B2.Application.Abstractions;
+using B2.Infrastructure.Diagnostics;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 
@@ -43,6 +45,12 @@ public static class B2ApiHost
 
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<IAuditContext, HttpAuditContext>();
+
+        // F-18 log buffer. TryAdd so the Windows Service can register the Serilog-connected
+        // instance first (Program.cs) and win; the standalone API / tests get this default.
+        builder.Services.TryAddSingleton<InMemoryLogReader>();
+        builder.Services.TryAddSingleton<ILogReader>(sp => sp.GetRequiredService<InMemoryLogReader>());
+
         builder.Services.AddB2Application();
         builder.Services.AddB2Infrastructure(connectionString, dataDir, enableJobs);
 
