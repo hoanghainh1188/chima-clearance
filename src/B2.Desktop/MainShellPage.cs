@@ -312,6 +312,10 @@ public sealed class MainShellPage : ContentPage
                 stack,
                 AppResources.Sidebar_Item_Users,
                 _services.GetRequiredService<UsersPage>());
+            AddSidebarItem(
+                stack,
+                AppResources.Sidebar_Item_Audit,
+                _services.GetRequiredService<AuditPage>());
         }
 
         container.Children.Add(stack);

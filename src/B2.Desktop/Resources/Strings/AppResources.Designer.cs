@@ -254,4 +254,24 @@ public static class AppResources
     public static string Export_Error_Network => ResourceManager.GetString(nameof(Export_Error_Network), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Export_Error_InvalidRange => ResourceManager.GetString(nameof(Export_Error_InvalidRange), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Export_LastExport_Format => ResourceManager.GetString(nameof(Export_LastExport_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Sidebar_Item_Audit => ResourceManager.GetString(nameof(Sidebar_Item_Audit), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Audit_Title => ResourceManager.GetString(nameof(Audit_Title), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Audit_Filter_All => ResourceManager.GetString(nameof(Audit_Filter_All), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Audit_Filter_EntityType => ResourceManager.GetString(nameof(Audit_Filter_EntityType), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Audit_Filter_Action => ResourceManager.GetString(nameof(Audit_Filter_Action), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Audit_Filter_From => ResourceManager.GetString(nameof(Audit_Filter_From), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Audit_Filter_To => ResourceManager.GetString(nameof(Audit_Filter_To), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Audit_Filter_Apply => ResourceManager.GetString(nameof(Audit_Filter_Apply), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Audit_Column_Time => ResourceManager.GetString(nameof(Audit_Column_Time), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Audit_Column_Actor => ResourceManager.GetString(nameof(Audit_Column_Actor), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Audit_Column_Action => ResourceManager.GetString(nameof(Audit_Column_Action), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Audit_Column_EntityType => ResourceManager.GetString(nameof(Audit_Column_EntityType), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Audit_Column_Entity => ResourceManager.GetString(nameof(Audit_Column_Entity), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Audit_Detail_Title => ResourceManager.GetString(nameof(Audit_Detail_Title), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Audit_Empty => ResourceManager.GetString(nameof(Audit_Empty), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Audit_PageSummary_Format => ResourceManager.GetString(nameof(Audit_PageSummary_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Audit_PrevPage => ResourceManager.GetString(nameof(Audit_PrevPage), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Audit_NextPage => ResourceManager.GetString(nameof(Audit_NextPage), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Audit_Error_Format => ResourceManager.GetString(nameof(Audit_Error_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Audit_Error_Network => ResourceManager.GetString(nameof(Audit_Error_Network), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
 }
