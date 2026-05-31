@@ -33,13 +33,22 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      # Every dotnet step uses `shell: bash` (Git Bash). On windows-2022,
-      # `setup-dotnet@v5` writes the SDK location to GITHUB_PATH, but the
-      # default pwsh shell intermittently fails to pick it up between steps
-      # (observed: PR #9 first run, post-merge R3b, post-merge R3b re-run —
-      # always at "Verify formatting" with "Unable to locate dotnet CLI").
-      # Git Bash reads PATH via the runner's persistent env and avoids the
-      # flake.
+      # setup-dotnet@v5 intermittently fails to propagate the SDK location to
+      # GITHUB_PATH on windows-2022, so a later bash step hits "Unable to locate
+      # dotnet CLI. Ensure that it is on the PATH." (observed at "Verify
+      # formatting" across PR #9 first run, R3b ×2, PR #40, PR #41 ×2). On the
+      # hosted runner the SDK (and setup-dotnet's install) live at
+      # C:\Program Files\dotnet, so pin that onto PATH + DOTNET_ROOT explicitly
+      # for every subsequent step instead of relying on the action's own write.
+      - name: Pin dotnet on PATH (setup-dotnet windows flake guard)
+        shell: bash
+        run: |
+          echo "/c/Program Files/dotnet" >> "$GITHUB_PATH"
+          echo "DOTNET_ROOT=C:\\Program Files\\dotnet" >> "$GITHUB_ENV"
+
+      # Every dotnet step uses `shell: bash` (Git Bash): Git Bash reads PATH via
+      # the runner's persistent env, which together with the pin step above keeps
+      # the SDK reliably resolvable between steps.
       - name: Install MAUI workload
         shell: bash
         run: dotnet workload install maui
