@@ -103,7 +103,7 @@ integration sweeps where appropriate.
 | S2 | T-S2-01 .. T-S2-22 (22) | F-05, F-06, F-07, F-08 + FR-019/024 | ~4 500 | ✅ Merged (PR #5 `de24ec5`) |
 | S3 | T-S3-01 .. T-S3-12 (12) | F-09, F-10 + FR-027/FR-028 | ~2 500 | ✅ Merged (PRs #6/#7/#8/#9/#11/#12/#15/#16, #13 CI fix) |
 | S4 | T-S4-01 .. T-S4-15 (15) | F-11, F-12, F-14 + FR-025 | ~2 800 | ✅ Merged (PR #18 `9f0d15b` + docs PR #19 `6514c2e`); 9 carry-overs `T-S4-CO-01..09` deferred to S5 |
-| S5 | T-S5-01 .. T-S5-19 (19) | F-13, F-15, F-16, F-18 + FR-022/026 | ~3 800 | 🔄 In progress — F-13 backend (T-S5-01/02/03/05) on `feat/F-13-excel-export`; UI (T-S5-04) + perf (T-S5-06) next; 9 S4 carry-overs cleared (PR #40) |
+| S5 | T-S5-01 .. T-S5-19 (19) | F-13, F-15, F-16, F-18 + FR-022/026 | ~3 800 | 🔄 In progress — **F-13 complete** (backend PR #41 + UI PR `feat/F-13-export-ui`; T-S5-06 perf = spec-VM placeholder); CI flake fix PR #42; 9 S4 carry-overs cleared (PR #40). Next: F-15 / F-16 / F-18 / FR-022 |
 | S6 | T-S6-01 .. T-S6-12 (12) | F-17 simple v1 + a11y + runbook + UAT | ~1 800 | ⏳ Pending |
 | **Total** | **113 tasks** | 18 features + 7 cross-cutting FRs | **~19 500 LOC** | **75/113 tasks merged (S0–S4 done)** |
 
@@ -734,9 +734,10 @@ audit viewer shows every write tagged with the actor.
 
 ### F-13 Excel Export
 
-> **Backend landed (PR `feat/F-13-excel-export`, 2026-05-31)** — T-S5-01 /
-> 02 / 03 / 05 done. UI (T-S5-04) and NBomber perf (T-S5-06) deferred to the
-> next PR. Notes: the exporter is **template-based on the embedded
+> **Backend landed (PR #41 `feat/F-13-excel-export`)** — T-S5-01 / 02 / 03 /
+> 05 done. **UI landed (PR `feat/F-13-export-ui`)** — T-S5-04 done; T-S5-06
+> NBomber perf is a spec-VM placeholder pending the perf harness. Notes: the
+> exporter is **template-based on the embedded
 > `MauSoB2.xlsx`** (B2.Infrastructure embedded resource) with the on-disk
 > `C:\ProgramData\B2\templates\Mẫu sổ B2.xlsx` as an optional override;
 > `SoB2ExportRepository` runs two flat queries stitched client-side because
@@ -760,11 +761,21 @@ audit viewer shows every write tagged with the actor.
   `ReportsEndpoints.cs` with `SupervisorOrAbove`. File name
   `SoB2_{from:yyyyMMdd}_{to:yyyyMMdd}.xlsx`. Make T-S5-01 green. **Dep**:
   T-S5-02. **LOC**: ~80.
-- [ ] **T-S5-04** [F-13] Implement `ExportPage.xaml` + `ExportViewModel.cs`
+- [X] **T-S5-04** [F-13] Implement `ExportPage.xaml` + `ExportViewModel.cs`
   per [wireframe § 6.7](../05-ui-wireframes.md). Render the three "Bao gồm:"
   options as **read-only "Đã bật" badges** (UI clarification Q3 — NOT
   checkboxes). Progress modal (cancellable). Vietnamese copy verbatim.
   **Dep**: T-S5-03. **LOC**: ~280. **DoD**: §DoD-6.
+  *Done (PR `feat/F-13-export-ui`)*: `ExportPage` ContentView + `ExportViewModel`
+  — date-range Picker (Hôm nay / Hôm qua / Tuần này / Tháng này / Tùy chọn +
+  custom DatePickers), three read-only "Đã bật" badges, cancellable export
+  (CancellationTokenSource + `Hủy`) with inline ActivityIndicator progress,
+  native Save As via CommunityToolkit `FileSaver`, severity toasts + "Lần xuất
+  gần nhất". `IB2Api.ExportSoB2Async` returns the raw `HttpResponseMessage`.
+  Sidebar item `📤 Xuất Sổ B2` gated to Admin/Supervisor (FR-027). 25 vi.resx
+  keys + Designer accessors added. B2.Desktop builds clean locally (XAML +
+  analyzers). The wireframe's "Ước tính ~N dòng" estimate + the toast
+  Mở/Mở-thư-mục actions are minor follow-up polish.
 - [X] **T-S5-05** [F-13] Bundle `Mẫu sổ B2.xlsx` template into
   `src/B2.Installer/` so it lands at `C:\ProgramData\B2\templates\` after
   install. **Dep**: T-S5-02. **LOC**: ~30.
@@ -772,9 +783,15 @@ audit viewer shows every write tagged with the actor.
   PreserveNewest) ready for the Velopack packaging in T-S6-11. The same
   template is embedded in B2.Infrastructure so the export already works at
   runtime without the on-disk copy.
-- [ ] **T-S5-06** [F-13] Add NBomber performance scenario in
+- [~] **T-S5-06** [F-13] Add NBomber performance scenario in
   `tests/B2.Performance.Tests/ExportScenarios.cs` asserting the 30-day export
   budget < 10 s on the spec VM (SC-012). **Dep**: T-S5-03. **LOC**: ~120.
+  *Partial*: `ExportScenarios.cs` lands as a `[Fact(Skip=…)]` spec-VM
+  placeholder (matching the F-07 search-perf convention) documenting the
+  SC-012 budget. The full NBomber load harness is deferred — `B2.Performance.Tests`
+  has no scenarios yet, so bootstrapping NBomber + a `WebApplicationFactory`
+  seed of ~3,500 declarations is its own infra task, out of scope for the
+  F-13 UI PR. Un-skip + implement when the perf harness is stood up.
 
 ### F-15 Backup & Restore + FR-026 Recovery Code
 

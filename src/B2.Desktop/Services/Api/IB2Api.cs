@@ -148,4 +148,12 @@ public interface IB2Api
         [Query] DateTimeOffset? asOf = null,
         [Query] bool includeCancelled = false,
         CancellationToken cancellationToken = default);
+
+    /// <summary>F-13 Sổ B2 export — returns the raw .xlsx response (bytes +
+    /// Content-Disposition file name); the binary bypasses JSON deserialization.</summary>
+    [Get("/api/reports/excel")]
+    Task<HttpResponseMessage> ExportSoB2Async(
+        [Query] string from,
+        [Query] string to,
+        CancellationToken cancellationToken = default);
 }
