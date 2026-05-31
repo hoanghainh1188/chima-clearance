@@ -676,38 +676,46 @@ appears; at 23:00 the day total populates; report numbers match a hand count.
 
 Carry-over to Sprint S5 (review feedback items not blocking merge):
 
-- **T-S4-CO-01** Strengthen `EndpointPolicyAlignmentTests` (T-S4-15
+> **Resolved 2026-05-31** — all nine carry-overs `T-S4-CO-01..09` cleared as
+> one batch on `chore/s4-carryovers`. Full `B2.sln` builds clean with
+> warnings-as-errors; Application + Server.Api + Domain test suites pass. See
+> the `CHANGELOG.md` "S4 review carry-overs" block for the per-item summary.
+> Note CO-06: the Desktop `VietnamToday` copy is retained by necessity
+> (Constitution V forbids `B2.Desktop → B2.Application`); only the two
+> server-side copies were consolidated into `VietnamTime.TimeZone`.
+
+- [X] **T-S4-CO-01** Strengthen `EndpointPolicyAlignmentTests` (T-S4-15
   ArchUnit) to verify each route maps to the *specific* FR-027 policy
   (`AdminOnly` / `SupervisorOrAbove` / `OperatorOrAbove` / `AnyAuthenticated`),
   not just "any auth attribute is present". **LOC**: ~80.
-- **T-S4-CO-02** Add F-11 `catch-up-on-startup` Gherkin test (currently
+- [X] **T-S4-CO-02** Add F-11 `catch-up-on-startup` Gherkin test (currently
   only `header-at-00:01` and `idempotent` are covered). Test that
   `DailyHeaderCatchupHostedService.StartAsync` creates today's header
   when missed. **LOC**: ~60.
-- **T-S4-CO-03** Multi-day catch-up in `DailyHeaderCatchupHostedService` —
+- [X] **T-S4-CO-03** Multi-day catch-up in `DailyHeaderCatchupHostedService` —
   currently only catches up *today*. If the service was down across
   multiple days, prior `DailyHeader` rows remain absent. Walk back from
   today to the last persisted header date, ensuring rows exist with
   zero-vehicle summaries. **LOC**: ~120.
-- **T-S4-CO-04** `ReportsRepository.GetByOfficerAsync` — wrap the two
+- [X] **T-S4-CO-04** `ReportsRepository.GetByOfficerAsync` — wrap the two
   `ToListAsync` calls in a snapshot transaction so SQLite WAL writers
   can't skew the entry-count vs KVGS-count between the two reads, AND
   surface officers who only KVGS-confirmed (currently dropped because
   the projection seeds from `entered`). **LOC**: ~80.
-- **T-S4-CO-05** Remove redundant `.Include(v => v.Declaration)` from
+- [X] **T-S4-CO-05** Remove redundant `.Include(v => v.Declaration)` from
   `ReportsRepository.BaseVehicleQuery` — navigation predicates work
   without `Include` and dropping it shrinks the result set. **LOC**: ~10.
-- **T-S4-CO-06** Consolidate `ResolveVietnamTimeZone` (currently
+- [X] **T-S4-CO-06** Consolidate `ResolveVietnamTimeZone` (currently
   duplicated in `ReportsRepository`, `InfrastructureServiceCollectionExtensions`,
   and `LedgerViewModel.VietnamToday`) into a single
   `VietnamTime.TimeZone` static helper in `B2.Application.Common`.
   **LOC**: ~30.
-- **T-S4-CO-07** Move `UpdateOfficerNameCommandValidator` English literal
+- [X] **T-S4-CO-07** Move `UpdateOfficerNameCommandValidator` English literal
   ("Officer name can only be edited for today's header.") to a resource
   key (Constitution VI). **LOC**: ~10.
-- **T-S4-CO-08** Parallelise `ReportsViewModel.LoadAsync` — five sequential
+- [X] **T-S4-CO-08** Parallelise `ReportsViewModel.LoadAsync` — five sequential
   `_api.Get*Async` calls become one `Task.WhenAll`. **LOC**: ~20.
-- **T-S4-CO-09** `ConnectivityService.Dispose` should also dispose the
+- [X] **T-S4-CO-09** `ConnectivityService.Dispose` should also dispose the
   `HubConnection` (currently only `StopAsync` does). Implement
   `IAsyncDisposable` or block-dispose synchronously to avoid a leaked
   TCP connection on DI tear-down. **LOC**: ~30.

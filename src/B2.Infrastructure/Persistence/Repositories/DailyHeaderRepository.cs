@@ -14,6 +14,17 @@ public sealed class DailyHeaderRepository : IDailyHeaderRepository
     public Task<DailyHeader?> GetByDateAsync(DateOnly date, CancellationToken cancellationToken) =>
         _db.DailyHeaders.FirstOrDefaultAsync(x => x.Date == date, cancellationToken);
 
+    public async Task<DateOnly?> GetLatestDateAsync(CancellationToken cancellationToken)
+    {
+        var dates = _db.DailyHeaders.AsNoTracking().Select(x => x.Date);
+        if (!await dates.AnyAsync(cancellationToken))
+        {
+            return null;
+        }
+
+        return await dates.MaxAsync(cancellationToken);
+    }
+
     public async Task<IReadOnlyList<DailyHeader>> GetByDateRangeAsync(DateOnly fromDate, DateOnly toDate, CancellationToken cancellationToken)
     {
         return await _db.DailyHeaders.AsNoTracking()

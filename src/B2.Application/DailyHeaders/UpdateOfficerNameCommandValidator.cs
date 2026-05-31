@@ -11,6 +11,6 @@ public sealed class UpdateOfficerNameCommandValidator : AbstractValidator<Update
         RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
         RuleFor(x => x.Date)
             .Must(date => date == VietnamTime.BusinessDateFromUtc(clock.UtcNow))
-            .WithMessage("Officer name can only be edited for today's header.");
+            .WithMessage(ValidationMessages.OfficerNameTodayOnly);
     }
 }
