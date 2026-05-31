@@ -167,4 +167,14 @@ public interface IB2Api
         [Query] int page,
         [Query] int pageSize,
         CancellationToken cancellationToken = default);
+
+    [Get("/api/admin/health/detail")]
+    Task<HealthReportDto> GetHealthDetailAsync(CancellationToken cancellationToken = default);
+
+    [Get("/api/admin/logs")]
+    Task<LogListResponse> ListLogsAsync(
+        [Query] string? level,
+        [Query] int page,
+        [Query] int pageSize,
+        CancellationToken cancellationToken = default);
 }

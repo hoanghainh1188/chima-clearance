@@ -1,4 +1,6 @@
 using B2.Application.Admin.Audit;
+using B2.Application.Admin.Health;
+using B2.Application.Admin.LogViewer;
 using B2.Application.Auth;
 using B2.Application.Declarations;
 using B2.Application.Declarations.Cancel;
@@ -45,6 +47,8 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<PendingReportQueryHandler>();
         services.AddScoped<ExportSoB2QueryHandler>();
         services.AddScoped<ListAuditQueryHandler>();
+        services.AddScoped<LogsQueryHandler>();
+        services.AddScoped<HealthQueryHandler>();
         services.AddValidatorsFromAssemblyContaining<Auth.Validators.LoginRequestValidator>();
         return services;
     }

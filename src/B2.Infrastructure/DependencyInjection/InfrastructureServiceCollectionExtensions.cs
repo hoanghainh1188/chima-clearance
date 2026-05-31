@@ -2,6 +2,7 @@ using B2.Application.Abstractions;
 using B2.Application.Common;
 using B2.Infrastructure.Auth;
 using B2.Infrastructure.Clock;
+using B2.Infrastructure.Diagnostics;
 using B2.Infrastructure.Excel;
 using B2.Infrastructure.Jobs;
 using B2.Infrastructure.Persistence;
@@ -37,6 +38,10 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IReportsRepository, ReportsRepository>();
         services.AddScoped<ISoB2ExportRepository, SoB2ExportRepository>();
         services.AddScoped<IAuditRepository, AuditRepository>();
+        services.AddScoped<ISystemHealthProbe>(sp => new SystemHealthProbe(
+            sp.GetRequiredService<B2DbContext>(),
+            sp.GetRequiredService<IClock>(),
+            Path.Combine(dataDirectory, "db", "b2.db")));
         services.AddSingleton<ISoB2Exporter>(_ => new ClosedXmlSoB2Exporter(dataDirectory));
 
         if (enableBackgroundJobs)

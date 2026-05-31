@@ -72,6 +72,8 @@ public static class MauiProgram
         builder.Services.AddTransient<ExportPage>();
         builder.Services.AddTransient<AuditViewModel>();
         builder.Services.AddTransient<AuditPage>();
+        builder.Services.AddTransient<HealthViewModel>();
+        builder.Services.AddTransient<HealthPage>();
         builder.Services.AddTransient<KvgsViewModel>();
         builder.Services.AddTransient<KvgsPage>();
         builder.Services.AddTransient<AppShell>();

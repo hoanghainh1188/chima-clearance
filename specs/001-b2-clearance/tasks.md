@@ -103,7 +103,7 @@ integration sweeps where appropriate.
 | S2 | T-S2-01 .. T-S2-22 (22) | F-05, F-06, F-07, F-08 + FR-019/024 | ~4 500 | ✅ Merged (PR #5 `de24ec5`) |
 | S3 | T-S3-01 .. T-S3-12 (12) | F-09, F-10 + FR-027/FR-028 | ~2 500 | ✅ Merged (PRs #6/#7/#8/#9/#11/#12/#15/#16, #13 CI fix) |
 | S4 | T-S4-01 .. T-S4-15 (15) | F-11, F-12, F-14 + FR-025 | ~2 800 | ✅ Merged (PR #18 `9f0d15b` + docs PR #19 `6514c2e`); 9 carry-overs `T-S4-CO-01..09` deferred to S5 |
-| S5 | T-S5-01 .. T-S5-19 (19) | F-13, F-15, F-16, F-18 + FR-022/026 | ~3 800 | 🔄 In progress — **F-13** (PRs #41+#43, T-S5-06 perf = placeholder), **FR-022 Cancel** (#44), **F-16 Audit** (PR `feat/F16-F18-audit-health`, T-S5-16/17) complete; CI flake fix #42; carry-overs #40. Next: F-18 Health (T-S5-18/19) · F-15 Backup (T-S5-07..13) |
+| S5 | T-S5-01 .. T-S5-19 (19) | F-13, F-15, F-16, F-18 + FR-022/026 | ~3 800 | 🔄 In progress — **F-13** (#41+#43, T-S5-06 perf = placeholder), **FR-022 Cancel** (#44), **F-16 Audit** (#45), **F-18 Health** (PR `feat/F-18-health-logs`, T-S5-18/19) complete; CI flake fix #42; carry-overs #40. **Only F-15 Backup/Restore (T-S5-07..13) remains** in S5 |
 | S6 | T-S6-01 .. T-S6-12 (12) | F-17 simple v1 + a11y + runbook + UAT | ~1 800 | ⏳ Pending |
 | **Total** | **113 tasks** | 18 features + 7 cross-cutting FRs | **~19 500 LOC** | **75/113 tasks merged (S0–S4 done)** |
 
@@ -893,17 +893,36 @@ audit viewer shows every write tagged with the actor.
 
 ### F-18 Health & Logs
 
-- [ ] **T-S5-18** [P] [F-18] Write Gherkin tests in
+> **Landed (PR `feat/F-18-health-logs`)** — T-S5-18 / 19 done.
+
+- [X] **T-S5-18** [P] [F-18] Write Gherkin tests in
   `tests/B2.Server.Api.Tests/Admin/HealthLogsEndpointTests.cs` verbatim from
   `spec.md` F-18 (disk-space-warning, read-recent-log). Tag
   `[Trait("Feature","F-18")]`. **Dep**: T-S4-15. **LOC**: ~180.
-- [ ] **T-S5-19** [F-18] Implement `HealthQueryHandler` and
+  *Done*: read-recent-logs-newest-first, filter-by-level, operator-403 (logs +
+  health-detail), health-detail-for-admin, and a low-disk-threshold `[Theory]`.
+  Logs are injected through the test host's `InMemoryLogReader` singleton.
+- [X] **T-S5-19** [F-18] Implement `HealthQueryHandler` and
   `LogsQueryHandler` in `src/B2.Application/Admin/`. Wire
   `GET /api/admin/health` (anonymous; minimal info) and `GET /api/admin/logs`
   (Admin) in `AdminEndpoints.cs`. Implement `Admin/HealthPage.xaml`
   (tabbed: Tổng quan / Nhật ký) per
   [wireframe § 6.11](../05-ui-wireframes.md). Vietnamese copy verbatim.
   **Dep**: T-S1-02, T-S5-09. **LOC**: ~450. **DoD**: §DoD-6.
+  *Done*: `ILogReader` + `InMemoryLogReader` (B2.Infrastructure, registered via
+  `B2ApiHost` `TryAddSingleton` so tests/standalone API get it; the Windows
+  Service registers the Serilog-connected instance first and wins) →
+  `LogsQueryHandler` (newest-first, level filter, paginated). `ISystemHealthProbe`
+  + `SystemHealthProbe` (uptime, working set, DB file bytes, free disk,
+  open-declarations-older-than-24h) → `HealthQueryHandler` applying the SC
+  disk/open-decl warning thresholds. `GET /api/admin/logs` + `GET
+  /api/admin/health/detail` (both `AdminOnly`, in the FR-027 matrix); the
+  anonymous minimal `/api/admin/health` probe is unchanged. `Admin/HealthPage`
+  + `HealthViewModel`: tabbed Tổng quan (health rows + status) / Nhật ký (level
+  filter + paginated log list). 20 vi.resx keys; sidebar `🩺 Sức khỏe hệ thống`
+  (Admin). Litestream-replica + Quartz-pending + failed-logins-1h checks from
+  the wireframe are deferred (Litestream is F-15; the others need extra
+  instrumentation).
 
 **Sprint S5 exit smoke**: full quickstart § 5 spec-VM smoke checklist (10
 steps) MUST pass. DoD-9 enforced for the entire S5 deliverable.
