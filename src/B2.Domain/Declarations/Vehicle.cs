@@ -58,6 +58,15 @@ public sealed class Vehicle
                 409);
         }
 
+        // FR-022: no vehicle under a cancelled declaration can be exited.
+        if (Declaration is { Status: DeclarationStatus.Cancelled })
+        {
+            throw new DomainException(
+                "DECLARATION_CANCELLED",
+                "Cannot mark exit for a vehicle on a cancelled declaration.",
+                409);
+        }
+
         ExitMarked = true;
         ExitTime = exitTime;
         ExitConfirmedByUserId = confirmedByUserId;

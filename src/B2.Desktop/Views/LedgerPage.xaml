@@ -190,12 +190,24 @@
                          Text="{Binding Row.DeclarationMasked}"
                          FontAttributes="Bold"
                          VerticalOptions="Center"
-                         LineBreakMode="TailTruncation" />
+                         LineBreakMode="TailTruncation">
+                    <Label.Triggers>
+                      <DataTrigger TargetType="Label" Binding="{Binding Row.IsCancelled}" Value="True">
+                        <Setter Property="TextDecorations" Value="Strikethrough" />
+                      </DataTrigger>
+                    </Label.Triggers>
+                  </Label>
                   <Label Grid.Column="3"
                          Text="{Binding Row.CompanyName}"
                          VerticalOptions="Center"
                          LineBreakMode="TailTruncation"
-                         TextColor="{StaticResource ColorOnSurface}" />
+                         TextColor="{StaticResource ColorOnSurface}">
+                    <Label.Triggers>
+                      <DataTrigger TargetType="Label" Binding="{Binding Row.IsCancelled}" Value="True">
+                        <Setter Property="TextDecorations" Value="Strikethrough" />
+                      </DataTrigger>
+                    </Label.Triggers>
+                  </Label>
                   <Label Grid.Column="4"
                          Text="{Binding Row.ProcessorName}"
                          VerticalOptions="Center"
@@ -206,7 +218,13 @@
                          Text="{Binding Row.PlateAndTrailerLine}"
                          VerticalOptions="Center"
                          LineBreakMode="TailTruncation"
-                         TextColor="{StaticResource ColorOnSurface}" />
+                         TextColor="{StaticResource ColorOnSurface}">
+                    <Label.Triggers>
+                      <DataTrigger TargetType="Label" Binding="{Binding Row.IsCancelled}" Value="True">
+                        <Setter Property="TextDecorations" Value="Strikethrough" />
+                      </DataTrigger>
+                    </Label.Triggers>
+                  </Label>
                   <Label Grid.Column="6"
                          Text="{Binding Row.YardLabel}"
                          VerticalOptions="Center"
