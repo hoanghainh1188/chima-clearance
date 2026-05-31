@@ -135,6 +135,7 @@ public static class B2ApiHost
         app.MapVehiclesEndpoints();
         app.MapDailyHeadersEndpoints();
         app.MapReportsEndpoints();
+        app.MapAdminEndpoints();
         app.MapHub<EventsHub>("/hubs/events").RequireAuthorization();
     }
 }

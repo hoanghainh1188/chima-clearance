@@ -27,6 +27,27 @@ retained.
 
 ### Added
 
+#### Sprint S5 — F-16 audit log viewer (Admin) — `feat/F16-F18-audit-health`
+
+Read-only, filterable, paginated view of the immutable audit log (T-S5-16/17).
+Full `B2.sln -c Release` builds clean; Server.Api (78) suite passes; `B2.Desktop`
+builds clean (XAML + analyzers). F-18 Health & Logs follows in the next PR.
+
+- **Backend** — `IAuditRepository` + `AuditRepository` filters by entity type /
+  id / actor / action / date range; pages via the ledger's `(Id, At)`-project →
+  in-memory sort → fetch-by-id trick (SQLite can't `ORDER BY` a `DateTimeOffset`)
+  and resolves actor usernames. `ListAuditQueryHandler` → `AuditLogListResponse`.
+  New `AdminEndpoints` group `GET /api/admin/audit` (`AdminOnly`, added to the
+  FR-027 `EndpointPolicyAlignmentTests` matrix); the existing `/api/admin/health`
+  stays anonymous.
+- **Desktop** — `Admin/AuditPage` + `AuditViewModel`: entity-type / action / date
+  filters, paginated list, before/after JSON detail on row select. Sidebar
+  `🔍 Nhật ký kiểm toán` (Admin only); 20 vi.resx keys + Designer accessors.
+- **Tests** — 3 `AuditEndpointTests`: filter-by-entity, no-mutating-audit-endpoint
+  (enumerates live routes, asserts GET-only — FR-003), operator-403.
+- **Follow-up** — the wireframe's plate→entityId drill-down and CSV export are
+  minor follow-ups; the endpoint already supports `entityId` filtering.
+
 #### Sprint S5 — FR-022 declaration cancellation (Admin) — `feat/FR-022-cancel`
 
 Admin-only soft-delete of an erroneous declaration (T-S5-14/15). Full

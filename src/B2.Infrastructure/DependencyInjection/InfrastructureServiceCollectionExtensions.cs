@@ -36,6 +36,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IDailyHeaderRepository, DailyHeaderRepository>();
         services.AddScoped<IReportsRepository, ReportsRepository>();
         services.AddScoped<ISoB2ExportRepository, SoB2ExportRepository>();
+        services.AddScoped<IAuditRepository, AuditRepository>();
         services.AddSingleton<ISoB2Exporter>(_ => new ClosedXmlSoB2Exporter(dataDirectory));
 
         if (enableBackgroundJobs)

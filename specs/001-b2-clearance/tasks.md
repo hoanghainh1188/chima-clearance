@@ -103,7 +103,7 @@ integration sweeps where appropriate.
 | S2 | T-S2-01 .. T-S2-22 (22) | F-05, F-06, F-07, F-08 + FR-019/024 | ~4 500 | ✅ Merged (PR #5 `de24ec5`) |
 | S3 | T-S3-01 .. T-S3-12 (12) | F-09, F-10 + FR-027/FR-028 | ~2 500 | ✅ Merged (PRs #6/#7/#8/#9/#11/#12/#15/#16, #13 CI fix) |
 | S4 | T-S4-01 .. T-S4-15 (15) | F-11, F-12, F-14 + FR-025 | ~2 800 | ✅ Merged (PR #18 `9f0d15b` + docs PR #19 `6514c2e`); 9 carry-overs `T-S4-CO-01..09` deferred to S5 |
-| S5 | T-S5-01 .. T-S5-19 (19) | F-13, F-15, F-16, F-18 + FR-022/026 | ~3 800 | 🔄 In progress — **F-13 complete** (PRs #41 + #43; T-S5-06 perf = spec-VM placeholder); **FR-022 Cancel complete** (PR `feat/FR-022-cancel`, T-S5-14/15); CI flake fix PR #42; 9 S4 carry-overs cleared (PR #40). Next: F-15 / F-16 / F-18 |
+| S5 | T-S5-01 .. T-S5-19 (19) | F-13, F-15, F-16, F-18 + FR-022/026 | ~3 800 | 🔄 In progress — **F-13** (PRs #41+#43, T-S5-06 perf = placeholder), **FR-022 Cancel** (#44), **F-16 Audit** (PR `feat/F16-F18-audit-health`, T-S5-16/17) complete; CI flake fix #42; carry-overs #40. Next: F-18 Health (T-S5-18/19) · F-15 Backup (T-S5-07..13) |
 | S6 | T-S6-01 .. T-S6-12 (12) | F-17 simple v1 + a11y + runbook + UAT | ~1 800 | ⏳ Pending |
 | **Total** | **113 tasks** | 18 features + 7 cross-cutting FRs | **~19 500 LOC** | **75/113 tasks merged (S0–S4 done)** |
 
@@ -866,15 +866,30 @@ audit viewer shows every write tagged with the actor.
 
 ### F-16 Audit Log Viewer
 
-- [ ] **T-S5-16** [P] [F-16] Write Gherkin tests in
+> **Landed (PR `feat/F16-F18-audit-health`)** — T-S5-16 / 17 done.
+
+- [X] **T-S5-16** [P] [F-16] Write Gherkin tests in
   `tests/B2.Server.Api.Tests/Admin/AuditEndpointTests.cs` verbatim from
   `spec.md` F-16 (filter-by-entity, audit-is-read-only — no DELETE endpoint
   exists). Tag `[Trait("Feature","F-16")]`. **Dep**: T-S4-15. **LOC**: ~150.
-- [ ] **T-S5-17** [F-16] Implement `ListAuditQueryHandler` in
+  *Done*: 3 tests — filter-by-entity (declaration Create + vehicle exit Update,
+  filtered to the vehicle), no-mutating-audit-endpoint (enumerates the live
+  endpoints, asserts `/api/admin/audit` is GET-only), operator-403.
+- [X] **T-S5-17** [F-16] Implement `ListAuditQueryHandler` in
   `src/B2.Application/Admin/Audit/` + `GET /api/admin/audit` endpoint in
   `AdminEndpoints.cs` (Admin only). Implement `Admin/AuditPage.xaml` per
   [wireframe § 6.12](../05-ui-wireframes.md). Vietnamese copy verbatim.
   **Dep**: T-S1-07, T-S5-11. **LOC**: ~400. **DoD**: §DoD-6.
+  *Done*: `IAuditRepository` + `AuditRepository` (filters entityType / entityId
+  / actor / action / date range; (Id, At)-project + in-memory sort + page-by-id
+  to dodge SQLite's `DateTimeOffset` ORDER BY; resolves actor usernames) →
+  `ListAuditQueryHandler` → `AuditLogListResponse`. New `AdminEndpoints.cs`
+  group (`AdminOnly`) added to the FR-027 matrix; health stays anonymous.
+  `Admin/AuditPage` + `AuditViewModel`: entity-type / action / date filters,
+  paginated list, before/after JSON detail on row select. 20 vi.resx keys;
+  sidebar `🔍 Nhật ký kiểm toán` (Admin). The plate→entityId drill-down and
+  CSV export from the wireframe are minor follow-up (the endpoint supports
+  entityId filtering already).
 
 ### F-18 Health & Logs
 

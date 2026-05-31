@@ -30,6 +30,9 @@ public sealed class EndpointPolicyAlignmentTests
         // Health probe (minimal info, anonymous by design)
         ["GET /api/admin/health"] = AllowAnonymous,
 
+        // Audit log viewer — Admin only (F-16)
+        ["GET /api/admin/audit"] = B2Policies.AdminOnly,
+
         // Users — Admin only
         ["GET /api/users"] = B2Policies.AdminOnly,
         ["POST /api/users"] = B2Policies.AdminOnly,

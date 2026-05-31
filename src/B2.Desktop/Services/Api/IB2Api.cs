@@ -1,3 +1,4 @@
+using B2.Shared.Contracts.Admin;
 using B2.Shared.Contracts.Auth;
 using B2.Shared.Contracts.Declarations;
 using B2.Shared.Contracts.MasterData;
@@ -155,5 +156,15 @@ public interface IB2Api
     Task<HttpResponseMessage> ExportSoB2Async(
         [Query] string from,
         [Query] string to,
+        CancellationToken cancellationToken = default);
+
+    [Get("/api/admin/audit")]
+    Task<AuditLogListResponse> ListAuditAsync(
+        [Query] string? entityType,
+        [Query] string? action,
+        [Query] string? from,
+        [Query] string? to,
+        [Query] int page,
+        [Query] int pageSize,
         CancellationToken cancellationToken = default);
 }
