@@ -103,7 +103,7 @@ integration sweeps where appropriate.
 | S2 | T-S2-01 .. T-S2-22 (22) | F-05, F-06, F-07, F-08 + FR-019/024 | ~4 500 | ✅ Merged (PR #5 `de24ec5`) |
 | S3 | T-S3-01 .. T-S3-12 (12) | F-09, F-10 + FR-027/FR-028 | ~2 500 | ✅ Merged (PRs #6/#7/#8/#9/#11/#12/#15/#16, #13 CI fix) |
 | S4 | T-S4-01 .. T-S4-15 (15) | F-11, F-12, F-14 + FR-025 | ~2 800 | ✅ Merged (PR #18 `9f0d15b` + docs PR #19 `6514c2e`); 9 carry-overs `T-S4-CO-01..09` deferred to S5 |
-| S5 | T-S5-01 .. T-S5-19 (19) | F-13, F-15, F-16, F-18 + FR-022/026 | ~3 800 | ⏳ Pending |
+| S5 | T-S5-01 .. T-S5-19 (19) | F-13, F-15, F-16, F-18 + FR-022/026 | ~3 800 | 🔄 In progress — F-13 backend (T-S5-01/02/03/05) on `feat/F-13-excel-export`; UI (T-S5-04) + perf (T-S5-06) next; 9 S4 carry-overs cleared (PR #40) |
 | S6 | T-S6-01 .. T-S6-12 (12) | F-17 simple v1 + a11y + runbook + UAT | ~1 800 | ⏳ Pending |
 | **Total** | **113 tasks** | 18 features + 7 cross-cutting FRs | **~19 500 LOC** | **75/113 tasks merged (S0–S4 done)** |
 
@@ -734,11 +734,20 @@ audit viewer shows every write tagged with the actor.
 
 ### F-13 Excel Export
 
-- [ ] **T-S5-01** [P] [F-13] Write Gherkin tests in
+> **Backend landed (PR `feat/F-13-excel-export`, 2026-05-31)** — T-S5-01 /
+> 02 / 03 / 05 done. UI (T-S5-04) and NBomber perf (T-S5-06) deferred to the
+> next PR. Notes: the exporter is **template-based on the embedded
+> `MauSoB2.xlsx`** (B2.Infrastructure embedded resource) with the on-disk
+> `C:\ProgramData\B2\templates\Mẫu sổ B2.xlsx` as an optional override;
+> `SoB2ExportRepository` runs two flat queries stitched client-side because
+> SQLite cannot `ORDER BY` a `DateTimeOffset`; the cancelled-strikethrough
+> test drives status via EF until the FR-022 cancel endpoint (T-S5-14/15).
+
+- [X] **T-S5-01** [P] [F-13] Write Gherkin tests in
   `tests/B2.Server.Api.Tests/Reports/ExcelExportEndpointTests.cs` verbatim
   from `spec.md` F-13 (1-day, color-preservation, 30-day-perf). Tag
   `[Trait("Feature","F-13")]`. **Dep**: T-S4-15. **LOC**: ~200.
-- [ ] **T-S5-02** [F-13] Implement `ExportSoB2QueryHandler` +
+- [X] **T-S5-02** [F-13] Implement `ExportSoB2QueryHandler` +
   `ClosedXmlExporter` in `src/B2.Application/Export/` and
   `src/B2.Infrastructure/Excel/`. Open template `Mẫu sổ B2.xlsx` from
   `C:\ProgramData\B2\templates\`; fill columns A–O; apply conditional
@@ -747,7 +756,7 @@ audit viewer shows every write tagged with the actor.
   strike-through for `Cancelled` (FR-023). All three transformations are
   always-on (Q3 — "Đã bật" badges in UI). **Dep**: T-S2-08, T-S4-03. **LOC**:
   ~400.
-- [ ] **T-S5-03** [F-13] Wire `GET /api/reports/excel` endpoint in
+- [X] **T-S5-03** [F-13] Wire `GET /api/reports/excel` endpoint in
   `ReportsEndpoints.cs` with `SupervisorOrAbove`. File name
   `SoB2_{from:yyyyMMdd}_{to:yyyyMMdd}.xlsx`. Make T-S5-01 green. **Dep**:
   T-S5-02. **LOC**: ~80.
@@ -756,9 +765,13 @@ audit viewer shows every write tagged with the actor.
   options as **read-only "Đã bật" badges** (UI clarification Q3 — NOT
   checkboxes). Progress modal (cancellable). Vietnamese copy verbatim.
   **Dep**: T-S5-03. **LOC**: ~280. **DoD**: §DoD-6.
-- [ ] **T-S5-05** [F-13] Bundle `Mẫu sổ B2.xlsx` template into
+- [X] **T-S5-05** [F-13] Bundle `Mẫu sổ B2.xlsx` template into
   `src/B2.Installer/` so it lands at `C:\ProgramData\B2\templates\` after
   install. **Dep**: T-S5-02. **LOC**: ~30.
+  *Done*: bundled at `src/B2.Installer/Templates/Mẫu sổ B2.xlsx` (Content,
+  PreserveNewest) ready for the Velopack packaging in T-S6-11. The same
+  template is embedded in B2.Infrastructure so the export already works at
+  runtime without the on-disk copy.
 - [ ] **T-S5-06** [F-13] Add NBomber performance scenario in
   `tests/B2.Performance.Tests/ExportScenarios.cs` asserting the 30-day export
   budget < 10 s on the spec VM (SC-012). **Dep**: T-S5-03. **LOC**: ~120.

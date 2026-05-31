@@ -12,6 +12,40 @@ from S3: ledger child-vehicle expand/collapse, right-click context menu,
 300/400 ms animations on SignalR push, sidebar collapse toggle, focus-ring
 style sweep, ⚙️ quick-settings menu, top-right toast position.
 
+### Added
+
+#### Sprint S5 — F-13 Sổ B2 Excel export (backend) — `feat/F-13-excel-export`
+
+First slice of Sprint S5: the template-based Sổ B2 export endpoint. UI
+(`ExportPage`, T-S5-04) and the NBomber 30-day perf scenario (T-S5-06) follow
+in the next PR. Full `B2.sln -c Release` builds clean (warnings-as-errors);
+Server.Api (68), Application (7), Domain (5) suites pass; `dotnet format` clean.
+
+- **T-S5-02 exporter** — `ClosedXmlSoB2Exporter` (B2.Infrastructure/Excel)
+  renders the legacy column order A–O from the `Mẫu sổ B2.xlsx` template:
+  daily-header banner row per day, parent row (declaration metadata) + child
+  vehicle rows, red font for un-exited vehicles, green fill on `AllExited`
+  parent rows, strike-through for `Cancelled` (FR-023). Times rendered in
+  `Asia/Ho_Chi_Minh`. The template is an **embedded resource** so the export
+  works with no on-disk file; `C:\ProgramData\B2\templates\Mẫu sổ B2.xlsx`
+  overrides it when present.
+- **Assembly** — `ExportSoB2QueryHandler` (B2.Application/Export) groups
+  declarations by business day, merges each day's persisted daily-header
+  (officer + total), and emits a header row even for declaration-less days;
+  an empty range still yields a valid file. `ISoB2Exporter` /
+  `ISoB2ExportRepository` abstractions keep ClosedXML + EF in Infrastructure.
+- **T-S5-03 endpoint** — `GET /api/reports/excel?from=&to=`
+  (`SupervisorOrAbove`), returns the `.xlsx` as `SoB2_{from}_{to}.xlsx`.
+  Added to the FR-027 `EndpointPolicyAlignmentTests` matrix.
+- **T-S5-05** — template bundled into `src/B2.Installer/Templates/` (Content,
+  PreserveNewest) for the Velopack packaging in T-S6-11.
+- **T-S5-01 tests** — `ExcelExportEndpointTests` (5): 1-day header + rows +
+  column order, un-exited-red, cancelled-strikethrough, operator-403, file
+  name + content type.
+- **Notes** — `SoB2ExportRepository` runs two flat queries stitched
+  client-side because SQLite cannot `ORDER BY` a `DateTimeOffset`. ClosedXML
+  added to B2.Infrastructure + B2.Server.Api.Tests.
+
 ### Changed
 
 #### S4 review carry-overs `T-S4-CO-01..09`

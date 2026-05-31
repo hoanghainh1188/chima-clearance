@@ -6,7 +6,15 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- Sổ B2 export template (F-13). Embedded so the export works without the
+         on-disk copy at C:\ProgramData\B2\templates\ (which the installer also
+         ships, T-S5-05); the on-disk file, when present, overrides this. -->
+    <EmbeddedResource Include="Excel\Templates\MauSoB2.xlsx" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="ClosedXML" Version="0.104.2" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.11">
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
       <PrivateAssets>all</PrivateAssets>

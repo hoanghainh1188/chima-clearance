@@ -4,6 +4,7 @@ using B2.Application.Declarations.ConfirmKvgs;
 using B2.Application.Declarations.Exit;
 using B2.Application.Declarations.List;
 using B2.Application.DailyHeaders;
+using B2.Application.Export;
 using B2.Application.MasterData;
 using B2.Application.Reports;
 using B2.Application.Users;
@@ -39,6 +40,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<ByHourReportQueryHandler>();
         services.AddScoped<ByOfficerReportQueryHandler>();
         services.AddScoped<PendingReportQueryHandler>();
+        services.AddScoped<ExportSoB2QueryHandler>();
         services.AddValidatorsFromAssemblyContaining<Auth.Validators.LoginRequestValidator>();
         return services;
     }
