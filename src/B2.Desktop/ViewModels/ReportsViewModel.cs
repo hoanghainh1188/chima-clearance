@@ -89,11 +89,20 @@ public sealed partial class ReportsViewModel : ObservableObject
 
         try
         {
-            var processor = await _api.GetByProcessorReportAsync(from, to, IncludeCancelled).ConfigureAwait(true);
-            var yard = await _api.GetByYardReportAsync(from, to, IncludeCancelled).ConfigureAwait(true);
-            var hour = await _api.GetByHourReportAsync(from, BucketMinutes, IncludeCancelled).ConfigureAwait(true);
-            var officer = await _api.GetByOfficerReportAsync(from, to, IncludeCancelled).ConfigureAwait(true);
-            var pending = await _api.GetPendingReportAsync(DateTimeOffset.UtcNow, IncludeCancelled).ConfigureAwait(true);
+            // The five reports are independent reads — fire them together so the page
+            // loads in one round-trip's worth of latency instead of five back-to-back.
+            var processorTask = _api.GetByProcessorReportAsync(from, to, IncludeCancelled);
+            var yardTask = _api.GetByYardReportAsync(from, to, IncludeCancelled);
+            var hourTask = _api.GetByHourReportAsync(from, BucketMinutes, IncludeCancelled);
+            var officerTask = _api.GetByOfficerReportAsync(from, to, IncludeCancelled);
+            var pendingTask = _api.GetPendingReportAsync(DateTimeOffset.UtcNow, IncludeCancelled);
+            await Task.WhenAll(processorTask, yardTask, hourTask, officerTask, pendingTask).ConfigureAwait(true);
+
+            var processor = await processorTask.ConfigureAwait(true);
+            var yard = await yardTask.ConfigureAwait(true);
+            var hour = await hourTask.ConfigureAwait(true);
+            var officer = await officerTask.ConfigureAwait(true);
+            var pending = await pendingTask.ConfigureAwait(true);
 
             Processors.Clear();
             foreach (var r in processor)

@@ -6,12 +6,53 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 
-Sprints S0 through S4 are merged on `main`. Remaining low-priority polish
+Sprints S0 through S4 are merged on `main`. The nine S4 review carry-overs
+(`T-S4-CO-01..09`) are now cleared (see below). Remaining low-priority polish
 from S3: ledger child-vehicle expand/collapse, right-click context menu,
 300/400 ms animations on SignalR push, sidebar collapse toggle, focus-ring
-style sweep, ⚙️ quick-settings menu, top-right toast position. S4 review
-carry-over items (`T-S4-CO-01..09`) tracked under Phase 5 of `tasks.md`
-and slated for early Sprint S5.
+style sweep, ⚙️ quick-settings menu, top-right toast position.
+
+### Changed
+
+#### S4 review carry-overs `T-S4-CO-01..09`
+
+Quality + correctness follow-ups deferred from PR #18, cleared as one batch.
+Build green on `B2.sln -c Release` (warnings-as-errors); Application,
+Server.Api, and Domain test suites all pass.
+
+- **CO-01** — `EndpointPolicyAlignmentTests` now asserts every `/api/`
+  endpoint binds its *specific* FR-027 policy (new `Should_each_endpoint_bind_the_specific_fr027_policy`
+  drives an explicit method × route → policy matrix), not merely that some
+  auth attribute is present. A new endpoint that is not classified in the
+  matrix fails the test.
+- **CO-02** — added F-11 startup catch-up tests (`Should_catch_up_today_header_on_startup_when_missing`,
+  multi-day backfill, fresh-install-only-today, idempotent-when-present).
+- **CO-03** — `EnsureTodayHeaderCommandHandler.EnsureCatchUpAsync` backfills
+  every business day from the last persisted header through today (capped at
+  366 days); `DailyHeaderCatchupHostedService` recomputes each day's summary
+  across the window. New `IDailyHeaderRepository.GetLatestDateAsync`.
+- **CO-04** — `ReportsRepository.GetByOfficerAsync` wraps the entry-count and
+  KVGS-count reads in a snapshot transaction so a concurrent WAL writer cannot
+  skew one tally against the other. The KVGS-only-officer union landed
+  independently in PR #37 (`fix(F-14)`); this rebase reconciles the two — the
+  retained implementation keeps the union (folding the officer-name lookup into
+  the KVGS query's join) and adds the transaction on top. PR #37's KVGS-only
+  tests pass against it.
+- **CO-05** — removed the redundant `.Include(v => v.Declaration)` from
+  `ReportsRepository.BaseVehicleQuery` (callers only touch the navigation
+  inside server-side projections/predicates).
+- **CO-06** — consolidated the duplicated Vietnam time-zone lookup into a
+  single cached `VietnamTime.TimeZone` (used by Quartz triggers + report
+  hour-bucketing). `LedgerViewModel.VietnamToday` keeps its own copy by
+  necessity — Constitution V forbids `B2.Desktop → B2.Application` — now
+  documented in a code comment.
+- **CO-07** — moved the officer-name validator's English literal into
+  `B2.Application.Common.ValidationMessages`.
+- **CO-08** — `ReportsViewModel.LoadAsync` fires the five report reads with
+  `Task.WhenAll` instead of five sequential awaits.
+- **CO-09** — `ConnectivityService` implements `IAsyncDisposable` and disposes
+  the `HubConnection` on both Dispose paths (no more leaked TCP connection on
+  DI tear-down).
 
 ### Added
 

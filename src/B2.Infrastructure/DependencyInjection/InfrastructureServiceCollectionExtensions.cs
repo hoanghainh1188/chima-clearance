@@ -1,4 +1,5 @@
 using B2.Application.Abstractions;
+using B2.Application.Common;
 using B2.Infrastructure.Auth;
 using B2.Infrastructure.Clock;
 using B2.Infrastructure.Jobs;
@@ -36,7 +37,7 @@ public static class InfrastructureServiceCollectionExtensions
 
         if (enableBackgroundJobs)
         {
-            var vietnamTimeZone = ResolveVietnamTimeZone();
+            var vietnamTimeZone = VietnamTime.TimeZone;
             services.AddQuartz(q =>
             {
                 var jobKey = new JobKey("IdempotencyKeyEviction");
@@ -66,18 +67,6 @@ public static class InfrastructureServiceCollectionExtensions
         }
 
         return services;
-    }
-
-    private static TimeZoneInfo ResolveVietnamTimeZone()
-    {
-        try
-        {
-            return TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
-        }
-        catch (TimeZoneNotFoundException)
-        {
-            return TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-        }
     }
 
     public static async Task EnsureDatabaseAsync(this IServiceProvider services, CancellationToken cancellationToken = default)

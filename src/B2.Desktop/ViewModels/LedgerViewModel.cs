@@ -420,6 +420,9 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
             VietnamToday().ToString("dd/MM/yyyy", culture));
     }
 
+    // Mirror of B2.Application.Common.VietnamTime: Constitution V forbids
+    // B2.Desktop → B2.Application, so the shared server-side helper can't be
+    // referenced here. Keep the fallback chain identical to that helper.
     private static DateOnly VietnamToday()
     {
         TimeZoneInfo tz;

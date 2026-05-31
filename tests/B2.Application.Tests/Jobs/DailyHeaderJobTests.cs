@@ -41,6 +41,75 @@ public sealed class DailyHeaderJobTests
     }
 
     [Fact]
+    [Trait("Feature", "F-11")]
+    public async Task Should_catch_up_today_header_on_startup_when_missing()
+    {
+        var repo = new InMemoryDailyHeaderRepo();
+        var clock = new FixedClock(new DateTimeOffset(2026, 05, 10, 0, 5, 0, TimeSpan.Zero));
+        var sut = new EnsureTodayHeaderCommandHandler(repo, clock, new CountingUow());
+
+        var window = await sut.EnsureCatchUpAsync(CancellationToken.None);
+
+        // Vietnam (UTC+7) business date for 00:05Z on 2026-05-10 is the 10th.
+        window.Should().ContainSingle().Which.Should().Be(new DateOnly(2026, 5, 10));
+        (await repo.ExistsForDateAsync(new DateOnly(2026, 5, 10), CancellationToken.None)).Should().BeTrue();
+    }
+
+    [Fact]
+    [Trait("Feature", "F-11")]
+    public async Task Should_backfill_every_missed_day_after_a_multi_day_outage()
+    {
+        var repo = new InMemoryDailyHeaderRepo();
+        // Last header on record is three days before "today".
+        repo.Headers.Add(new DailyHeader { Id = Guid.NewGuid(), Date = new DateOnly(2026, 5, 7), CreatedAt = DateTimeOffset.UtcNow });
+        var clock = new FixedClock(new DateTimeOffset(2026, 05, 10, 0, 5, 0, TimeSpan.Zero));
+        var uow = new CountingUow();
+        var sut = new EnsureTodayHeaderCommandHandler(repo, clock, uow);
+
+        var window = await sut.EnsureCatchUpAsync(CancellationToken.None);
+
+        window.Should().Equal(new DateOnly(2026, 5, 8), new DateOnly(2026, 5, 9), new DateOnly(2026, 5, 10));
+        repo.Headers.Select(h => h.Date).Should().BeEquivalentTo(new[]
+        {
+            new DateOnly(2026, 5, 7),
+            new DateOnly(2026, 5, 8),
+            new DateOnly(2026, 5, 9),
+            new DateOnly(2026, 5, 10),
+        });
+        uow.SaveCalls.Should().Be(1);
+    }
+
+    [Fact]
+    [Trait("Feature", "F-11")]
+    public async Task Should_only_create_today_on_fresh_install_with_no_prior_headers()
+    {
+        var repo = new InMemoryDailyHeaderRepo();
+        var clock = new FixedClock(new DateTimeOffset(2026, 05, 10, 0, 5, 0, TimeSpan.Zero));
+        var sut = new EnsureTodayHeaderCommandHandler(repo, clock, new CountingUow());
+
+        var window = await sut.EnsureCatchUpAsync(CancellationToken.None);
+
+        window.Should().ContainSingle().Which.Should().Be(new DateOnly(2026, 5, 10));
+        repo.Headers.Should().ContainSingle();
+    }
+
+    [Fact]
+    [Trait("Feature", "F-11")]
+    public async Task Should_be_idempotent_catch_up_when_all_days_present()
+    {
+        var repo = new InMemoryDailyHeaderRepo();
+        repo.Headers.Add(new DailyHeader { Id = Guid.NewGuid(), Date = new DateOnly(2026, 5, 10), CreatedAt = DateTimeOffset.UtcNow });
+        var clock = new FixedClock(new DateTimeOffset(2026, 05, 10, 0, 5, 0, TimeSpan.Zero));
+        var uow = new CountingUow();
+        var sut = new EnsureTodayHeaderCommandHandler(repo, clock, uow);
+
+        _ = await sut.EnsureCatchUpAsync(CancellationToken.None);
+
+        repo.Headers.Should().ContainSingle();
+        uow.SaveCalls.Should().Be(0);
+    }
+
+    [Fact]
     [Trait("Feature", "F-12")]
     public async Task Should_recompute_summary_at_2300()
     {
@@ -65,6 +134,9 @@ public sealed class DailyHeaderJobTests
 
         public Task<DailyHeader?> GetByDateAsync(DateOnly date, CancellationToken cancellationToken) =>
             Task.FromResult<DailyHeader?>(Headers.FirstOrDefault(x => x.Date == date));
+
+        public Task<DateOnly?> GetLatestDateAsync(CancellationToken cancellationToken) =>
+            Task.FromResult<DateOnly?>(Headers.Count == 0 ? null : Headers.Max(x => x.Date));
 
         public Task AddAsync(DailyHeader header, CancellationToken cancellationToken)
         {

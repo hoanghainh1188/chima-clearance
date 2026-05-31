@@ -9,7 +9,7 @@ namespace B2.Desktop.Services;
 /// Owns SignalR hub connection + lightweight HTTP reachability for FR-028.
 /// Fires <see cref="SuggestedListRefresh"/> when polling fallback is active (≈3 s).
 /// </summary>
-public sealed class ConnectivityService : IDisposable
+public sealed class ConnectivityService : IDisposable, IAsyncDisposable
 {
     private readonly AuthTokenHandler _auth;
     private readonly DesktopRuntimeOptions _options;
@@ -296,14 +296,58 @@ public sealed class ConnectivityService : IDisposable
 
     public void Dispose()
     {
-        if (_disposed)
+        if (!BeginDispose(out var hub, out var cts))
         {
             return;
         }
 
-        _disposed = true;
+        // HubConnection only exposes async disposal; block on it so the synchronous
+        // IDisposable path does not leak the underlying TCP connection. The carry-over
+        // (T-S4-CO-09) explicitly sanctions a synchronous block here.
+        hub?.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        cts?.Dispose();
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (!BeginDispose(out var hub, out var cts))
+        {
+            return;
+        }
+
+        if (hub is not null)
+        {
+            await hub.DisposeAsync().ConfigureAwait(false);
+        }
+
+        cts?.Dispose();
+    }
+
+    /// <summary>
+    /// Flips the disposed flag exactly once, detaches the hub + lifecycle token, and
+    /// stops the poll timer. Returns false on any subsequent call so both Dispose
+    /// paths share teardown without double-disposing.
+    /// </summary>
+    private bool BeginDispose(out HubConnection? hub, out CancellationTokenSource? cts)
+    {
+        lock (_gate)
+        {
+            if (_disposed)
+            {
+                hub = null;
+                cts = null;
+                return false;
+            }
+
+            _disposed = true;
+            hub = _hub;
+            _hub = null;
+            cts = _lifecycleCts;
+            _lifecycleCts = null;
+        }
+
         StopPollingTimer();
-        _lifecycleCts?.Cancel();
-        _lifecycleCts?.Dispose();
+        cts?.Cancel();
+        return true;
     }
 }

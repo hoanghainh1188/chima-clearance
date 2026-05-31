@@ -1,4 +1,5 @@
 using B2.Application.Abstractions;
+using B2.Application.Common;
 using B2.Domain.Declarations;
 using B2.Shared.Contracts.Reports;
 using Microsoft.EntityFrameworkCore;
@@ -68,7 +69,12 @@ public sealed class ReportsRepository : IReportsRepository
         bool includeCancelled,
         CancellationToken cancellationToken)
     {
-        var entered = await _db.Declarations
+        // Snapshot transaction: the entry-count and KVGS-count reads must observe
+        // the same DB state. Without it a concurrent WAL writer can land between
+        // the two ToListAsync calls and skew one tally against the other.
+        await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);
+
+        var entered = await _db.Declarations.AsNoTracking()
             .Where(d => d.BusinessDate >= fromDate && d.BusinessDate <= toDate)
             .Where(d => includeCancelled || d.Status != DeclarationStatus.Cancelled)
             .Join(
@@ -77,51 +83,42 @@ public sealed class ReportsRepository : IReportsRepository
                 u => u.Id,
                 (d, u) => new { Declaration = d, User = u })
             .GroupBy(x => new { x.User.Id, x.User.FullName })
-            .Select(g => new { UserId = g.Key.Id, g.Key.FullName, VehiclesEntered = g.Sum(x => x.Declaration.Vehicles.Count) })
+            .Select(g => new { OfficerUserId = g.Key.Id, g.Key.FullName, VehiclesEntered = g.Sum(x => x.Declaration.Vehicles.Count) })
             .ToListAsync(cancellationToken);
 
-        var kvgs = await _db.Declarations
+        var kvgs = await _db.Declarations.AsNoTracking()
             .Where(d => d.BusinessDate >= fromDate && d.BusinessDate <= toDate)
             .Where(d => includeCancelled || d.Status != DeclarationStatus.Cancelled)
             .Where(d => d.KvgsConfirmedByUserId != null)
-            .GroupBy(d => d.KvgsConfirmedByUserId!.Value)
-            .Select(g => new { UserId = g.Key, Count = g.Count() })
+            .Join(
+                _db.Users.AsNoTracking(),
+                d => d.KvgsConfirmedByUserId!.Value,
+                u => u.Id,
+                (d, u) => new { d.KvgsConfirmedByUserId, u.FullName })
+            .GroupBy(x => new { x.KvgsConfirmedByUserId, x.FullName })
+            .Select(g => new { OfficerUserId = g.Key.KvgsConfirmedByUserId!.Value, g.Key.FullName, Count = g.Count() })
             .ToListAsync(cancellationToken);
 
-        var vehiclesEnteredByUser = entered.ToDictionary(x => x.UserId, x => (x.FullName, x.VehiclesEntered));
-        var kvgsByUser = kvgs.ToDictionary(x => x.UserId, x => x.Count);
+        await tx.CommitAsync(cancellationToken);
 
-        var allUserIds = vehiclesEnteredByUser.Keys
-            .AsEnumerable()
-            .Union(kvgsByUser.Keys)
-            .Distinct()
-            .ToList();
+        // Union both populations so an officer who only KVGS-confirmed (never entered
+        // a declaration) still appears — previously dropped because the projection
+        // seeded exclusively from `entered`.
+        var byOfficer = new Dictionary<Guid, (string Name, int Entered, int Kvgs)>();
+        foreach (var e in entered)
+        {
+            byOfficer[e.OfficerUserId] = (e.FullName, e.VehiclesEntered, 0);
+        }
 
-        var kvgsOnlyIds = allUserIds.Where(id => !vehiclesEnteredByUser.ContainsKey(id)).ToList();
-        IReadOnlyDictionary<Guid, string> namesForKvgsOnly = kvgsOnlyIds.Count == 0
-            ? new Dictionary<Guid, string>()
-            : await _db.Users.AsNoTracking()
-                .Where(u => kvgsOnlyIds.Contains(u.Id))
-                .ToDictionaryAsync(u => u.Id, u => u.FullName, cancellationToken);
+        foreach (var k in kvgs)
+        {
+            byOfficer[k.OfficerUserId] = byOfficer.TryGetValue(k.OfficerUserId, out var cur)
+                ? (cur.Name, cur.Entered, k.Count)
+                : (k.FullName, 0, k.Count);
+        }
 
-        return allUserIds
-            .Select(id =>
-            {
-                if (vehiclesEnteredByUser.TryGetValue(id, out var row))
-                {
-                    return new OfficerReportItemDto(
-                        id,
-                        row.FullName,
-                        row.VehiclesEntered,
-                        kvgsByUser.GetValueOrDefault(id));
-                }
-
-                return new OfficerReportItemDto(
-                    id,
-                    namesForKvgsOnly.GetValueOrDefault(id, string.Empty),
-                    0,
-                    kvgsByUser.GetValueOrDefault(id));
-            })
+        return byOfficer
+            .Select(x => new OfficerReportItemDto(x.Key, x.Value.Name, x.Value.Entered, x.Value.Kvgs))
             .OrderByDescending(x => x.VehiclesEntered)
             .ThenBy(x => x.OfficerName)
             .ToList();
@@ -153,6 +150,9 @@ public sealed class ReportsRepository : IReportsRepository
 
     private IQueryable<Domain.Declarations.Vehicle> BaseVehicleQuery(DateOnly fromDate, DateOnly toDate, bool includeCancelled)
     {
+        // No Include: every caller only touches v.Declaration.* inside a server-side
+        // projection/predicate, which EF translates to a SQL join. Materialising the
+        // Declaration navigation would only bloat the result set.
         var q = _db.Vehicles.AsNoTracking()
             .Where(v => v.Declaration.BusinessDate >= fromDate && v.Declaration.BusinessDate <= toDate);
         if (!includeCancelled)
@@ -160,28 +160,15 @@ public sealed class ReportsRepository : IReportsRepository
             q = q.Where(v => v.Declaration.Status != DeclarationStatus.Cancelled);
         }
 
-        return q.Include(v => v.Declaration);
+        return q;
     }
 
     private static string BucketLabel(DateTimeOffset timestamp, int bucketMinutes)
     {
-        var tz = ResolveVietnamTimeZone();
-        var local = TimeZoneInfo.ConvertTime(timestamp, tz);
+        var local = TimeZoneInfo.ConvertTime(timestamp, VietnamTime.TimeZone);
         var startMinute = (local.Minute / bucketMinutes) * bucketMinutes;
         var start = new DateTimeOffset(local.Year, local.Month, local.Day, local.Hour, startMinute, 0, local.Offset);
         var end = start.AddMinutes(bucketMinutes);
         return $"{start:HH:mm}-{end:HH:mm}";
-    }
-
-    private static TimeZoneInfo ResolveVietnamTimeZone()
-    {
-        try
-        {
-            return TimeZoneInfo.FindSystemTimeZoneById("Asia/Ho_Chi_Minh");
-        }
-        catch (TimeZoneNotFoundException)
-        {
-            return TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-        }
     }
 }

@@ -1,5 +1,3 @@
-using B2.Application.Abstractions;
-using B2.Application.Common;
 using B2.Application.DailyHeaders;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -26,12 +24,14 @@ internal sealed class DailyHeaderCatchupHostedService : IHostedService
         using var scope = _scopeFactory.CreateScope();
         var ensureHeader = scope.ServiceProvider.GetRequiredService<EnsureTodayHeaderCommandHandler>();
         var summary = scope.ServiceProvider.GetRequiredService<RecomputeDailySummaryCommandHandler>();
-        var clock = scope.ServiceProvider.GetRequiredService<IClock>();
-        await ensureHeader.HandleAsync(cancellationToken);
 
-        // Catch up today's summary if service was down during scheduled run.
-        var date = VietnamTime.BusinessDateFromUtc(clock.UtcNow);
-        await summary.HandleAsync(new RecomputeDailySummaryCommand(date, "Startup catch-up"), cancellationToken);
+        // Backfill any day(s) missed while the service was down, then recompute the
+        // summary for each — covers a multi-day outage, not just today.
+        var dates = await ensureHeader.EnsureCatchUpAsync(cancellationToken);
+        foreach (var date in dates)
+        {
+            await summary.HandleAsync(new RecomputeDailySummaryCommand(date, "Startup catch-up"), cancellationToken);
+        }
     }
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
