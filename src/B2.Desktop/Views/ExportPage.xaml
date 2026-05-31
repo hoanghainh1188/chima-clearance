@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentView x:Class="B2.Desktop.Views.ExportPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:B2.Desktop.ViewModels"
+             xmlns:s="clr-namespace:B2.Desktop.Resources.Strings"
+             x:DataType="vm:ExportViewModel"
+             BackgroundColor="{StaticResource ColorSurface}">
+  <ScrollView>
+    <VerticalStackLayout Padding="{StaticResource SpacingM}" Spacing="{StaticResource SpacingM}">
+
+      <Label Text="{x:Static s:AppResources.Export_Title}"
+             FontSize="{StaticResource FontSizeXL}"
+             TextColor="{StaticResource ColorPrimary}" />
+
+      <Border Stroke="{StaticResource ColorBorder}"
+              StrokeThickness="1"
+              Padding="{StaticResource SpacingM}"
+              MaximumWidthRequest="560"
+              HorizontalOptions="Start">
+        <VerticalStackLayout Spacing="{StaticResource SpacingM}">
+
+          <!-- Khoảng thời gian -->
+          <VerticalStackLayout Spacing="{StaticResource SpacingS}">
+            <Label Text="{x:Static s:AppResources.Export_DateRange_Label}"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource ColorOnSurface}" />
+            <Picker ItemsSource="{Binding Presets}"
+                    SelectedIndex="{Binding DatePresetIndex}"
+                    WidthRequest="280"
+                    HorizontalOptions="Start" />
+            <Grid ColumnDefinitions="Auto,Auto,Auto,Auto"
+                  ColumnSpacing="{StaticResource SpacingS}"
+                  IsVisible="{Binding IsCustomRange}">
+              <Label Grid.Column="0"
+                     Text="{x:Static s:AppResources.Export_From}"
+                     VerticalOptions="Center"
+                     TextColor="{StaticResource ColorOnSurfaceMuted}" />
+              <DatePicker Grid.Column="1" Date="{Binding CustomFrom}" />
+              <Label Grid.Column="2"
+                     Text="{x:Static s:AppResources.Export_To}"
+                     VerticalOptions="Center"
+                     TextColor="{StaticResource ColorOnSurfaceMuted}" />
+              <DatePicker Grid.Column="3" Date="{Binding CustomTo}" />
+            </Grid>
+          </VerticalStackLayout>
+
+          <!-- Bao gồm (read-only "Đã bật" badges per UI Q3 / FR-015) -->
+          <VerticalStackLayout Spacing="{StaticResource SpacingS}">
+            <Label Text="{x:Static s:AppResources.Export_Include_Label}"
+                   FontAttributes="Bold"
+                   TextColor="{StaticResource ColorOnSurface}" />
+
+            <HorizontalStackLayout Spacing="{StaticResource SpacingS}">
+              <Border BackgroundColor="{StaticResource ColorBadgeOnlineBg}"
+                      Stroke="Transparent"
+                      Padding="6,2"
+                      VerticalOptions="Center">
+                <Border.StrokeShape>
+                  <RoundRectangle CornerRadius="4" />
+                </Border.StrokeShape>
+                <Label Text="{x:Static s:AppResources.Export_Badge_Enabled}"
+                       FontSize="{StaticResource FontSizeXS}"
+                       TextColor="{StaticResource ColorBadgeOnlineText}" />
+              </Border>
+              <Label Text="{x:Static s:AppResources.Export_Include_DailyHeaders}"
+                     VerticalOptions="Center"
+                     TextColor="{StaticResource ColorOnSurface}" />
+            </HorizontalStackLayout>
+
+            <HorizontalStackLayout Spacing="{StaticResource SpacingS}">
+              <Border BackgroundColor="{StaticResource ColorBadgeOnlineBg}"
+                      Stroke="Transparent"
+                      Padding="6,2"
+                      VerticalOptions="Center">
+                <Border.StrokeShape>
+                  <RoundRectangle CornerRadius="4" />
+                </Border.StrokeShape>
+                <Label Text="{x:Static s:AppResources.Export_Badge_Enabled}"
+                       FontSize="{StaticResource FontSizeXS}"
+                       TextColor="{StaticResource ColorBadgeOnlineText}" />
+              </Border>
+              <Label Text="{x:Static s:AppResources.Export_Include_StatusColors}"
+                     VerticalOptions="Center"
+                     TextColor="{StaticResource ColorOnSurface}" />
+            </HorizontalStackLayout>
+
+            <HorizontalStackLayout Spacing="{StaticResource SpacingS}">
+              <Border BackgroundColor="{StaticResource ColorBadgeOnlineBg}"
+                      Stroke="Transparent"
+                      Padding="6,2"
+                      VerticalOptions="Center">
+                <Border.StrokeShape>
+                  <RoundRectangle CornerRadius="4" />
+                </Border.StrokeShape>
+                <Label Text="{x:Static s:AppResources.Export_Badge_Enabled}"
+                       FontSize="{StaticResource FontSizeXS}"
+                       TextColor="{StaticResource ColorBadgeOnlineText}" />
+              </Border>
+              <Label Text="{x:Static s:AppResources.Export_Include_NoteColumn}"
+                     VerticalOptions="Center"
+                     TextColor="{StaticResource ColorOnSurface}" />
+            </HorizontalStackLayout>
+          </VerticalStackLayout>
+
+          <!-- Actions -->
+          <HorizontalStackLayout Spacing="{StaticResource SpacingS}" HorizontalOptions="End">
+            <Button Text="{x:Static s:AppResources.Export_Action_Cancel}"
+                    Command="{Binding CancelCommand}"
+                    IsEnabled="{Binding IsExporting}" />
+            <Button Text="{x:Static s:AppResources.Export_Action_Export}"
+                    Command="{Binding ExportCommand}"
+                    IsEnabled="{Binding IsExporting, Converter={StaticResource InvertedBoolConverter}}" />
+          </HorizontalStackLayout>
+
+          <!-- Progress -->
+          <HorizontalStackLayout Spacing="{StaticResource SpacingS}"
+                                 IsVisible="{Binding IsExporting}">
+            <ActivityIndicator IsRunning="{Binding IsExporting}" />
+            <Label Text="{x:Static s:AppResources.Export_Progress}"
+                   VerticalOptions="Center"
+                   TextColor="{StaticResource ColorOnSurfaceMuted}" />
+          </HorizontalStackLayout>
+
+        </VerticalStackLayout>
+      </Border>
+
+      <Label Text="{Binding LastExportText}"
+             TextColor="{StaticResource ColorOnSurfaceMuted}"
+             IsVisible="{Binding LastExportText, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+
+    </VerticalStackLayout>
+  </ScrollView>
+</ContentView>

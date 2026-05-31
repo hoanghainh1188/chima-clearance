@@ -27,6 +27,27 @@ retained.
 
 ### Added
 
+#### Sprint S5 — F-13 Sổ B2 Excel export (UI) — `feat/F-13-export-ui`
+
+The desktop **Xuất Sổ B2** screen (wireframe § 6.7) on top of the F-13 backend.
+`B2.Desktop` builds clean locally (XAML + analyzers, warnings-as-errors).
+
+- **T-S5-04** — `ExportPage` (ContentView) + `ExportViewModel`: date-range
+  Picker (Hôm nay / Hôm qua / Tuần này / Tháng này / Tùy chọn + custom
+  DatePickers), the three "Bao gồm:" transformations as **read-only "Đã bật"
+  badges** (UI Q3 / FR-015 — not checkboxes), cancellable export
+  (`CancellationTokenSource` + `Hủy`) with an inline `ActivityIndicator`
+  progress row, native Save As via CommunityToolkit `FileSaver`, severity
+  toasts (success / cancelled / error), and a "Lần xuất gần nhất" line.
+- `IB2Api.ExportSoB2Async` returns the raw `HttpResponseMessage` so the `.xlsx`
+  bytes + Content-Disposition file name bypass JSON deserialization.
+- Sidebar item `📤 Xuất Sổ B2` registered for Admin/Supervisor only (FR-027).
+- 25 `AppResources.vi.resx` keys + matching Designer accessors.
+- **T-S5-06** — `ExportScenarios.cs` lands as a `[Fact(Skip=…)]` spec-VM
+  placeholder documenting the SC-012 budget (30-day export < 10 s). The full
+  NBomber load harness is deferred until the (currently empty) performance
+  project is bootstrapped.
+
 #### Sprint S5 — F-13 Sổ B2 Excel export (backend) — `feat/F-13-excel-export`
 
 First slice of Sprint S5: the template-based Sổ B2 export endpoint. UI

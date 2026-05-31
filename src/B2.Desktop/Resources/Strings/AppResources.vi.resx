@@ -676,4 +676,76 @@ Alt+1 … Alt+8 — Chuyển nhanh giữa các tab
   <data name="Reports_Empty" xml:space="preserve">
     <value>Không có dữ liệu cho khoảng thời gian đã chọn.</value>
   </data>
+  <data name="Sidebar_Item_Export" xml:space="preserve">
+    <value>📤 Xuất Sổ B2</value>
+  </data>
+  <data name="Export_Title" xml:space="preserve">
+    <value>Xuất Sổ B2</value>
+  </data>
+  <data name="Export_DateRange_Label" xml:space="preserve">
+    <value>Khoảng thời gian:</value>
+  </data>
+  <data name="Export_Preset_Today" xml:space="preserve">
+    <value>Hôm nay</value>
+  </data>
+  <data name="Export_Preset_Yesterday" xml:space="preserve">
+    <value>Hôm qua</value>
+  </data>
+  <data name="Export_Preset_ThisWeek" xml:space="preserve">
+    <value>Tuần này</value>
+  </data>
+  <data name="Export_Preset_ThisMonth" xml:space="preserve">
+    <value>Tháng này</value>
+  </data>
+  <data name="Export_Preset_Custom" xml:space="preserve">
+    <value>Tùy chọn</value>
+  </data>
+  <data name="Export_From" xml:space="preserve">
+    <value>Từ ngày</value>
+  </data>
+  <data name="Export_To" xml:space="preserve">
+    <value>Đến ngày</value>
+  </data>
+  <data name="Export_Include_Label" xml:space="preserve">
+    <value>Bao gồm:</value>
+  </data>
+  <data name="Export_Include_DailyHeaders" xml:space="preserve">
+    <value>Dòng tiêu đề ngày (chốt 23h)</value>
+  </data>
+  <data name="Export_Include_StatusColors" xml:space="preserve">
+    <value>Tô màu trạng thái (đỏ/xanh)</value>
+  </data>
+  <data name="Export_Include_NoteColumn" xml:space="preserve">
+    <value>Cột ghi chú</value>
+  </data>
+  <data name="Export_Badge_Enabled" xml:space="preserve">
+    <value>Đã bật</value>
+  </data>
+  <data name="Export_Action_Export" xml:space="preserve">
+    <value>📤 Xuất file</value>
+  </data>
+  <data name="Export_Action_Cancel" xml:space="preserve">
+    <value>Hủy</value>
+  </data>
+  <data name="Export_Progress" xml:space="preserve">
+    <value>Đang tạo file...</value>
+  </data>
+  <data name="Export_Success_Format" xml:space="preserve">
+    <value>✅ Đã xuất file: {0}</value>
+  </data>
+  <data name="Export_Cancelled" xml:space="preserve">
+    <value>Đã hủy xuất file</value>
+  </data>
+  <data name="Export_Error_Format" xml:space="preserve">
+    <value>Lỗi xuất file (mã {0})</value>
+  </data>
+  <data name="Export_Error_Network" xml:space="preserve">
+    <value>Mất kết nối máy chủ khi xuất file</value>
+  </data>
+  <data name="Export_Error_InvalidRange" xml:space="preserve">
+    <value>Khoảng thời gian không hợp lệ</value>
+  </data>
+  <data name="Export_LastExport_Format" xml:space="preserve">
+    <value>Lần xuất gần nhất: {0}</value>
+  </data>
 </root>
