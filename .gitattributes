@@ -22,6 +22,7 @@
 *.resx text eol=crlf
 
 # Binary
+*.xlsx binary
 *.png binary
 *.jpg binary
 *.jpeg binary

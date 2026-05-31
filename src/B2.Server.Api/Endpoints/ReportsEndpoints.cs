@@ -1,4 +1,5 @@
 using System.Globalization;
+using B2.Application.Export;
 using B2.Application.Reports;
 using B2.Server.Api.Auth;
 
@@ -65,6 +66,26 @@ public static class ReportsEndpoints
             {
                 var at = asOf ?? DateTimeOffset.UtcNow;
                 return Results.Ok(await handler.HandleAsync(at, includeCancelled ?? false, ct));
+            });
+
+        // F-13 — Sổ B2 template-based Excel export.
+        g.MapGet(
+            "/excel",
+            async (ExportSoB2QueryHandler handler, string from, string to, CancellationToken ct) =>
+            {
+                if (!TryParseDateRange(from, to, out var fromDate, out var toDate))
+                {
+                    return Results.BadRequest(new { code = "INVALID_DATE_RANGE" });
+                }
+
+                var bytes = await handler.HandleAsync(fromDate, toDate, ct);
+                var fileName = string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"SoB2_{fromDate:yyyyMMdd}_{toDate:yyyyMMdd}.xlsx");
+                return Results.File(
+                    bytes,
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    fileName);
             });
     }
 

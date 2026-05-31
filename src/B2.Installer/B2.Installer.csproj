@@ -6,4 +6,14 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <!-- F-13 / T-S5-05: ship the Sổ B2 export template so the installer (Velopack,
+         built in T-S6-11) lays it down at C:\ProgramData\B2\templates\. At runtime the
+         export also embeds this template in B2.Infrastructure, so the on-disk copy is an
+         optional override the unit can re-skin without a redeploy. -->
+    <Content Include="Templates\Mẫu sổ B2.xlsx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
 </Project>

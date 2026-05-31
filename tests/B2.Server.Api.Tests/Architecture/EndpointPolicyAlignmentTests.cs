@@ -69,6 +69,7 @@ public sealed class EndpointPolicyAlignmentTests
         ["GET /api/reports/by-hour"] = B2Policies.SupervisorOrAbove,
         ["GET /api/reports/by-officer"] = B2Policies.SupervisorOrAbove,
         ["GET /api/reports/pending"] = B2Policies.SupervisorOrAbove,
+        ["GET /api/reports/excel"] = B2Policies.SupervisorOrAbove,
     };
 
     [Fact]
