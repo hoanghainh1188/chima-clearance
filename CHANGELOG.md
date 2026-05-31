@@ -12,6 +12,19 @@ from S3: ledger child-vehicle expand/collapse, right-click context menu,
 300/400 ms animations on SignalR push, sidebar collapse toggle, focus-ring
 style sweep, ⚙️ quick-settings menu, top-right toast position.
 
+### Fixed
+
+#### CI — `setup-dotnet` windows PATH flake guard — `ci/harden-dotnet-path`
+
+The `build-and-test` job intermittently failed at "Verify formatting" with
+`Unable to locate dotnet CLI. Ensure that it is on the PATH.` — `setup-dotnet@v5`
+not propagating the SDK location to `GITHUB_PATH` on windows-2022 (seen across
+PR #9, R3b ×2, PR #40, PR #41 ×2; each cleared only by a manual re-run). Added a
+step right after `setup-dotnet` that pins `C:\Program Files\dotnet` onto
+`GITHUB_PATH` + `DOTNET_ROOT` explicitly, so every later step resolves the SDK
+without relying on the action's own write. Pre-existing `shell: bash` pinning is
+retained.
+
 ### Added
 
 #### Sprint S5 — F-13 Sổ B2 Excel export (backend) — `feat/F-13-excel-export`
