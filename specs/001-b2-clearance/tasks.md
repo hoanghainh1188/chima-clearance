@@ -795,10 +795,10 @@ audit viewer shows every write tagged with the actor.
 
 ### F-15 Backup & Restore + FR-026 Recovery Code
 
-> **Slice 1 landed (PR `feat/F-15-backup-core`)** — the encrypted-snapshot codec
-> + FR-026 dual key-wrap + `backup-now` endpoint + round-trip tests. Remaining
-> F-15 slices: Litestream continuous backup (T-S5-08), the live restore hot-swap
-> with write-pause (T-S5-10 full) + `POST /api/admin/restore` (T-S5-11), the
+> **Slices 1–2 landed** (PRs `feat/F-15-backup-core` #48 + `feat/F-15-restore-hotswap`
+> #50) — the encrypted-snapshot codec + FR-026 dual key-wrap + `backup-now` (T-S5-09),
+> and the restore handler + apply-on-startup swap + `POST /api/admin/restore`
+> (T-S5-10/11). **Remaining F-15 slices:** Litestream continuous backup (T-S5-08), the
 > `BackupPage` UI (T-S5-12), and the install-time recovery-code generator (T-S5-13).
 
 - [~] **T-S5-07** [P] [F-15] Write Gherkin tests in
@@ -851,25 +851,6 @@ audit viewer shows every write tagged with the actor.
   the FR-027 matrix. Restore tests: stage+apply round-trip (isolated
   `DatabaseRestoreService`), upload-accepted-and-audited, wrong-secret 400,
   file-required 400, operator-403.
-- [ ] **T-S5-08** [F-15] Implement Litestream wrapper in
-  `src/B2.Infrastructure/Backup/LitestreamProcess.cs` — child-process supervisor
-  spawned by `B2.Server.Service`; reads config from `appsettings.json`; restart
-  on crash. **Dep**: T-S0-04. **LOC**: ~250.
-- [ ] **T-S5-09** [F-15] Implement `BackupSnapshotService` in
-  `src/B2.Infrastructure/Backup/BackupSnapshotService.cs`: `sqlite3 .backup`
-  → AES-256-GCM zip with key-wrap (FR-026: DK wrapped twice, once with
-  KDF(install-password), once with KDF(recovery-code)). Header JSON lists both
-  wrapped DK blobs. **Dep**: T-S5-08. **LOC**: ~350.
-- [ ] **T-S5-10** [F-15] Implement `RestoreCommandHandler` in
-  `src/B2.Application/Admin/Restore/`: tries password OR recovery code; on
-  success, pauses writes (FR-011 🔴 state announced via SignalR), swaps DB
-  file, restarts. Downtime budget ≤ 30 s (SC-009). **Dep**: T-S5-09. **LOC**:
-  ~280.
-- [ ] **T-S5-11** [F-15] Wire `POST /api/admin/backup-now` and
-  `POST /api/admin/restore` (multipart) in
-  `src/B2.Server.Api/Endpoints/AdminEndpoints.cs`. Restore form accepts
-  `password` OR `recoveryCode`. Make T-S5-07 green. **Dep**: T-S5-09, T-S5-10.
-  **LOC**: ~180.
 - [ ] **T-S5-12** [F-15] Implement `Admin/BackupPage.xaml` +
   `BackupViewModel.cs` per [wireframe § 6.10](../05-ui-wireframes.md).
   Continuous status, manual snapshot, restore with typed-RESTORE confirmation
