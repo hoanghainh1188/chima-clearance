@@ -37,6 +37,30 @@ retained.
 
 ### Added
 
+#### Sprint S5 — F-15 encrypted backup snapshot (slice 1) — `feat/F-15-backup-core`
+
+First slice of F-15: the FR-026 dual-wrapped encrypted snapshot codec + on-demand
+`backup-now` endpoint (T-S5-09 + the snapshot half of T-S5-07/10/11). Build green on
+`B2.sln -c Release`; Server.Api (89) suite passes.
+
+- **Codec** — `IBackupSnapshotService` + `BackupSnapshotService`: a
+  Microsoft.Data.Sqlite online `BackupDatabase` snapshot is AES-256-GCM encrypted
+  under a random 32-byte data key; the DK is wrapped **twice** (PBKDF2-SHA256,
+  100k iters → AES-256-GCM) under the install password **and** the recovery code,
+  so either secret decrypts (FR-026). JSON container = version + both wrap blobs +
+  payload; `DecryptSnapshot` tries each wrap with the supplied secret. `Pooling=False`
+  on the snapshot connections releases the temp file before read.
+- **Endpoint** — `POST /api/admin/backup-now` (`AdminOnly`, in the FR-027 matrix)
+  returns the encrypted `b2-{yyyyMMdd-HHmm}.bak` and writes a `BackupSnapshot` audit
+  row. Install secrets read from `B2:Backup:*` config, falling back to dev defaults
+  until the install-time recovery-code generator (T-S5-13).
+- **Tests** — 4 `BackupRestoreEndpointTests`: restore-round-trip (decrypted DB holds
+  the seeded declarations), FR-026 both-secrets-decrypt-identical, wrong-secret
+  rejected (`BACKUP_INVALID_SECRET`), backup-now returns file + audits, operator-403.
+- **Deferred** to later F-15 slices: Litestream continuous backup (T-S5-08), the live
+  restore hot-swap + write-pause + `POST /api/admin/restore` (T-S5-10/11), the
+  `BackupPage` UI (T-S5-12), and the install-time recovery-code generator (T-S5-13).
+
 #### Sprint S5 — F-18 health & logs (Admin) — `feat/F-18-health-logs`
 
 Admin diagnostics: a tabbed health dashboard + in-app log viewer (T-S5-18/19).

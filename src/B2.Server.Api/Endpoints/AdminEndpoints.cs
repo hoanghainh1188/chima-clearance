@@ -1,4 +1,6 @@
 using System.Globalization;
+using System.Text.Json;
+using B2.Application.Abstractions;
 using B2.Application.Admin.Audit;
 using B2.Application.Admin.Health;
 using B2.Application.Admin.LogViewer;
@@ -49,6 +51,44 @@ public static class AdminEndpoints
         g.MapGet(
             "/health/detail",
             async (HealthQueryHandler handler, CancellationToken ct) => Results.Ok(await handler.HandleAsync(ct)));
+
+        // F-15 / FR-026 — on-demand encrypted (dual-wrapped) snapshot download.
+        g.MapPost(
+            "/backup-now",
+            async (
+                HttpContext http,
+                IBackupSnapshotService backups,
+                IConfiguration config,
+                IClock clock,
+                IAuditContext audit,
+                CancellationToken ct) =>
+            {
+                // Install-time secrets land with T-S5-13; until then fall back to deterministic
+                // dev secrets so the snapshot path is exercisable.
+                var installPassword = config["B2:Backup:InstallPassword"];
+                if (string.IsNullOrEmpty(installPassword))
+                {
+                    installPassword = "b2-dev-install-password";
+                }
+
+                var recoveryCode = config["B2:Backup:RecoveryCode"];
+                if (string.IsNullOrEmpty(recoveryCode))
+                {
+                    recoveryCode = "B2-DEV-RECOVERY-CODE-0000";
+                }
+
+                var bytes = await backups.CreateSnapshotAsync(installPassword, recoveryCode, ct);
+                var fileName = string.Create(CultureInfo.InvariantCulture, $"b2-{clock.UtcNow:yyyyMMdd-HHmm}.bak");
+                audit.Set(new AuditEnvelope(
+                    http.User.GetB2UserId(),
+                    AuditAction.Create,
+                    "BackupSnapshot",
+                    Guid.NewGuid(),
+                    null,
+                    JsonSerializer.Serialize(new { fileName, bytes.Length }),
+                    null));
+                return Results.File(bytes, "application/octet-stream", fileName);
+            });
     }
 
     private static string? NullIfWhitespace(string? s) => string.IsNullOrWhiteSpace(s) ? null : s;
