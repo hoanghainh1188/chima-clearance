@@ -44,6 +44,7 @@ public static class InfrastructureServiceCollectionExtensions
             sp.GetRequiredService<IClock>(),
             Path.Combine(dataDirectory, "db", "b2.db")));
         services.AddSingleton<IBackupSnapshotService>(_ => new BackupSnapshotService(Path.Combine(dataDirectory, "db", "b2.db")));
+        services.AddSingleton<IDatabaseRestoreService>(_ => new DatabaseRestoreService(Path.Combine(dataDirectory, "db", "b2.db")));
         services.AddSingleton<ISoB2Exporter>(_ => new ClosedXmlSoB2Exporter(dataDirectory));
 
         if (enableBackgroundJobs)

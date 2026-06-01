@@ -103,7 +103,7 @@ integration sweeps where appropriate.
 | S2 | T-S2-01 .. T-S2-22 (22) | F-05, F-06, F-07, F-08 + FR-019/024 | ~4 500 | ✅ Merged (PR #5 `de24ec5`) |
 | S3 | T-S3-01 .. T-S3-12 (12) | F-09, F-10 + FR-027/FR-028 | ~2 500 | ✅ Merged (PRs #6/#7/#8/#9/#11/#12/#15/#16, #13 CI fix) |
 | S4 | T-S4-01 .. T-S4-15 (15) | F-11, F-12, F-14 + FR-025 | ~2 800 | ✅ Merged (PR #18 `9f0d15b` + docs PR #19 `6514c2e`); 9 carry-overs `T-S4-CO-01..09` deferred to S5 |
-| S5 | T-S5-01 .. T-S5-19 (19) | F-13, F-15, F-16, F-18 + FR-022/026 | ~3 800 | 🔄 In progress — **F-13** (#41+#43), **FR-022** (#44), **F-16** (#45), **F-18** (#46) complete; CI flake fixed (#42→#47); **F-15 slice 1** (encrypted snapshot codec + FR-026 dual-wrap + backup-now, PR `feat/F-15-backup-core`, T-S5-09 + part of 07/10/11) done. F-15 remaining: Litestream (08), restore hot-swap (10/11), BackupPage (12), recovery-code installer (13) |
+| S5 | T-S5-01 .. T-S5-19 (19) | F-13, F-15, F-16, F-18 + FR-022/026 | ~3 800 | 🔄 In progress — **F-13** (#41+#43), **FR-022** (#44), **F-16** (#45), **F-18** (#46) complete; CI flake fixed (#42→#47); **F-15 slices 1–2** (encrypted snapshot codec + FR-026 dual-wrap + backup-now + restore apply-on-startup, PRs `feat/F-15-backup-core` + `feat/F-15-restore-hotswap`, T-S5-09/10/11 + part of 07) done. F-15 remaining: Litestream (08), BackupPage UI (12), recovery-code installer (13) |
 | S6 | T-S6-01 .. T-S6-12 (12) | F-17 simple v1 + a11y + runbook + UAT | ~1 800 | ⏳ Pending |
 | **Total** | **113 tasks** | 18 features + 7 cross-cutting FRs | **~19 500 LOC** | **75/113 tasks merged (S0–S4 done)** |
 
@@ -827,29 +827,30 @@ audit viewer shows every write tagged with the actor.
   the install password and the recovery code. JSON container (version + both wrap
   blobs + payload). `DecryptSnapshot` tries each wrap with the supplied secret.
   `Pooling=False` on the snapshot connections so the temp file unlocks before read.
-- [~] **T-S5-10** [F-15] Implement `RestoreCommandHandler` in
+- [X] **T-S5-10** [F-15] Implement `RestoreCommandHandler` in
   `src/B2.Application/Admin/Restore/`: tries password OR recovery code; on
   success, pauses writes (FR-011 🔴 state announced via SignalR), swaps DB
   file, restarts. Downtime budget ≤ 30 s (SC-009). **Dep**: T-S5-09. **LOC**:
   ~280.
-  *Slice 1*: the decrypt-with-either-secret core is `BackupSnapshotService.DecryptSnapshot`
-  (round-trip tested). The live hot-swap (write-pause + DB file swap + restart)
-  is the remaining slice.
-- [~] **T-S5-11** [F-15] Wire `POST /api/admin/backup-now` and
+  *Done (slice 2, `feat/F-15-restore-hotswap`)*: `RestoreCommandHandler`
+  decrypts (either secret) → validates the SQLite magic → stages via
+  `IDatabaseRestoreService`/`DatabaseRestoreService` to `b2.db.restore-pending`
+  + writes an `AuditAction.Restore` row. **Apply-on-startup** design instead of
+  a mid-run swap: `B2ApiHost.InitializeDatabaseAsync` calls `ApplyPending()`
+  (ClearAllPools + drop the live DB + WAL/SHM sidecars + promote the pending
+  file) **before** EF opens the DB, so there is no file-lock race; the restart
+  *is* the write-pause. The endpoint triggers that restart via
+  `IHostApplicationLifetime.StopApplication()` (skipped under `Testing`).
+- [X] **T-S5-11** [F-15] Wire `POST /api/admin/backup-now` and
   `POST /api/admin/restore` (multipart) in
   `src/B2.Server.Api/Endpoints/AdminEndpoints.cs`. Restore form accepts
   `password` OR `recoveryCode`. Make T-S5-07 green. **Dep**: T-S5-09, T-S5-10.
   **LOC**: ~180.
-  *Slice 1*: `POST /api/admin/backup-now` (`AdminOnly`, in the FR-027 matrix)
-  returns the encrypted `b2-{ts}.bak` + writes a `BackupSnapshot` audit row.
-  Install secrets fall back to dev defaults until T-S5-13. `POST /api/admin/restore`
-  ships with the hot-swap slice.
-  `tests/B2.Server.Api.Tests/Admin/BackupRestoreEndpointTests.cs` verbatim from
-  `spec.md` F-15 (continuous-health, restore-round-trip, restore-confirmation).
-  Add FR-026 tests: install-time recovery code generation, both-secrets-
-  decrypt, lost-password-recovery-code-still-works. Tag
-  `[Trait("Feature","F-15")]` + `[Trait("Requirement","FR-026")]`. **Dep**:
-  T-S4-15. **LOC**: ~350.
+  *Done*: `POST /api/admin/backup-now` (slice 1) + `POST /api/admin/restore`
+  (multipart `file` + `password`/`recoveryCode`, slice 2). Both `AdminOnly`, in
+  the FR-027 matrix. Restore tests: stage+apply round-trip (isolated
+  `DatabaseRestoreService`), upload-accepted-and-audited, wrong-secret 400,
+  file-required 400, operator-403.
 - [ ] **T-S5-08** [F-15] Implement Litestream wrapper in
   `src/B2.Infrastructure/Backup/LitestreamProcess.cs` — child-process supervisor
   spawned by `B2.Server.Service`; reads config from `appsettings.json`; restart

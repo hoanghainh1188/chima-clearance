@@ -113,6 +113,8 @@ public static class B2ApiHost
 
     public static async Task InitializeDatabaseAsync(WebApplication app, CancellationToken cancellationToken = default)
     {
+        // F-15: apply any staged restore before EF opens the DB (no mid-run file swap).
+        app.Services.GetRequiredService<IDatabaseRestoreService>().ApplyPending();
         await app.Services.EnsureDatabaseAsync(cancellationToken);
     }
 
