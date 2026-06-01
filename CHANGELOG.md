@@ -37,6 +37,27 @@ retained.
 
 ### Added
 
+#### Sprint S5 — F-15 restore (apply-on-startup) — slice 2 — `feat/F-15-restore-hotswap`
+
+Restore an encrypted snapshot with either secret (T-S5-10/11). Build green on
+`B2.sln -c Release`; Server.Api (94) suite passes.
+
+- **Restore** — `RestoreCommandHandler` decrypts the upload (install password OR
+  recovery code), validates the SQLite magic, and **stages** it via
+  `IDatabaseRestoreService` / `DatabaseRestoreService` to `b2.db.restore-pending`,
+  writing an `AuditAction.Restore` audit row.
+- **Apply-on-startup** (not a mid-run swap) — `B2ApiHost.InitializeDatabaseAsync`
+  calls `ApplyPending()` **before** EF opens the DB: `SqliteConnection.ClearAllPools()`,
+  drop the live DB + WAL/SHM sidecars, promote the pending file. No file-lock race;
+  the restart itself is the write-pause.
+- **Endpoint** — `POST /api/admin/restore` (`AdminOnly`, multipart `file` +
+  `password`/`recoveryCode`, in the FR-027 matrix) stages the restore and triggers
+  `IHostApplicationLifetime.StopApplication()` so the staged DB applies on the next
+  start (skipped under `Testing`).
+- **Tests** — 5: stage→apply round-trip (isolated `DatabaseRestoreService` — swaps a
+  temp DB + clears a stale WAL sidecar), upload-accepted-and-audited, wrong-secret 400,
+  file-required 400, operator-403.
+
 #### Sprint S5 — F-15 encrypted backup snapshot (slice 1) — `feat/F-15-backup-core`
 
 First slice of F-15: the FR-026 dual-wrapped encrypted snapshot codec + on-demand

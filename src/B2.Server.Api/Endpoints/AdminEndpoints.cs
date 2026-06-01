@@ -4,8 +4,10 @@ using B2.Application.Abstractions;
 using B2.Application.Admin.Audit;
 using B2.Application.Admin.Health;
 using B2.Application.Admin.LogViewer;
+using B2.Application.Admin.Restore;
 using B2.Domain.Audit;
 using B2.Server.Api.Auth;
+using Microsoft.Extensions.Hosting;
 
 namespace B2.Server.Api.Endpoints;
 
@@ -88,6 +90,58 @@ public static class AdminEndpoints
                     JsonSerializer.Serialize(new { fileName, bytes.Length }),
                     null));
                 return Results.File(bytes, "application/octet-stream", fileName);
+            });
+
+        // F-15 — restore from an uploaded snapshot (password OR recovery code). The staged
+        // DB is applied on the next startup; outside tests we trigger that restart now.
+        g.MapPost(
+            "/restore",
+            async (
+                HttpContext http,
+                RestoreCommandHandler handler,
+                IHostApplicationLifetime lifetime,
+                IHostEnvironment env,
+                CancellationToken ct) =>
+            {
+                if (!http.Request.HasFormContentType)
+                {
+                    return Results.BadRequest(new { code = "INVALID_REQUEST" });
+                }
+
+                var form = await http.Request.ReadFormAsync(ct);
+                var file = form.Files["file"];
+                if (file is null || file.Length == 0)
+                {
+                    return Results.BadRequest(new { code = "FILE_REQUIRED" });
+                }
+
+                var secret = form["password"].ToString();
+                if (string.IsNullOrEmpty(secret))
+                {
+                    secret = form["recoveryCode"].ToString();
+                }
+
+                if (string.IsNullOrEmpty(secret))
+                {
+                    return Results.BadRequest(new { code = "SECRET_REQUIRED" });
+                }
+
+                byte[] container;
+                await using (var stream = file.OpenReadStream())
+                using (var buffer = new MemoryStream())
+                {
+                    await stream.CopyToAsync(buffer, ct);
+                    container = buffer.ToArray();
+                }
+
+                handler.Handle(container, secret, http.User.GetB2UserId());
+
+                if (!env.IsEnvironment("Testing"))
+                {
+                    lifetime.StopApplication();
+                }
+
+                return Results.Ok(new { restartRequired = true });
             });
     }
 
