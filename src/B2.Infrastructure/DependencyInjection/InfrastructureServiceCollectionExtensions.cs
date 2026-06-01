@@ -1,6 +1,7 @@
 using B2.Application.Abstractions;
 using B2.Application.Common;
 using B2.Infrastructure.Auth;
+using B2.Infrastructure.Backup;
 using B2.Infrastructure.Clock;
 using B2.Infrastructure.Diagnostics;
 using B2.Infrastructure.Excel;
@@ -42,6 +43,7 @@ public static class InfrastructureServiceCollectionExtensions
             sp.GetRequiredService<B2DbContext>(),
             sp.GetRequiredService<IClock>(),
             Path.Combine(dataDirectory, "db", "b2.db")));
+        services.AddSingleton<IBackupSnapshotService>(_ => new BackupSnapshotService(Path.Combine(dataDirectory, "db", "b2.db")));
         services.AddSingleton<ISoB2Exporter>(_ => new ClosedXmlSoB2Exporter(dataDirectory));
 
         if (enableBackgroundJobs)

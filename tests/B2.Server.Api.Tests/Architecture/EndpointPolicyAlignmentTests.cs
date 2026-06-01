@@ -37,6 +37,9 @@ public sealed class EndpointPolicyAlignmentTests
         ["GET /api/admin/logs"] = B2Policies.AdminOnly,
         ["GET /api/admin/health/detail"] = B2Policies.AdminOnly,
 
+        // Backup snapshot — Admin only (F-15)
+        ["POST /api/admin/backup-now"] = B2Policies.AdminOnly,
+
         // Users — Admin only
         ["GET /api/users"] = B2Policies.AdminOnly,
         ["POST /api/users"] = B2Policies.AdminOnly,
