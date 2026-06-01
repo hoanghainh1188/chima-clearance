@@ -320,6 +320,10 @@ public sealed class MainShellPage : ContentPage
                 stack,
                 AppResources.Sidebar_Item_Health,
                 _services.GetRequiredService<HealthPage>());
+            AddSidebarItem(
+                stack,
+                AppResources.Sidebar_Item_Backup,
+                _services.GetRequiredService<BackupPage>());
         }
 
         container.Children.Add(stack);

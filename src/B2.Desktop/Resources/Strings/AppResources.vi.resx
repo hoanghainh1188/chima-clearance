@@ -868,4 +868,67 @@ Alt+1 … Alt+8 — Chuyển nhanh giữa các tab
   <data name="Health_Error_Network" xml:space="preserve">
     <value>Không tải được (lỗi mạng).</value>
   </data>
+  <data name="Sidebar_Item_Backup" xml:space="preserve">
+    <value>💾 Sao lưu &amp; khôi phục</value>
+  </data>
+  <data name="Backup_Title" xml:space="preserve">
+    <value>Sao lưu &amp; khôi phục</value>
+  </data>
+  <data name="Backup_Continuous_Title" xml:space="preserve">
+    <value>Sao lưu liên tục (tự động)</value>
+  </data>
+  <data name="Backup_Continuous_NotConfigured" xml:space="preserve">
+    <value>Chưa cấu hình (sẽ bật khi cài đặt Litestream).</value>
+  </data>
+  <data name="Backup_Snapshot_Title" xml:space="preserve">
+    <value>Sao lưu tức thời</value>
+  </data>
+  <data name="Backup_Snapshot_Desc" xml:space="preserve">
+    <value>Tạo bản sao lưu đầy đủ (file .bak mã hóa AES-256).</value>
+  </data>
+  <data name="Backup_Snapshot_Button" xml:space="preserve">
+    <value>💾 Sao lưu ngay</value>
+  </data>
+  <data name="Backup_LastBackup_Format" xml:space="preserve">
+    <value>Lần sao lưu gần nhất: {0}</value>
+  </data>
+  <data name="Backup_Restore_Title" xml:space="preserve">
+    <value>Khôi phục dữ liệu ⚠️</value>
+  </data>
+  <data name="Backup_Restore_Warning" xml:space="preserve">
+    <value>Khôi phục sẽ thay thế toàn bộ dữ liệu hiện tại. Hệ thống dừng khoảng 30 giây và mọi phiên đăng nhập sẽ bị ngắt.</value>
+  </data>
+  <data name="Backup_Restore_SelectFile" xml:space="preserve">
+    <value>📁 Chọn file sao lưu...</value>
+  </data>
+  <data name="Backup_Restore_SelectedFile_Format" xml:space="preserve">
+    <value>File: {0}</value>
+  </data>
+  <data name="Backup_Restore_ConfirmLabel" xml:space="preserve">
+    <value>Nhập "RESTORE" để xác nhận:</value>
+  </data>
+  <data name="Backup_Restore_PasswordLabel" xml:space="preserve">
+    <value>Mật khẩu sao lưu (hoặc mã khôi phục):</value>
+  </data>
+  <data name="Backup_Restore_Confirm" xml:space="preserve">
+    <value>Khôi phục</value>
+  </data>
+  <data name="Backup_Restore_Cancel" xml:space="preserve">
+    <value>Hủy</value>
+  </data>
+  <data name="Backup_Toast_BackupSuccess_Format" xml:space="preserve">
+    <value>✅ Đã sao lưu: {0}</value>
+  </data>
+  <data name="Backup_Toast_BackupCancelled" xml:space="preserve">
+    <value>Đã hủy lưu file sao lưu</value>
+  </data>
+  <data name="Backup_Toast_RestoreRequested" xml:space="preserve">
+    <value>✅ Đã gửi yêu cầu khôi phục. Hệ thống sẽ khởi động lại.</value>
+  </data>
+  <data name="Backup_Error_Format" xml:space="preserve">
+    <value>Lỗi (mã {0})</value>
+  </data>
+  <data name="Backup_Error_Network" xml:space="preserve">
+    <value>Mất kết nối máy chủ</value>
+  </data>
 </root>
