@@ -294,4 +294,25 @@ public static class AppResources
     public static string Health_PageSummary_Format => ResourceManager.GetString(nameof(Health_PageSummary_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Health_Error_Format => ResourceManager.GetString(nameof(Health_Error_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Health_Error_Network => ResourceManager.GetString(nameof(Health_Error_Network), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Sidebar_Item_Backup => ResourceManager.GetString(nameof(Sidebar_Item_Backup), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Backup_Title => ResourceManager.GetString(nameof(Backup_Title), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Backup_Continuous_Title => ResourceManager.GetString(nameof(Backup_Continuous_Title), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Backup_Continuous_NotConfigured => ResourceManager.GetString(nameof(Backup_Continuous_NotConfigured), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Backup_Snapshot_Title => ResourceManager.GetString(nameof(Backup_Snapshot_Title), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Backup_Snapshot_Desc => ResourceManager.GetString(nameof(Backup_Snapshot_Desc), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Backup_Snapshot_Button => ResourceManager.GetString(nameof(Backup_Snapshot_Button), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Backup_LastBackup_Format => ResourceManager.GetString(nameof(Backup_LastBackup_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Backup_Restore_Title => ResourceManager.GetString(nameof(Backup_Restore_Title), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Backup_Restore_Warning => ResourceManager.GetString(nameof(Backup_Restore_Warning), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Backup_Restore_SelectFile => ResourceManager.GetString(nameof(Backup_Restore_SelectFile), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Backup_Restore_SelectedFile_Format => ResourceManager.GetString(nameof(Backup_Restore_SelectedFile_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Backup_Restore_ConfirmLabel => ResourceManager.GetString(nameof(Backup_Restore_ConfirmLabel), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Backup_Restore_PasswordLabel => ResourceManager.GetString(nameof(Backup_Restore_PasswordLabel), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Backup_Restore_Confirm => ResourceManager.GetString(nameof(Backup_Restore_Confirm), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Backup_Restore_Cancel => ResourceManager.GetString(nameof(Backup_Restore_Cancel), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Backup_Toast_BackupSuccess_Format => ResourceManager.GetString(nameof(Backup_Toast_BackupSuccess_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Backup_Toast_BackupCancelled => ResourceManager.GetString(nameof(Backup_Toast_BackupCancelled), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Backup_Toast_RestoreRequested => ResourceManager.GetString(nameof(Backup_Toast_RestoreRequested), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Backup_Error_Format => ResourceManager.GetString(nameof(Backup_Error_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Backup_Error_Network => ResourceManager.GetString(nameof(Backup_Error_Network), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
 }

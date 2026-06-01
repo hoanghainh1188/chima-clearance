@@ -177,4 +177,17 @@ public interface IB2Api
         [Query] int page,
         [Query] int pageSize,
         CancellationToken cancellationToken = default);
+
+    /// <summary>F-15 — downloads a fresh encrypted snapshot (raw .bak response).</summary>
+    [Post("/api/admin/backup-now")]
+    Task<HttpResponseMessage> BackupNowAsync(CancellationToken cancellationToken = default);
+
+    /// <summary>F-15 — uploads a snapshot to restore; the secret is the install password
+    /// OR the recovery code. The server stages it and restarts to apply.</summary>
+    [Multipart]
+    [Post("/api/admin/restore")]
+    Task<HttpResponseMessage> RestoreAsync(
+        [AliasAs("file")] ByteArrayPart file,
+        [AliasAs("password")] string password,
+        CancellationToken cancellationToken = default);
 }

@@ -1,0 +1,71 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<ContentView x:Class="B2.Desktop.Views.Admin.BackupPage"
+             xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:vm="clr-namespace:B2.Desktop.ViewModels"
+             xmlns:s="clr-namespace:B2.Desktop.Resources.Strings"
+             x:DataType="vm:BackupViewModel"
+             BackgroundColor="{StaticResource ColorSurface}">
+  <ScrollView>
+    <VerticalStackLayout Padding="{StaticResource SpacingM}" Spacing="{StaticResource SpacingM}" MaximumWidthRequest="640" HorizontalOptions="Start">
+
+      <Label Text="{x:Static s:AppResources.Backup_Title}"
+             FontSize="{StaticResource FontSizeXL}"
+             TextColor="{StaticResource ColorPrimary}" />
+
+      <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" HorizontalOptions="Start" />
+
+      <!-- Sao lưu liên tục (placeholder until Litestream / T-S5-08) -->
+      <Border Stroke="{StaticResource ColorBorder}" StrokeThickness="1" Padding="{StaticResource SpacingM}">
+        <VerticalStackLayout Spacing="{StaticResource SpacingS}">
+          <Label Text="{x:Static s:AppResources.Backup_Continuous_Title}" FontAttributes="Bold" TextColor="{StaticResource ColorOnSurface}" />
+          <Label Text="{x:Static s:AppResources.Backup_Continuous_NotConfigured}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
+        </VerticalStackLayout>
+      </Border>
+
+      <!-- Sao lưu tức thời -->
+      <Border Stroke="{StaticResource ColorBorder}" StrokeThickness="1" Padding="{StaticResource SpacingM}">
+        <VerticalStackLayout Spacing="{StaticResource SpacingS}">
+          <Label Text="{x:Static s:AppResources.Backup_Snapshot_Title}" FontAttributes="Bold" TextColor="{StaticResource ColorOnSurface}" />
+          <Label Text="{x:Static s:AppResources.Backup_Snapshot_Desc}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
+          <Button Text="{x:Static s:AppResources.Backup_Snapshot_Button}"
+                  Command="{Binding BackupNowCommand}"
+                  IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}"
+                  HorizontalOptions="Start" />
+          <Label Text="{Binding LastBackupText}"
+                 TextColor="{StaticResource ColorOnSurfaceMuted}"
+                 FontSize="{StaticResource FontSizeS}"
+                 IsVisible="{Binding LastBackupText, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+        </VerticalStackLayout>
+      </Border>
+
+      <!-- Khôi phục dữ liệu -->
+      <Border Stroke="{StaticResource ColorError}" StrokeThickness="1" Padding="{StaticResource SpacingM}">
+        <VerticalStackLayout Spacing="{StaticResource SpacingS}">
+          <Label Text="{x:Static s:AppResources.Backup_Restore_Title}" FontAttributes="Bold" TextColor="{StaticResource ColorError}" />
+          <Label Text="{x:Static s:AppResources.Backup_Restore_Warning}" TextColor="{StaticResource ColorOnSurface}" />
+          <Button Text="{x:Static s:AppResources.Backup_Restore_SelectFile}"
+                  Command="{Binding SelectFileCommand}"
+                  IsEnabled="{Binding IsBusy, Converter={StaticResource InvertedBoolConverter}}"
+                  HorizontalOptions="Start" />
+
+          <!-- Typed-RESTORE confirmation (FR-013), shown after a file is picked -->
+          <VerticalStackLayout Spacing="{StaticResource SpacingS}" IsVisible="{Binding IsRestoreConfirmVisible}">
+            <Label Text="{Binding SelectedFileLabel}" FontAttributes="Bold" TextColor="{StaticResource ColorOnSurface}" />
+            <Label Text="{x:Static s:AppResources.Backup_Restore_ConfirmLabel}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
+            <Entry Text="{Binding RestoreConfirmText}" WidthRequest="240" HorizontalOptions="Start" />
+            <Label Text="{x:Static s:AppResources.Backup_Restore_PasswordLabel}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
+            <Entry Text="{Binding RestorePassword}" IsPassword="True" WidthRequest="280" HorizontalOptions="Start" />
+            <HorizontalStackLayout Spacing="{StaticResource SpacingS}">
+              <Button Text="{x:Static s:AppResources.Backup_Restore_Cancel}" Command="{Binding CancelRestoreCommand}" />
+              <Button Text="{x:Static s:AppResources.Backup_Restore_Confirm}"
+                      Command="{Binding RestoreCommand}"
+                      BackgroundColor="{StaticResource ColorError}" />
+            </HorizontalStackLayout>
+          </VerticalStackLayout>
+        </VerticalStackLayout>
+      </Border>
+
+    </VerticalStackLayout>
+  </ScrollView>
+</ContentView>

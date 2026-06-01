@@ -103,7 +103,7 @@ integration sweeps where appropriate.
 | S2 | T-S2-01 .. T-S2-22 (22) | F-05, F-06, F-07, F-08 + FR-019/024 | ~4 500 | ✅ Merged (PR #5 `de24ec5`) |
 | S3 | T-S3-01 .. T-S3-12 (12) | F-09, F-10 + FR-027/FR-028 | ~2 500 | ✅ Merged (PRs #6/#7/#8/#9/#11/#12/#15/#16, #13 CI fix) |
 | S4 | T-S4-01 .. T-S4-15 (15) | F-11, F-12, F-14 + FR-025 | ~2 800 | ✅ Merged (PR #18 `9f0d15b` + docs PR #19 `6514c2e`); 9 carry-overs `T-S4-CO-01..09` deferred to S5 |
-| S5 | T-S5-01 .. T-S5-19 (19) | F-13, F-15, F-16, F-18 + FR-022/026 | ~3 800 | 🔄 In progress — **F-13** (#41+#43), **FR-022** (#44), **F-16** (#45), **F-18** (#46) complete; CI flake fixed (#42→#47); **F-15 slices 1–2** (encrypted snapshot codec + FR-026 dual-wrap + backup-now + restore apply-on-startup, PRs `feat/F-15-backup-core` + `feat/F-15-restore-hotswap`, T-S5-09/10/11 + part of 07) done. F-15 remaining: Litestream (08), BackupPage UI (12), recovery-code installer (13) |
+| S5 | T-S5-01 .. T-S5-19 (19) | F-13, F-15, F-16, F-18 + FR-022/026 | ~3 800 | 🔄 In progress — **F-13** (#41+#43), **FR-022** (#44), **F-16** (#45), **F-18** (#46) complete; CI flake fixed (#42→#47); **F-15 slices 1–3** (encrypted snapshot codec + FR-026 dual-wrap + backup-now + restore apply-on-startup + BackupPage UI, PRs #48 + #50 + `feat/F-15-backup-ui`, T-S5-09/10/11/12 + part of 07) done. F-15 remaining: Litestream (08), recovery-code installer (13) |
 | S6 | T-S6-01 .. T-S6-12 (12) | F-17 simple v1 + a11y + runbook + UAT | ~1 800 | ⏳ Pending |
 | **Total** | **113 tasks** | 18 features + 7 cross-cutting FRs | **~19 500 LOC** | **75/113 tasks merged (S0–S4 done)** |
 
@@ -798,8 +798,10 @@ audit viewer shows every write tagged with the actor.
 > **Slices 1–2 landed** (PRs `feat/F-15-backup-core` #48 + `feat/F-15-restore-hotswap`
 > #50) — the encrypted-snapshot codec + FR-026 dual key-wrap + `backup-now` (T-S5-09),
 > and the restore handler + apply-on-startup swap + `POST /api/admin/restore`
-> (T-S5-10/11). **Remaining F-15 slices:** Litestream continuous backup (T-S5-08), the
-> `BackupPage` UI (T-S5-12), and the install-time recovery-code generator (T-S5-13).
+> (T-S5-10/11). **Slice 3** (PR `feat/F-15-backup-ui`) — the `BackupPage` UI
+> (snapshot + restore with typed-`RESTORE` confirmation, T-S5-12). **Remaining F-15
+> slices:** Litestream continuous backup (T-S5-08) + the install-time recovery-code
+> generator (T-S5-13).
 
 - [~] **T-S5-07** [P] [F-15] Write Gherkin tests in
   `tests/B2.Server.Api.Tests/Admin/BackupRestoreEndpointTests.cs` verbatim from
@@ -851,11 +853,19 @@ audit viewer shows every write tagged with the actor.
   the FR-027 matrix. Restore tests: stage+apply round-trip (isolated
   `DatabaseRestoreService`), upload-accepted-and-audited, wrong-secret 400,
   file-required 400, operator-403.
-- [ ] **T-S5-12** [F-15] Implement `Admin/BackupPage.xaml` +
+- [X] **T-S5-12** [F-15] Implement `Admin/BackupPage.xaml` +
   `BackupViewModel.cs` per [wireframe § 6.10](../05-ui-wireframes.md).
   Continuous status, manual snapshot, restore with typed-RESTORE confirmation
   (FR-013) + password/recoveryCode field. Vietnamese copy verbatim. **Dep**:
   T-S5-11. **LOC**: ~400. **DoD**: §DoD-6.
+  *Done (slice 3, `feat/F-15-backup-ui`)*: `BackupPage` + `BackupViewModel` —
+  **Sao lưu ngay** (POST backup-now → CommunityToolkit `FileSaver` Save As +
+  "Lần sao lưu gần nhất"), **Khôi phục** (MAUI `FilePicker` → typed-`RESTORE`
+  confirmation + backup-secret field → multipart `POST /api/admin/restore`;
+  the `Khôi phục` button is gated by `CanRestore` = `RESTORE` typed + secret +
+  file). Continuous-Litestream section is a placeholder until T-S5-08. New
+  `IB2Api.BackupNowAsync` + multipart `RestoreAsync`; sidebar
+  `💾 Sao lưu & khôi phục` (Admin); 21 vi.resx keys. B2.Desktop builds clean.
 - [ ] **T-S5-13** [F-15] Implement install-time recovery-code generator in
   `src/B2.Installer/` — generates 24-char base32, displays once, requires
   Admin to type it back to confirm acknowledgement, persists

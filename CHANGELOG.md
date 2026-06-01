@@ -37,6 +37,22 @@ retained.
 
 ### Added
 
+#### Sprint S5 — F-15 Backup & Restore page (slice 3) — `feat/F-15-backup-ui`
+
+The Admin **Sao lưu & khôi phục** screen (wireframe § 6.10, T-S5-12) on the slice-1/2
+backend. `B2.Desktop` builds clean (XAML + analyzers, warnings-as-errors).
+
+- **Snapshot** — `Sao lưu ngay` → `POST /api/admin/backup-now` → CommunityToolkit
+  `FileSaver` Save As + a "Lần sao lưu gần nhất" line.
+- **Restore** — `Chọn file sao lưu...` (MAUI `FilePicker`, `.bak`) → a typed-**`RESTORE`**
+  confirmation (FR-013) + backup-secret field (install password OR recovery code) →
+  multipart `POST /api/admin/restore`. The `Khôi phục` button is gated by `CanRestore`
+  (`RESTORE` typed + secret + file present) and the screen warns about the ~30 s downtime.
+- **API** — `IB2Api.BackupNowAsync` (raw response) + multipart `RestoreAsync`
+  (`ByteArrayPart` + secret). Sidebar `💾 Sao lưu & khôi phục` (Admin); 21 vi.resx keys.
+- **Placeholder** — the continuous-backup (Litestream) status block is a placeholder
+  until T-S5-08.
+
 #### Sprint S5 — F-15 restore (apply-on-startup) — slice 2 — `feat/F-15-restore-hotswap`
 
 Restore an encrypted snapshot with either secret (T-S5-10/11). Build green on
