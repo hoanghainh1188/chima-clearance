@@ -103,7 +103,7 @@ integration sweeps where appropriate.
 | S2 | T-S2-01 .. T-S2-22 (22) | F-05, F-06, F-07, F-08 + FR-019/024 | ~4 500 | ✅ Merged (PR #5 `de24ec5`) |
 | S3 | T-S3-01 .. T-S3-12 (12) | F-09, F-10 + FR-027/FR-028 | ~2 500 | ✅ Merged (PRs #6/#7/#8/#9/#11/#12/#15/#16, #13 CI fix) |
 | S4 | T-S4-01 .. T-S4-15 (15) | F-11, F-12, F-14 + FR-025 | ~2 800 | ✅ Merged (PR #18 `9f0d15b` + docs PR #19 `6514c2e`); 9 carry-overs `T-S4-CO-01..09` deferred to S5 |
-| S5 | T-S5-01 .. T-S5-19 (19) | F-13, F-15, F-16, F-18 + FR-022/026 | ~3 800 | 🔄 In progress — **F-13** (#41+#43), **FR-022** (#44), **F-16** (#45), **F-18** (#46) complete; CI flake fixed (#42→#47); **F-15 slices 1–4** (codec + FR-026 dual-wrap + backup-now + restore apply-on-startup + BackupPage UI + recovery-code/secrets store, PRs #48 #50 #52 + `feat/F-15-recovery-code`, T-S5-09/10/11/12 + 13-core + part of 07) done. **F-15 remaining: only Litestream continuous backup (T-S5-08)** + the T-S5-13 installer reveal/ack UI (→ T-S6-11) |
+| S5 | T-S5-01 .. T-S5-19 (19) | F-13, F-15, F-16, F-18 + FR-022/026 | ~3 800 | 🔄 In progress — **F-13** (#41+#43), **FR-022** (#44), **F-16** (#45), **F-18** (#46) complete; CI flake fixed (#42→#47); ✅ **Sprint S5 functionally complete.** F-13 (#41/#43), FR-022 (#44), F-16 (#45), F-18 (#46), F-15 slices 1–5 (#48/#50/#52/#53 + `feat/F-15-litestream`: codec + FR-026 dual-wrap + backup-now + restore apply-on-startup + BackupPage UI + recovery-code/secrets store + Litestream supervisor). Remainders are installer-bound (T-S6-11) + the T-S5-06 NBomber placeholder. Next: **Sprint S6** |
 | S6 | T-S6-01 .. T-S6-12 (12) | F-17 simple v1 + a11y + runbook + UAT | ~1 800 | ⏳ Pending |
 | **Total** | **113 tasks** | 18 features + 7 cross-cutting FRs | **~19 500 LOC** | **75/113 tasks merged (S0–S4 done)** |
 
@@ -802,7 +802,10 @@ audit viewer shows every write tagged with the actor.
 > (snapshot + restore with typed-`RESTORE` confirmation, T-S5-12). **Slice 4** (PR
 > `feat/F-15-recovery-code`) — `RecoveryCodeGenerator` + sealed `BackupSecretsStore`
 > feeding real secrets into `backup-now` (T-S5-13 core; the install-time reveal/ack UI
-> is in T-S6-11). **Remaining F-15:** Litestream continuous backup (T-S5-08).
+> is in T-S6-11). **Slice 5** (PR `feat/F-15-litestream`) — the `LitestreamSupervisor`
+> continuous-backup hosted service (T-S5-08). **F-15 is now feature-complete for
+> Phase 1**; the only remainders are installer-bound (Litestream binary + recovery-code
+> reveal/ack UI, both T-S6-11).
 
 - [~] **T-S5-07** [P] [F-15] Write Gherkin tests in
   `tests/B2.Server.Api.Tests/Admin/BackupRestoreEndpointTests.cs` verbatim from
@@ -815,10 +818,19 @@ audit viewer shows every write tagged with the actor.
   wrong-secret-rejected + backup-now-returns-file-and-audits + operator-403.
   Continuous-health (Litestream) and restore-confirmation (UI typed-RESTORE)
   tests land with their features.
-- [ ] **T-S5-08** [F-15] Implement Litestream wrapper in
+- [X] **T-S5-08** [F-15] Implement Litestream wrapper in
   `src/B2.Infrastructure/Backup/LitestreamProcess.cs` — child-process supervisor
   spawned by `B2.Server.Service`; reads config from `appsettings.json`; restart
   on crash. **Dep**: T-S0-04. **LOC**: ~250.
+  *Done (`feat/F-15-litestream`)*: `LitestreamOptions` (bound from `B2:Litestream`),
+  `LitestreamConfigWriter` (options → Litestream YAML), and `LitestreamSupervisor`
+  (`IHostedService`): spawns `litestream replicate -config …`, restarts on crash
+  (2 s backoff), kills on shutdown. **No-ops gracefully** when disabled or the
+  binary is absent (dev/CI) so the service still starts; runs for real on the spec
+  VM. Registered via `AddB2Litestream` from `B2.Server.Service`. 3 tests (YAML
+  render, disabled-no-op, missing-binary-no-op). The binary + real config ship
+  with the Velopack installer (T-S6-11); the health "last replica sync" indicator
+  is a later wire-up.
 - [X] **T-S5-09** [F-15] Implement `BackupSnapshotService` in
   `src/B2.Infrastructure/Backup/BackupSnapshotService.cs`: `sqlite3 .backup`
   → AES-256-GCM zip with key-wrap (FR-026: DK wrapped twice, once with

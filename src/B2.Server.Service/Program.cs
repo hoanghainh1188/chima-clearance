@@ -1,4 +1,5 @@
 using B2.Application.Abstractions;
+using B2.Infrastructure.DependencyInjection;
 using B2.Infrastructure.Diagnostics;
 using B2.Server.Api.Hosting;
 using B2.Server.Service.Quartz;
@@ -22,6 +23,7 @@ if (OperatingSystem.IsWindows())
 
 B2ApiHost.ConfigureServices(builder);
 builder.Services.AddB2QuartzStartup();
+builder.Services.AddB2Litestream(builder.Configuration, B2ApiHost.ResolveDataDirectory(builder));
 var app = builder.Build();
 await B2ApiHost.InitializeDatabaseAsync(app);
 B2ApiHost.MapPipeline(app);

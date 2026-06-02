@@ -9,7 +9,9 @@ using B2.Infrastructure.Jobs;
 using B2.Infrastructure.Persistence;
 using B2.Infrastructure.Persistence.Repositories;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Quartz;
 
 namespace B2.Infrastructure.DependencyInjection;
@@ -79,6 +81,42 @@ public static class InfrastructureServiceCollectionExtensions
             services.AddQuartzHostedService(options => options.WaitForJobsToComplete = true);
         }
 
+        return services;
+    }
+
+    /// <summary>
+    /// F-15 / T-S5-08 — binds <c>B2:Litestream</c> and registers the continuous-backup
+    /// supervisor as a hosted service. Disabled by default; no-ops without the binary.
+    /// </summary>
+    public static IServiceCollection AddB2Litestream(
+        this IServiceCollection services,
+        IConfiguration configuration,
+        string dataDirectory)
+    {
+        var section = configuration.GetSection("B2:Litestream");
+        var dbPath = section["DbPath"];
+        var options = new LitestreamOptions
+        {
+            Enabled = bool.TryParse(section["Enabled"], out var enabled) && enabled,
+            ExecutablePath = section["ExecutablePath"] ?? string.Empty,
+            DbPath = string.IsNullOrWhiteSpace(dbPath) ? Path.Combine(dataDirectory, "db", "b2.db") : dbPath,
+        };
+
+        foreach (var child in section.GetSection("Replicas").GetChildren())
+        {
+            var path = child["Path"];
+            if (!string.IsNullOrWhiteSpace(path))
+            {
+                options.Replicas.Add(new LitestreamReplica(child["Name"] ?? string.Empty, path));
+            }
+        }
+
+        services.AddSingleton(options);
+        services.AddSingleton(sp => new LitestreamSupervisor(
+            options,
+            dataDirectory,
+            sp.GetRequiredService<ILogger<LitestreamSupervisor>>()));
+        services.AddHostedService(sp => sp.GetRequiredService<LitestreamSupervisor>());
         return services;
     }
 
