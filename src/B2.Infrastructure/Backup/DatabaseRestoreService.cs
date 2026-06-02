@@ -34,6 +34,8 @@ public sealed class DatabaseRestoreService : IDatabaseRestoreService
         File.Move(temp, _pendingPath, overwrite: true);
     }
 
+    public bool IsRestorePending() => File.Exists(_pendingPath);
+
     public bool ApplyPending()
     {
         if (!File.Exists(_pendingPath))
@@ -43,7 +45,7 @@ public sealed class DatabaseRestoreService : IDatabaseRestoreService
 
         SqliteConnection.ClearAllPools();
 
-        foreach (var sidecar in new[] { _dbPath, _dbPath + "-wal", _dbPath + "-shm" })
+        foreach (var sidecar in new[] { _dbPath + "-wal", _dbPath + "-shm" })
         {
             if (File.Exists(sidecar))
             {
@@ -51,7 +53,26 @@ public sealed class DatabaseRestoreService : IDatabaseRestoreService
             }
         }
 
-        File.Move(_pendingPath, _dbPath);
+        // Replace the live DB atomically so a failed promote cannot leave no database file.
+        var rollback = _dbPath + ".pre-restore.bak";
+        if (File.Exists(rollback))
+        {
+            File.Delete(rollback);
+        }
+
+        if (File.Exists(_dbPath))
+        {
+            File.Replace(_pendingPath, _dbPath, rollback);
+            if (File.Exists(rollback))
+            {
+                File.Delete(rollback);
+            }
+        }
+        else
+        {
+            File.Move(_pendingPath, _dbPath);
+        }
+
         return true;
     }
 }

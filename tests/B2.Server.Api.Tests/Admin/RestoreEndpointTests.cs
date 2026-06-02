@@ -1,9 +1,11 @@
 using System.Net;
+using System.Net.Http.Json;
 using B2.Application.Abstractions;
 using B2.Domain.Audit;
 using B2.Infrastructure.Backup;
 using B2.Infrastructure.Persistence;
 using B2.Server.Api.Tests.Support;
+using B2.Shared.Contracts.Declarations;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -104,6 +106,39 @@ public sealed class RestoreEndpointTests
         var res = await client.PostAsync("/api/admin/restore", form);
 
         res.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+    }
+
+    [Fact]
+    [Trait("Feature", "F-15")]
+    public async Task Should_reject_mutating_requests_while_restore_is_pending()
+    {
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+
+        var snapshot = await (await client.PostAsync("/api/admin/backup-now", content: null)).Content.ReadAsByteArrayAsync();
+        var installPassword = factory.Services.GetRequiredService<IBackupSecretsStore>().GetOrCreate().InstallPassword;
+
+        using var form = new MultipartFormDataContent
+        {
+            { new ByteArrayContent(snapshot), "file", "snapshot.bak" },
+            { new StringContent(installPassword), "password" },
+        };
+        (await client.PostAsync("/api/admin/restore", form)).StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var write = await client.PostAsJsonAsync(
+            "/api/declarations",
+            new DeclarationCreateRequest(
+                TestDeclarationNumbers.Next(),
+                SeedIds.ProcessorId,
+                "C1",
+                "G1",
+                SeedIds.YardId,
+                new VehicleAddRequest("31A20002", null, null)),
+            TestJson.Options);
+
+        write.StatusCode.Should().Be(HttpStatusCode.ServiceUnavailable);
     }
 
     [Fact]
