@@ -1,4 +1,5 @@
 using System.Net;
+using B2.Application.Abstractions;
 using B2.Domain.Audit;
 using B2.Infrastructure.Backup;
 using B2.Infrastructure.Persistence;
@@ -11,8 +12,6 @@ namespace B2.Server.Api.Tests.Admin;
 
 public sealed class RestoreEndpointTests
 {
-    // The dev-default install password the backup-now endpoint uses when B2:Backup:* is unset.
-    private const string DevPassword = "b2-dev-install-password";
 
     [Fact]
     [Trait("Feature", "F-15")]
@@ -54,11 +53,12 @@ public sealed class RestoreEndpointTests
         client.SetBearer(admin.AccessToken);
 
         var snapshot = await (await client.PostAsync("/api/admin/backup-now", content: null)).Content.ReadAsByteArrayAsync();
+        var installPassword = factory.Services.GetRequiredService<IBackupSecretsStore>().GetOrCreate().InstallPassword;
 
         using var form = new MultipartFormDataContent
         {
             { new ByteArrayContent(snapshot), "file", "snapshot.bak" },
-            { new StringContent(DevPassword), "password" },
+            { new StringContent(installPassword), "password" },
         };
         var res = await client.PostAsync("/api/admin/restore", form);
 
@@ -100,7 +100,7 @@ public sealed class RestoreEndpointTests
         var admin = await client.LoginAsAdminAsync();
         client.SetBearer(admin.AccessToken);
 
-        using var form = new MultipartFormDataContent { { new StringContent(DevPassword), "password" } };
+        using var form = new MultipartFormDataContent { { new StringContent("any-secret"), "password" } };
         var res = await client.PostAsync("/api/admin/restore", form);
 
         res.StatusCode.Should().Be(HttpStatusCode.BadRequest);

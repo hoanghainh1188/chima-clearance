@@ -37,6 +37,25 @@ retained.
 
 ### Added
 
+#### Sprint S5 — F-15 recovery code + backup secrets store (slice 4) — `feat/F-15-recovery-code`
+
+The FR-026 recovery-code generator + sealed backup-secrets store (T-S5-13 core). Build
+green on `B2.sln -c Release`; Server.Api (97) suite passes.
+
+- **Generator** — `RecoveryCodeGenerator` produces a 24-char Crockford base32 (no I/L/O/U)
+  crypto-random code.
+- **Store** — `IBackupSecretsStore` / `BackupSecretsStore` generates the install password +
+  recovery code on first use and **seals** them under `{dataDir}/keys` (Windows DPAPI
+  LocalMachine / non-Windows dev file — same pattern as `RsaJwtKeyProvider`), with an
+  `AcknowledgedAtInstall` flag (`MarkAcknowledged`).
+- **Wiring** — `POST /api/admin/backup-now` now wraps each snapshot's data key with these
+  **real persisted secrets** instead of the previous dev-default literals.
+- **Tests** — 3 (recovery-code format/uniqueness, persist+reload same secrets, acknowledge
+  persists without rotating); the restore upload test now uses the store's install password.
+- **Deferred** — the install-time **display-once + Admin-types-it-back** acknowledgement UI
+  ships with the Velopack installer (T-S6-11); `MarkAcknowledged` is ready for it. Litestream
+  continuous backup (T-S5-08) is the last remaining F-15 slice.
+
 #### Sprint S5 — F-15 Backup & Restore page (slice 3) — `feat/F-15-backup-ui`
 
 The Admin **Sao lưu & khôi phục** screen (wireframe § 6.10, T-S5-12) on the slice-1/2
