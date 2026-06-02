@@ -37,6 +37,23 @@ retained.
 
 ### Added
 
+#### Sprint S5 — F-15 Litestream continuous backup (slice 5) — `feat/F-15-litestream`
+
+The continuous-backup supervisor (T-S5-08) — **F-15 is now feature-complete for Phase 1**.
+Build green on `B2.sln -c Release`; Server.Api (100) suite passes.
+
+- **Supervisor** — `LitestreamSupervisor` (`IHostedService`) spawns
+  `litestream replicate -config …`, restarts the child on crash (2 s backoff), and kills it
+  on shutdown. It **no-ops gracefully** when disabled or the binary is absent (dev / CI) so
+  the service still starts; it runs for real on the spec VM.
+- **Config** — `LitestreamOptions` (bound from `B2:Litestream`: enabled / executable / DB /
+  file-replica targets) + `LitestreamConfigWriter` (options → Litestream YAML). Registered
+  via `AddB2Litestream` from `B2.Server.Service`.
+- **Tests** — 3 (YAML render per replica, disabled-no-op, missing-binary-no-op).
+- **Installer-bound remainders** — the litestream binary + real config and the recovery-code
+  reveal/ack UI ship with the Velopack installer (T-S6-11); the health "last replica sync"
+  indicator is a later wire-up.
+
 #### Sprint S5 — F-15 recovery code + backup secrets store (slice 4) — `feat/F-15-recovery-code`
 
 The FR-026 recovery-code generator + sealed backup-secrets store (T-S5-13 core). Build
