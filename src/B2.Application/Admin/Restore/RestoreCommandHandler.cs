@@ -1,13 +1,12 @@
 using B2.Application.Abstractions;
 using B2.Domain;
-using B2.Domain.Audit;
 
 namespace B2.Application.Admin.Restore;
 
 /// <summary>
 /// F-15 — decrypts an uploaded snapshot with the install password OR recovery code,
-/// validates it is a SQLite database, and stages it for apply-on-next-startup. Writes a
-/// <see cref="AuditAction.Restore"/> audit row.
+/// validates it is a SQLite database, and stages it (with audit metadata) for apply-on-next-startup.
+/// The <see cref="AuditAction.Restore"/> row is written after the DB swap on startup.
 /// </summary>
 public sealed class RestoreCommandHandler
 {
@@ -15,16 +14,16 @@ public sealed class RestoreCommandHandler
 
     private readonly IBackupSnapshotService _backups;
     private readonly IDatabaseRestoreService _restore;
-    private readonly IAuditContext _audit;
+    private readonly IClock _clock;
 
-    public RestoreCommandHandler(IBackupSnapshotService backups, IDatabaseRestoreService restore, IAuditContext audit)
+    public RestoreCommandHandler(IBackupSnapshotService backups, IDatabaseRestoreService restore, IClock clock)
     {
         _backups = backups;
         _restore = restore;
-        _audit = audit;
+        _clock = clock;
     }
 
-    public void Handle(byte[] container, string secret, Guid? actorUserId)
+    public void Handle(byte[] container, string secret, Guid? actorUserId, string? snapshotFileName)
     {
         var databaseBytes = _backups.DecryptSnapshot(container, secret);
         if (databaseBytes.Length < SqliteMagic.Length
@@ -33,14 +32,8 @@ public sealed class RestoreCommandHandler
             throw new DomainException("BACKUP_NOT_SQLITE", "The decrypted snapshot is not a SQLite database.", 400);
         }
 
-        _restore.Stage(databaseBytes);
-        _audit.Set(new AuditEnvelope(
-            actorUserId,
-            AuditAction.Restore,
-            "DatabaseRestore",
-            Guid.NewGuid(),
-            null,
-            "{\"staged\":true}",
-            null));
+        _restore.Stage(
+            databaseBytes,
+            new RestoreStagingMetadata(actorUserId, _clock.UtcNow, snapshotFileName));
     }
 }

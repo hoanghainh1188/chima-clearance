@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using B2.Application.Abstractions;
 using B2.Domain.Audit;
 using B2.Infrastructure.Backup;
+using B2.Infrastructure.DependencyInjection;
 using B2.Infrastructure.Persistence;
 using B2.Server.Api.Tests.Support;
 using B2.Shared.Contracts.Declarations;
@@ -29,12 +30,12 @@ public sealed class RestoreEndpointTests
             var restored = "NEW-DATABASE-CONTENT"u8.ToArray();
 
             var service = new DatabaseRestoreService(dbPath);
-            service.ApplyPending().Should().BeFalse("nothing staged yet");
+            service.ApplyPending().Should().BeNull("nothing staged yet");
 
-            service.Stage(restored);
+            service.Stage(restored, new RestoreStagingMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, "snapshot.bak"));
             File.Exists(dbPath + ".restore-pending").Should().BeTrue();
 
-            service.ApplyPending().Should().BeTrue();
+            service.ApplyPending().Should().NotBeNull();
             File.ReadAllBytes(dbPath).Should().Equal(restored);
             File.Exists(dbPath + ".restore-pending").Should().BeFalse("pending file consumed");
             File.Exists(dbPath + "-wal").Should().BeFalse("stale WAL sidecar removed");
@@ -65,6 +66,14 @@ public sealed class RestoreEndpointTests
         var res = await client.PostAsync("/api/admin/restore", form);
 
         res.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var restoreService = factory.Services.GetRequiredService<IDatabaseRestoreService>();
+        var metadata = restoreService.ApplyPending();
+        metadata.Should().NotBeNull();
+        metadata!.SnapshotFileName.Should().Be("snapshot.bak");
+
+        await RestoreAuditPersistence.PersistAfterApplyAsync(factory.Services, metadata);
+        await factory.Services.EnsureDatabaseAsync();
 
         using var scope = factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
