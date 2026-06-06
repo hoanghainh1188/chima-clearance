@@ -8,7 +8,6 @@
       "src/B2.Server.Api/B2.Server.Api.csproj",
       "src/B2.Server.Service/B2.Server.Service.csproj",
       "src/B2.Shared.Contracts/B2.Shared.Contracts.csproj",
-      "src/B2.Installer/B2.Installer.csproj",
       "tests/B2.Domain.Tests/B2.Domain.Tests.csproj",
       "tests/B2.Application.Tests/B2.Application.Tests.csproj",
       "tests/B2.Server.Api.Tests/B2.Server.Api.Tests.csproj",

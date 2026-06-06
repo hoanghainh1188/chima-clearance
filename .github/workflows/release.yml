@@ -1,0 +1,164 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'   # e.g. v1.0.0, v1.2.3
+
+permissions:
+  contents: write   # needed to upload release assets via gh
+
+jobs:
+  build-installer:
+    runs-on: windows-2022
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Normalize line endings
+        run: |
+          git config --global core.autocrlf false
+          git reset --hard HEAD
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v5
+        with:
+          dotnet-version: '8.0.x'
+
+      # Same pattern as ci.yml: detect real SDK location, write to GITHUB_PATH + GITHUB_ENV.
+      - name: Pin dotnet on PATH
+        shell: bash
+        run: |
+          DOTNET_EXE="$(command -v dotnet)"
+          DOTNET_BASH_DIR="$(dirname "${DOTNET_EXE}")"
+          DOTNET_WIN_DIR="$(cygpath -w "${DOTNET_BASH_DIR}")"
+          echo "${DOTNET_BASH_DIR}" >> "${GITHUB_PATH}"
+          echo "DOTNET_ROOT=${DOTNET_WIN_DIR}" >> "${GITHUB_ENV}"
+          dotnet --version
+
+      - name: Install MAUI workload
+        shell: bash
+        run: dotnet workload install maui
+
+      - name: Restore
+        shell: bash
+        run: |
+          dotnet workload restore B2.sln
+          dotnet restore B2.sln
+
+      # Parse version from tag (strips leading 'v').
+      - name: Set version
+        shell: bash
+        run: |
+          TAG="${GITHUB_REF_NAME}"          # e.g. v1.0.0
+          VERSION="${TAG#v}"                # e.g. 1.0.0
+          echo "VERSION=${VERSION}" >> "${GITHUB_ENV}"
+
+      # -----------------------------------------------------------------------
+      # Publish all three binaries as self-contained, framework-dependent,
+      # single-file win-x64. B2.Desktop requires the win-x64 RID but must NOT
+      # use --self-contained=true with MAUI (NETSDK1134). We publish each
+      # project individually to avoid MSB1008 "only one project" with multiple
+      # positional args on the Windows bash shell.
+      # -----------------------------------------------------------------------
+      - name: Publish B2.Server.Service
+        shell: bash
+        run: |
+          dotnet publish src/B2.Server.Service/B2.Server.Service.csproj \
+            -c Release -r win-x64 --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:Version="${VERSION}" \
+            -o publish/service
+
+      - name: Publish B2.Desktop
+        shell: bash
+        run: |
+          dotnet publish src/B2.Desktop/B2.Desktop.csproj \
+            -c Release -p:RuntimeIdentifierOverride=win-x64 \
+            -p:Version="${VERSION}" \
+            -o publish/desktop
+
+      - name: Publish B2.Installer (B2Clearance.exe)
+        shell: bash
+        run: |
+          dotnet publish src/B2.Installer/B2.Installer.csproj \
+            -c Release -r win-x64 --self-contained true \
+            -p:PublishSingleFile=true \
+            -p:Version="${VERSION}" \
+            -o publish/installer
+
+      # -----------------------------------------------------------------------
+      # Assemble the Velopack package directory:
+      #   publish/pkg/
+      #     B2Clearance.exe            ← Velopack main exe (installer hooks)
+      #     B2.Server.Service.exe      ← Windows Service binary
+      #     B2.Desktop/                ← Desktop app folder
+      #     Templates/                 ← Sổ B2 Excel template
+      #     litestream.exe             ← Continuous backup binary
+      # -----------------------------------------------------------------------
+      - name: Download Litestream
+        shell: bash
+        run: |
+          LITESTREAM_VERSION="v0.3.13"
+          curl -sSL \
+            "https://github.com/benbjohnson/litestream/releases/download/${LITESTREAM_VERSION}/litestream-${LITESTREAM_VERSION}-windows-amd64.zip" \
+            -o litestream.zip
+          unzip -q litestream.zip -d litestream-bin
+          cp litestream-bin/litestream.exe publish/installer/litestream.exe
+
+      - name: Assemble package dir
+        shell: bash
+        run: |
+          mkdir -p publish/pkg
+          # Installer (Velopack entry + assets)
+          cp -r publish/installer/. publish/pkg/
+          # Service
+          cp -r publish/service/. publish/pkg/
+          # Desktop (into a subdirectory so it doesn't clash with service files)
+          mkdir -p publish/pkg/Desktop
+          cp -r publish/desktop/. publish/pkg/Desktop/
+
+      # -----------------------------------------------------------------------
+      # Velopack: install the vpk CLI tool, then pack the installer.
+      # Output: Releases/B2ClearanceSetup.exe  (full installer)
+      #         Releases/RELEASES              (update feed for future auto-updates)
+      # -----------------------------------------------------------------------
+      - name: Install vpk CLI
+        shell: bash
+        run: dotnet tool install -g vpk
+
+      - name: Pack with Velopack
+        shell: bash
+        run: |
+          vpk pack \
+            --packId B2Clearance \
+            --packVersion "${VERSION}" \
+            --packDir publish/pkg \
+            --mainExe B2Clearance.exe \
+            --outputDir Releases
+
+      # -----------------------------------------------------------------------
+      # Upload artifacts and create GitHub Release
+      # -----------------------------------------------------------------------
+      - name: Create GitHub Release
+        shell: bash
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            --title "B2 Clearance ${GITHUB_REF_NAME}" \
+            --notes "Xem \`docs/runbook.md\` để biết hướng dẫn cài đặt và vận hành." \
+            Releases/B2ClearanceSetup.exe \
+            Releases/RELEASES
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload installer artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: B2Clearance-${{ env.VERSION }}
+          path: |
+            Releases/B2ClearanceSetup.exe
+            Releases/RELEASES
