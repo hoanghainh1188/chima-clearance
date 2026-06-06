@@ -12,7 +12,7 @@ namespace B2.Desktop.ViewModels;
 public partial class ChangePasswordViewModel : ObservableObject
 {
     private readonly IB2Api _api;
-    private readonly AuthTokenHandler _auth;
+    private readonly IAuthTokenStore _auth;
     private readonly IAppNavigator _navigator;
 
     [ObservableProperty]
@@ -42,7 +42,7 @@ public partial class ChangePasswordViewModel : ObservableObject
     [ObservableProperty]
     private bool _canCancel;
 
-    public ChangePasswordViewModel(IB2Api api, AuthTokenHandler auth, IAppNavigator navigator)
+    public ChangePasswordViewModel(IB2Api api, IAuthTokenStore auth, IAppNavigator navigator)
     {
         _api = api;
         _auth = auth;

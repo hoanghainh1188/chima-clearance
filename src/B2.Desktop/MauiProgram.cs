@@ -44,7 +44,11 @@ public static class MauiProgram
                 }),
         };
 
-        builder.Services.AddSingleton<AuthTokenHandler>();
+        // Token STATE lives in a singleton store; the DelegatingHandler that
+        // reads it MUST be transient (HttpClientFactory rebuilds the handler
+        // chain and rejects a reused/cached handler instance).
+        builder.Services.AddSingleton<IAuthTokenStore, AuthTokenStore>();
+        builder.Services.AddTransient<AuthTokenHandler>();
         builder.Services.AddRefitClient<IB2Api>(refitSettings)
             .ConfigureHttpClient(c => c.BaseAddress = new Uri(apiBase))
             .AddHttpMessageHandler<AuthTokenHandler>()

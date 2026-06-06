@@ -12,7 +12,7 @@ namespace B2.Desktop.ViewModels;
 public partial class LoginViewModel : ObservableObject
 {
     private readonly IB2Api _api;
-    private readonly AuthTokenHandler _auth;
+    private readonly IAuthTokenStore _auth;
     private readonly IMainShellFactory _mainShellFactory;
     private readonly ISessionContext _session;
 
@@ -30,7 +30,7 @@ public partial class LoginViewModel : ObservableObject
 
     public LoginViewModel(
         IB2Api api,
-        AuthTokenHandler auth,
+        IAuthTokenStore auth,
         IMainShellFactory mainShellFactory,
         ISessionContext session)
     {

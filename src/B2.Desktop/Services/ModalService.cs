@@ -13,38 +13,45 @@ namespace B2.Desktop.Services;
 /// </summary>
 public sealed class ModalService : IModalService
 {
-    public async Task<bool> ConfirmAsync(
+    // ShowPopupAsync MUST run on the UI thread. ViewModel commands frequently
+    // reach these methods from a thread-pool continuation (await ...
+    // ConfigureAwait(false)); showing a popup off the UI thread throws and, in
+    // an async-void command, crashes the app. Marshal the whole body so every
+    // caller is safe regardless of its current synchronization context.
+    public Task<bool> ConfirmAsync(
         string title,
         string message,
         string accept,
         string cancel,
         bool destructive = false,
-        CancellationToken cancellationToken = default)
-    {
-        var page = Application.Current?.MainPage;
-        if (page is null)
+        CancellationToken cancellationToken = default) =>
+        MainThread.InvokeOnMainThreadAsync(async () =>
         {
-            return false;
-        }
+            var page = Application.Current?.MainPage;
+            if (page is null)
+            {
+                return false;
+            }
 
-        var popup = new ConfirmPopup(title, message, accept, cancel, destructive);
-        var result = await page.ShowPopupAsync(popup, token: cancellationToken).ConfigureAwait(true);
-        return result is true;
-    }
+            var popup = new ConfirmPopup(title, message, accept, cancel, destructive);
+            var result = await page.ShowPopupAsync(popup, token: cancellationToken).ConfigureAwait(true);
+            return result is true;
+        });
 
-    public async Task ShowAsync(
+    public Task ShowAsync(
         string title,
         string message,
         string close,
-        CancellationToken cancellationToken = default)
-    {
-        var page = Application.Current?.MainPage;
-        if (page is null)
+        CancellationToken cancellationToken = default) =>
+        MainThread.InvokeOnMainThreadAsync(async () =>
         {
-            return;
-        }
+            var page = Application.Current?.MainPage;
+            if (page is null)
+            {
+                return;
+            }
 
-        var popup = new InfoPopup(title, message, close);
-        await page.ShowPopupAsync(popup, token: cancellationToken).ConfigureAwait(true);
-    }
+            var popup = new InfoPopup(title, message, close);
+            await page.ShowPopupAsync(popup, token: cancellationToken).ConfigureAwait(true);
+        });
 }
