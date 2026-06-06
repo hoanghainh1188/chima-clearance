@@ -79,6 +79,15 @@ public sealed class Vehicle
             throw new DomainException("VEHICLE_NOT_EXITED", "Vehicle is not marked as exited.", 400);
         }
 
+        // FR-022: cancelled declarations are immutable — no vehicle writes permitted.
+        if (Declaration is { Status: DeclarationStatus.Cancelled })
+        {
+            throw new DomainException(
+                "DECLARATION_CANCELLED",
+                "Cannot un-exit a vehicle on a cancelled declaration.",
+                409);
+        }
+
         ExitMarked = false;
         ExitTime = null;
         ExitConfirmedByUserId = null;

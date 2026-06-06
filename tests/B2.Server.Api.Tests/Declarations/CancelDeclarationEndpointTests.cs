@@ -166,13 +166,53 @@ public sealed class CancelDeclarationEndpointTests
 
     [Fact]
     [Trait("Requirement", "FR-022")]
+    public async Task Should_prevent_un_exit_after_cancel()
+    {
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+        var decl = await CreateOpenDeclarationAsync(client, "31A40008");
+
+        (await client.PostAsJsonAsync(
+            $"/api/declarations/{decl.Id}/vehicles",
+            new VehicleAddRequest("31A40009", null, null),
+            TestJson.Options)).EnsureSuccessStatusCode();
+
+        Guid exitedVehicleId;
+        using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+            exitedVehicleId = await db.Vehicles.AsNoTracking()
+                .Where(v => v.DeclarationId == decl.Id && v.PlateNumber == "31A40008")
+                .Select(v => v.Id)
+                .SingleAsync();
+        }
+
+        // Exit one of two vehicles — declaration stays Open so cancel remains valid (INV-9).
+        (await client.SendAsync(ExitRequest(exitedVehicleId, Guid.NewGuid().ToString("N")))).EnsureSuccessStatusCode();
+
+        (await client.PostAsJsonAsync(
+            $"/api/declarations/{decl.Id}/cancel",
+            new CancelDeclarationRequest("Hủy khi vẫn còn xe chưa ra"),
+            TestJson.Options)).EnsureSuccessStatusCode();
+
+        var unExit = await client.PostAsJsonAsync(
+            $"/api/vehicles/{exitedVehicleId}/un-exit",
+            new UnExitVehicleRequest("Không được sửa tờ đã hủy"),
+            TestJson.Options);
+        unExit.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    [Trait("Requirement", "FR-022")]
     public async Task Should_prevent_add_vehicle_after_cancel()
     {
         await using var factory = new B2ApiFactory();
         var client = factory.CreateClient();
         var admin = await client.LoginAsAdminAsync();
         client.SetBearer(admin.AccessToken);
-        var decl = await CreateOpenDeclarationAsync(client, "31A40007");
+        var decl = await CreateOpenDeclarationAsync(client, "31A40010");
 
         (await client.PostAsJsonAsync(
             $"/api/declarations/{decl.Id}/cancel",

@@ -80,4 +80,17 @@ public sealed class DeclarationCancelTests
         var act = () => vehicle.MarkExit(Guid.NewGuid(), Now.AddMinutes(2));
         act.Should().Throw<DomainException>().Which.Code.Should().Be("DECLARATION_CANCELLED");
     }
+
+    [Fact]
+    public void UnExit_on_cancelled_declaration_throws()
+    {
+        var decl = NewOpenDeclaration(out var exited);
+        decl.AddVehicle(Guid.NewGuid(), PlateNumber.Parse("29A99999"), Now, Guid.NewGuid(), null, null);
+        exited.MarkExit(Guid.NewGuid(), Now.AddMinutes(1));
+        decl.Status.Should().Be(DeclarationStatus.Open);
+        decl.Cancel(Role.Admin, Guid.NewGuid(), "Hủy", Now.AddMinutes(2));
+
+        var act = () => exited.UnExit();
+        act.Should().Throw<DomainException>().Which.Code.Should().Be("DECLARATION_CANCELLED");
+    }
 }
