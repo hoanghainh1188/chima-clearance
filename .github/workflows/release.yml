@@ -149,14 +149,21 @@ jobs:
       # -----------------------------------------------------------------------
       # Upload artifacts and create GitHub Release
       # -----------------------------------------------------------------------
+      # List the Releases dir so we can see exact filenames in CI logs.
+      - name: List Releases dir
+        shell: bash
+        run: ls -lh Releases/
+
       - name: Create GitHub Release
         shell: bash
         run: |
+          # Collect all release artifacts except .nupkg delta/full packages
+          # (those are update-feed internal; end-users only need the setup exe + feed).
+          mapfile -t ASSETS < <(find Releases/ -maxdepth 1 -type f ! -name '*.nupkg' | sort)
           gh release create "${GITHUB_REF_NAME}" \
             --title "B2 Clearance ${GITHUB_REF_NAME}" \
             --notes "Xem \`docs/runbook.md\` để biết hướng dẫn cài đặt và vận hành." \
-            Releases/B2ClearanceSetup.exe \
-            Releases/RELEASES
+            "${ASSETS[@]}"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -164,6 +171,4 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: B2Clearance-${{ env.VERSION }}
-          path: |
-            Releases/B2ClearanceSetup.exe
-            Releases/RELEASES
+          path: Releases/
