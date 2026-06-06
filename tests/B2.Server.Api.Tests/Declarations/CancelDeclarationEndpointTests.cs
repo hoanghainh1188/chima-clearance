@@ -3,6 +3,7 @@ using System.Net.Http.Json;
 using B2.Application.Abstractions;
 using B2.Domain;
 using B2.Domain.Audit;
+using B2.Domain.Users;
 using B2.Domain.Declarations;
 using B2.Infrastructure.Persistence;
 using B2.Server.Api.Tests.Support;
