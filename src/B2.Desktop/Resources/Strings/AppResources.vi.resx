@@ -751,6 +751,9 @@ Alt+1 … Alt+8 — Chuyển nhanh giữa các tab
   <data name="Export_LastExport_Format" xml:space="preserve">
     <value>Lần xuất gần nhất: {0}</value>
   </data>
+  <data name="Export_DatePreset_Hint" xml:space="preserve">
+    <value>Chọn khoảng ngày xuất báo cáo</value>
+  </data>
   <data name="Sidebar_Item_Audit" xml:space="preserve">
     <value>🔍 Nhật ký kiểm toán</value>
   </data>

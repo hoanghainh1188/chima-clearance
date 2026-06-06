@@ -53,9 +53,11 @@
           <VerticalStackLayout Spacing="{StaticResource SpacingS}" IsVisible="{Binding IsRestoreConfirmVisible}">
             <Label Text="{Binding SelectedFileLabel}" FontAttributes="Bold" TextColor="{StaticResource ColorOnSurface}" />
             <Label Text="{x:Static s:AppResources.Backup_Restore_ConfirmLabel}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
-            <Entry Text="{Binding RestoreConfirmText}" WidthRequest="240" HorizontalOptions="Start" />
+            <Entry Text="{Binding RestoreConfirmText}" WidthRequest="240" HorizontalOptions="Start"
+                   SemanticProperties.Hint="{x:Static s:AppResources.Backup_Restore_ConfirmLabel}" />
             <Label Text="{x:Static s:AppResources.Backup_Restore_PasswordLabel}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
-            <Entry Text="{Binding RestorePassword}" IsPassword="True" WidthRequest="280" HorizontalOptions="Start" />
+            <Entry Text="{Binding RestorePassword}" IsPassword="True" WidthRequest="280" HorizontalOptions="Start"
+                   SemanticProperties.Hint="{x:Static s:AppResources.Backup_Restore_PasswordLabel}" />
             <HorizontalStackLayout Spacing="{StaticResource SpacingS}">
               <Button Text="{x:Static s:AppResources.Backup_Restore_Cancel}" Command="{Binding CancelRestoreCommand}" />
               <Button Text="{x:Static s:AppResources.Backup_Restore_Confirm}"

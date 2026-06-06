@@ -63,7 +63,8 @@
     <Grid Grid.Row="3" IsVisible="{Binding IsLogs}" RowDefinitions="Auto,*,Auto" RowSpacing="{StaticResource SpacingS}">
       <HorizontalStackLayout Grid.Row="0" Spacing="{StaticResource SpacingS}">
         <Label Text="{x:Static s:AppResources.Health_Logs_Level}" VerticalOptions="Center" TextColor="{StaticResource ColorOnSurfaceMuted}" />
-        <Picker WidthRequest="160" ItemsSource="{Binding LevelOptions}" SelectedIndex="{Binding LevelIndex}" />
+        <Picker WidthRequest="160" ItemsSource="{Binding LevelOptions}" SelectedIndex="{Binding LevelIndex}"
+                SemanticProperties.Hint="{x:Static s:AppResources.Health_Logs_Level}" />
         <Button Text="{x:Static s:AppResources.Audit_Filter_Apply}" Command="{Binding ApplyLogFilterCommand}" />
       </HorizontalStackLayout>
 

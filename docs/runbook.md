@@ -1,0 +1,228 @@
+# Sổ tay vận hành — Hệ thống B2 Clearance (v1)
+
+> **Dành cho**: Quản trị viên tại Cổng B2 và nhân viên kỹ thuật hỗ trợ.  
+> Tài liệu này cần có sẵn tại phòng giám sát và lưu trên USB dự phòng.
+
+---
+
+## 1. Khởi động / Dừng dịch vụ
+
+### Khởi động
+
+```powershell
+# Mở PowerShell với quyền Administrator
+Start-Service -Name "B2ClearanceService"
+# Xác nhận trạng thái
+Get-Service -Name "B2ClearanceService"
+```
+
+Dịch vụ sẽ khởi động trong vòng 10–15 giây. Mở ứng dụng Desktop và kiểm tra
+thanh trạng thái phía dưới — nếu hiển thị màu xanh lá (🟢 Trực tuyến) thì
+hệ thống đã hoạt động bình thường.
+
+### Dừng có kiểm soát
+
+```powershell
+Stop-Service -Name "B2ClearanceService"
+```
+
+> ⚠️ Dừng dịch vụ trong giờ làm việc sẽ khiến toàn bộ máy client mất kết nối
+> và không thể ghi thêm tờ khai mới. Chỉ thực hiện khi cần bảo trì.
+
+### Tự động khởi động cùng Windows
+
+Dịch vụ được cấu hình mặc định `StartupType = Automatic`. Sau mỗi lần khởi động
+lại máy chủ, nó sẽ tự chạy mà không cần can thiệp.
+
+### Kiểm tra log dịch vụ
+
+```powershell
+# 50 dòng gần nhất từ Event Viewer
+Get-EventLog -LogName Application -Source "B2ClearanceService" -Newest 50
+```
+
+---
+
+## 2. Đặt lại mật khẩu Admin (thủ tục ngoại tuyến với mã phục hồi)
+
+**Khi nào dùng**: Admin quên mật khẩu và không thể đăng nhập.
+
+### Bước 1 — Lấy mã phục hồi
+
+Mã phục hồi (24 ký tự Crockford base32) được in và lưu trong phong bì dán
+kín tại phòng quản lý. Cần có mã này để thực hiện bước tiếp theo.
+
+### Bước 2 — Mở giao diện đặt lại (Recovery Mode)
+
+1. Dừng dịch vụ B2 (xem mục 1).
+2. Mở PowerShell với quyền Administrator:
+
+```powershell
+cd "C:\Program Files\B2Clearance"
+.\B2.Server.Service.exe --reset-admin-password
+```
+
+3. Nhập mã phục hồi khi được yêu cầu.
+4. Nhập mật khẩu Admin mới (ít nhất 10 ký tự, gồm chữ hoa, chữ thường, số
+   và ký tự đặc biệt).
+5. Khởi động lại dịch vụ.
+
+> ⚠️ Sau khi đặt lại, đăng nhập bằng mật khẩu mới và tạo bản sao lưu ngay
+> (xem mục 3) trước khi vận hành lại.
+
+### Nếu mất cả mật khẩu lẫn mã phục hồi
+
+Liên hệ ngay đội phát triển (xem mục 7 — Leo thang). Không có cách nào khác
+để lấy lại quyền truy cập mà không xóa cơ sở dữ liệu.
+
+---
+
+## 3. Sao lưu thủ công
+
+### Phương pháp A — Trong ứng dụng (khuyến nghị)
+
+1. Đăng nhập bằng tài khoản Admin.
+2. Vào **Quản trị → Sao lưu & Khôi phục**.
+3. Nhấn nút **Tạo bản sao lưu ngay**.
+4. Chờ thông báo thành công (thường dưới 30 giây).
+5. File `.bak.zip` được tạo tự động tại thư mục cấu hình
+   (`C:\ProgramData\B2\backups\` hoặc thư mục USB/mạng LAN đã cấu hình).
+
+### Phương pháp B — Thủ công qua file system (fallback)
+
+```powershell
+Stop-Service -Name "B2ClearanceService"
+Copy-Item "C:\ProgramData\B2\db\b2.db" `
+          "D:\Backup\b2-$(Get-Date -Format 'yyyyMMdd-HHmm').db"
+Start-Service -Name "B2ClearanceService"
+```
+
+> File `.db` sao lưu bằng phương pháp B **không được mã hoá**. Lưu trữ ở nơi
+> an toàn và xóa ngay sau khi không cần thiết.
+
+### Lịch sao lưu tự động
+
+Litestream sao lưu liên tục mỗi 60 giây sang USB và thư mục mạng LAN (nếu đã
+cấu hình). Không cần làm thủ công hàng ngày — chỉ dùng phương pháp A trước
+mỗi lần cập nhật phần mềm hoặc thay đổi hệ thống.
+
+---
+
+## 4. Khôi phục từ bản sao lưu
+
+> ⚠️ **CẢNH BÁO**: Khôi phục sẽ xóa toàn bộ dữ liệu hiện tại và thay thế
+> bằng dữ liệu tại thời điểm sao lưu. Mọi tờ khai, phương tiện, hay thay đổi
+> sau thời điểm đó **sẽ bị mất vĩnh viễn**.
+
+### Thủ tục
+
+1. Thông báo cho tất cả người dùng đang online dừng thao tác.
+2. Vào **Quản trị → Sao lưu & Khôi phục** → phần **Khôi phục**.
+3. Nhấn **Chọn file** và chỉ đến file `.bak.zip`.
+4. Nhập mật khẩu cài đặt hoặc mã phục hồi.
+5. Gõ lại xác nhận "**KHÔI PHỤC**" vào ô xác nhận.
+6. Nhấn **Xác nhận khôi phục**.
+7. Dịch vụ sẽ tự khởi động lại sau khi khôi phục xong (~30 giây).
+
+### Sau khi khôi phục
+
+- Kiểm tra lại tờ khai của ngày hôm nay để xác nhận tính toàn vẹn.
+- Tạo ngay một bản sao lưu mới để đánh dấu trạng thái sau khôi phục.
+- Ghi lại sự việc vào nhật ký vận hành với thời gian, người thực hiện,
+  và lý do khôi phục.
+
+---
+
+## 5. Đọc bảng điều khiển sức khỏe hệ thống
+
+Vào **Quản trị → Sức khỏe hệ thống**. Trang có hai tab:
+
+### Tab Tổng quan
+
+| Chỉ số | Ý nghĩa | Giá trị mong muốn |
+|--------|---------|-------------------|
+| Kết nối CSDL | CSDL SQLite có phản hồi không | ✅ Kết nối tốt |
+| Thời gian phản hồi | Latency truy vấn | < 50 ms |
+| Dung lượng CSDL | Kích thước file `b2.db` | < 500 MB |
+| Lần sao lưu cuối | Thời gian bản sao lưu gần nhất | < 2 giờ trước |
+| Trạng thái Litestream | Sao lưu liên tục | ✅ Đang chạy |
+
+Nếu bất kỳ chỉ số nào hiển thị màu đỏ hoặc cảnh báo vàng, xem mục 6 bên dưới.
+
+### Tab Nhật ký hệ thống
+
+Hiển thị các sự kiện hệ thống gần đây. Dùng bộ lọc **Cấp độ** để chọn:
+
+- `Warning` — cảnh báo không nghiêm trọng, cần theo dõi.
+- `Error` — lỗi nghiêm trọng, cần xử lý ngay.
+- `Information` — hoạt động bình thường.
+
+---
+
+## 6. Lỗi thường gặp và cách xử lý
+
+### Lỗi 1: "Mất kết nối" — thanh trạng thái đỏ (🔴)
+
+**Triệu chứng**: Ứng dụng Desktop hiển thị banner đỏ "Mất kết nối". Không thể
+ghi tờ khai mới.
+
+**Kiểm tra**:
+1. Ping máy chủ: `ping <ip-máy-chủ>` trên máy client bị lỗi.
+2. Kiểm tra dịch vụ B2 còn chạy không (xem mục 1).
+3. Kiểm tra tường lửa Windows: cổng 5000 (hoặc cổng đã cấu hình) phải mở.
+
+**Khắc phục**:
+- Nếu dịch vụ bị dừng: khởi động lại (xem mục 1).
+- Nếu vấn đề mạng: liên hệ IT.
+- Nếu sau 5 phút vẫn không kết nối được: leo thang theo mục 7.
+
+---
+
+### Lỗi 2: "Lỗi sao lưu" — thông báo trên trang Sức khỏe
+
+**Triệu chứng**: Trang Sức khỏe hiển thị cảnh báo "Lần sao lưu cuối > 2 giờ"
+hoặc "Litestream: dừng".
+
+**Kiểm tra**:
+1. Kiểm tra USB sao lưu còn cắm vào và có dung lượng trống (> 1 GB).
+2. Kiểm tra thư mục mạng LAN có còn truy cập được không.
+3. Xem log: vào **Nhật ký hệ thống**, lọc `Error`, tìm dòng có từ
+   "backup" hoặc "litestream".
+
+**Khắc phục**:
+- Thay USB nếu đầy hoặc hỏng.
+- Khởi động lại dịch vụ B2 (Litestream supervisor sẽ tự khởi động lại).
+- Tạo bản sao lưu thủ công ngay (xem mục 3, Phương pháp A).
+
+---
+
+### Lỗi 3: Màn hình đăng nhập báo "Tài khoản bị khoá"
+
+**Triệu chứng**: Sau 5 lần nhập sai mật khẩu, tài khoản bị khoá 15 phút.
+
+**Khắc phục tạm thời**: Chờ 15 phút và thử lại.
+
+**Khắc phục vĩnh viễn (chỉ Admin)**:
+1. Đăng nhập bằng tài khoản Admin (từ máy khác).
+2. Vào **Quản trị → Người dùng**, tìm tài khoản bị khoá.
+3. Nhấn **Đặt lại mật khẩu** và cung cấp mật khẩu tạm thời cho người dùng.
+4. Yêu cầu người dùng đổi mật khẩu ngay sau khi đăng nhập.
+
+---
+
+## 7. Leo thang — Liên hệ đội phát triển
+
+Khi gặp lỗi không xử lý được theo hướng dẫn trên, liên hệ:
+
+| Thông tin | Giá trị |
+|-----------|---------|
+| **Email** | hoanghainh.1188@gmail.com |
+| **Ưu tiên** | Dùng tiêu đề: `[B2-URGENT] <mô tả ngắn>` cho sự cố ảnh hưởng vận hành |
+| **Thông tin cần cung cấp** | Ảnh chụp màn hình lỗi, log từ tab Nhật ký hệ thống (xuất file nếu được), thời điểm lỗi xảy ra, thao tác đang thực hiện |
+
+> Không chia sẻ mật khẩu Admin hay mã phục hồi qua email hoặc điện thoại.
+> Đội phát triển không bao giờ yêu cầu những thông tin này.
+
+---
+
+*Phiên bản tài liệu: v1.0 — Sprint S6 — 2026-06-06*
