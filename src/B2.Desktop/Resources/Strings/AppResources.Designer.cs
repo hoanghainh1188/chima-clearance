@@ -75,8 +75,15 @@ public static class AppResources
     public static string Entry_Toast_Saved => ResourceManager.GetString(nameof(Entry_Toast_Saved), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Entry_Toast_VehicleAdded => ResourceManager.GetString(nameof(Entry_Toast_VehicleAdded), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Entry_Suggest_Hint => ResourceManager.GetString(nameof(Entry_Suggest_Hint), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Entry_Suggest_Accept => ResourceManager.GetString(nameof(Entry_Suggest_Accept), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Entry_TrailerLabel => ResourceManager.GetString(nameof(Entry_TrailerLabel), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Entry_YardLabel => ResourceManager.GetString(nameof(Entry_YardLabel), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Entry_DeclarationNumberPlaceholder => ResourceManager.GetString(nameof(Entry_DeclarationNumberPlaceholder), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Entry_CompanyPlaceholder => ResourceManager.GetString(nameof(Entry_CompanyPlaceholder), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Entry_GoodsPlaceholder => ResourceManager.GetString(nameof(Entry_GoodsPlaceholder), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Entry_PlatePlaceholder => ResourceManager.GetString(nameof(Entry_PlatePlaceholder), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Entry_TrailerPlaceholder => ResourceManager.GetString(nameof(Entry_TrailerPlaceholder), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Entry_NotePlaceholder => ResourceManager.GetString(nameof(Entry_NotePlaceholder), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Exit_Error_MarkExit => ResourceManager.GetString(nameof(Exit_Error_MarkExit), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Exit_Error_NoMatch_Format => ResourceManager.GetString(nameof(Exit_Error_NoMatch_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Exit_Error_Search => ResourceManager.GetString(nameof(Exit_Error_Search), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;

@@ -11,7 +11,7 @@ namespace B2.Desktop.Services;
 /// </summary>
 public sealed class ConnectivityService : IDisposable, IAsyncDisposable
 {
-    private readonly AuthTokenHandler _auth;
+    private readonly IAuthTokenStore _auth;
     private readonly DesktopRuntimeOptions _options;
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly ILogger<ConnectivityService> _logger;
@@ -25,7 +25,7 @@ public sealed class ConnectivityService : IDisposable, IAsyncDisposable
 
     public ConnectivityService(
         DesktopRuntimeOptions options,
-        AuthTokenHandler auth,
+        IAuthTokenStore auth,
         IServiceScopeFactory scopeFactory,
         ILogger<ConnectivityService> logger)
     {

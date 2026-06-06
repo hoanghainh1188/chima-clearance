@@ -5,6 +5,7 @@ using B2.Desktop.Services.UserSettings;
 using B2.Desktop.Views;
 using B2.Desktop.Views.Admin;
 using B2.Shared.Contracts.Users;
+using Microsoft.Maui.Controls.Shapes;
 
 namespace B2.Desktop;
 
@@ -20,10 +21,22 @@ namespace B2.Desktop;
 /// <see cref="ActivateTabByIndex(int)"/> and <see cref="ShowShortcutsAsync"/>
 /// to wire <c>Alt+1..8</c> and <c>F1</c> respectively.
 /// </summary>
-public sealed class MainShellPage : ContentPage
+public sealed class MainShellPage : ContentPage, IToastPresenter
 {
+    private readonly VerticalStackLayout _toastHost = new()
+    {
+        Spacing = 8,
+        VerticalOptions = LayoutOptions.End,
+        HorizontalOptions = LayoutOptions.Center,
+        Margin = new Thickness(0, 0, 0, 52),
+        // Pass clicks through the empty overlay, but let the toasts themselves
+        // remain tappable (tap-to-dismiss).
+        InputTransparent = true,
+        CascadeInputTransparent = false,
+    };
+
     private readonly IServiceProvider _services;
-    private readonly AuthTokenHandler _auth;
+    private readonly IAuthTokenStore _auth;
     private readonly ISessionContext _session;
     private readonly ConnectivityService _connectivity;
     private readonly IModalService _modal;
@@ -40,7 +53,7 @@ public sealed class MainShellPage : ContentPage
     public MainShellPage(IServiceProvider services)
     {
         _services = services;
-        _auth = services.GetRequiredService<AuthTokenHandler>();
+        _auth = services.GetRequiredService<IAuthTokenStore>();
         _session = services.GetRequiredService<ISessionContext>();
         _connectivity = services.GetRequiredService<ConnectivityService>();
         _modal = services.GetRequiredService<IModalService>();
@@ -73,7 +86,9 @@ public sealed class MainShellPage : ContentPage
             {
                 new RowDefinition { Height = new GridLength(56) },
                 new RowDefinition { Height = GridLength.Star },
-                new RowDefinition { Height = new GridLength(32) },
+                // 44 px (was 32): the Cỡ chữ Picker / ComboBox needs ~36 px of
+                // intrinsic height; a 32 px row clipped its selected-item text.
+                new RowDefinition { Height = new GridLength(44) },
             },
             ColumnDefinitions =
             {
@@ -102,6 +117,13 @@ public sealed class MainShellPage : ContentPage
         Grid.SetColumn(statusBar, 0);
         Grid.SetColumnSpan(statusBar, 2);
         grid.Children.Add(statusBar);
+
+        // Toast overlay spans the whole shell and sits on top (added last).
+        Grid.SetRow(_toastHost, 0);
+        Grid.SetRowSpan(_toastHost, 3);
+        Grid.SetColumn(_toastHost, 0);
+        Grid.SetColumnSpan(_toastHost, 2);
+        grid.Children.Add(_toastHost);
 
         Content = grid;
 
@@ -402,7 +424,9 @@ public sealed class MainShellPage : ContentPage
                 new ColumnDefinition { Width = GridLength.Auto },
             },
             ColumnSpacing = 16,
-            Padding = new Thickness(12, 4),
+            // Slim vertical padding so the Cỡ chữ Picker gets the full row
+            // height (44 − 4 = 40 px) and its text is not clipped.
+            Padding = new Thickness(12, 2),
         };
 
         var muted = (Color)Application.Current.Resources["ColorOnSurfaceMuted"];
@@ -506,6 +530,10 @@ public sealed class MainShellPage : ContentPage
         var picker = new Picker
         {
             VerticalOptions = LayoutOptions.Center,
+            // Pin the height so the WinUI ComboBox renders its selected text in
+            // full inside the compact status bar instead of clipping it.
+            HeightRequest = 36,
+            MinimumHeightRequest = 36,
             TextColor = textColor,
             BackgroundColor = Colors.Transparent,
         };
@@ -604,6 +632,74 @@ public sealed class MainShellPage : ContentPage
         _auth.AccessToken = null;
         _session.Clear();
         await _navigator.NavigateToLoginAsync().ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// <see cref="IToastPresenter"/>: render an in-app toast in the overlay.
+    /// Severity maps to a solid background token (icon + colour + text per
+    /// Constitution VI / WCAG 1.4.1). Always invoked on the UI thread by
+    /// <see cref="ToastService"/>.
+    /// </summary>
+    public void ShowToast(string message, ToastSeverity severity, TimeSpan duration)
+    {
+        var resources = Application.Current!.Resources;
+        var background = (Color)(severity switch
+        {
+            ToastSeverity.Success => resources["ColorLedgerStatusAllExited"],
+            ToastSeverity.Warning => resources["ColorWarning"],
+            ToastSeverity.Error => resources["ColorError"],
+            _ => resources["ColorPrimary"],
+        });
+        var glyph = severity switch
+        {
+            ToastSeverity.Success => "✓  ",
+            ToastSeverity.Warning => "⚠  ",
+            ToastSeverity.Error => "✕  ",
+            _ => "ℹ  ",
+        };
+
+        var border = new Border
+        {
+            BackgroundColor = background,
+            StrokeThickness = 0,
+            Padding = new Thickness(16, 10),
+            Opacity = 0,
+            MaximumWidthRequest = 520,
+            StrokeShape = new RoundRectangle { CornerRadius = new CornerRadius(8) },
+            Content = new Label
+            {
+                Text = glyph + message,
+                TextColor = Colors.White,
+                FontSize = (double)resources["FontSizeM"],
+                LineBreakMode = LineBreakMode.WordWrap,
+            },
+        };
+
+        var tap = new TapGestureRecognizer();
+        tap.Tapped += (_, _) => RemoveToast(border);
+        border.GestureRecognizers.Add(tap);
+
+        _toastHost.Add(border);
+        _ = AnimateToastAsync(border, duration);
+    }
+
+    private async Task AnimateToastAsync(Border border, TimeSpan duration)
+    {
+        await border.FadeTo(1, 150).ConfigureAwait(true);
+        await Task.Delay(duration).ConfigureAwait(true);
+        if (_toastHost.Contains(border))
+        {
+            await border.FadeTo(0, 250).ConfigureAwait(true);
+            RemoveToast(border);
+        }
+    }
+
+    private void RemoveToast(Border border)
+    {
+        if (_toastHost.Contains(border))
+        {
+            _toastHost.Remove(border);
+        }
     }
 
     private sealed record TabEntry(Grid Container, BoxView LeftBar, Label TitleLabel, ContentView View);

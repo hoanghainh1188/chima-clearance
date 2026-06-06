@@ -372,6 +372,27 @@
   <data name="Entry_Suggest_Hint" xml:space="preserve">
     <value>💡 Gợi ý gần đây — nhấn Tab để chấp nhận</value>
   </data>
+  <data name="Entry_Suggest_Accept" xml:space="preserve">
+    <value>Tab — Chấp nhận gợi ý</value>
+  </data>
+  <data name="Entry_DeclarationNumberPlaceholder" xml:space="preserve">
+    <value>Ví dụ: 105200012345 (đúng 12 chữ số)</value>
+  </data>
+  <data name="Entry_CompanyPlaceholder" xml:space="preserve">
+    <value>Ví dụ: Công ty TNHH ABC</value>
+  </data>
+  <data name="Entry_GoodsPlaceholder" xml:space="preserve">
+    <value>Ví dụ: Vải cuộn, linh kiện điện tử</value>
+  </data>
+  <data name="Entry_PlatePlaceholder" xml:space="preserve">
+    <value>Ví dụ: 29C12345 (không có dấu cách)</value>
+  </data>
+  <data name="Entry_TrailerPlaceholder" xml:space="preserve">
+    <value>Ví dụ: 51R12345 hoặc TCLU1234567 (nếu có)</value>
+  </data>
+  <data name="Entry_NotePlaceholder" xml:space="preserve">
+    <value>Ghi chú thêm nếu cần (không bắt buộc)</value>
+  </data>
   <data name="Exit_PageTitle" xml:space="preserve">
     <value>Xác nhận xe ra</value>
   </data>
