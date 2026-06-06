@@ -70,6 +70,12 @@ public interface IB2Api
         [Header("Idempotency-Key")] string idempotencyKey,
         CancellationToken cancellationToken = default);
 
+    [Get("/api/vehicles/suggest")]
+    Task<VehicleSuggestResponse> SuggestVehiclePairAsync(
+        [Query] string plate,
+        [Query] string field,
+        CancellationToken cancellationToken = default);
+
     [Get("/api/vehicles/search")]
     Task<List<VehicleSearchResultDto>> SearchVehiclesAsync(
         [Query] string suffix,

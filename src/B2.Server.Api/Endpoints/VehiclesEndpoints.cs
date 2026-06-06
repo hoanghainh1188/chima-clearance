@@ -1,5 +1,6 @@
 using B2.Application.Declarations.Exit;
 using B2.Application.Vehicles;
+using B2.Application.Vehicles.Suggest;
 using B2.Application.Vehicles.Validators;
 using B2.Server.Api.Auth;
 using B2.Shared.Contracts.Declarations;
@@ -11,6 +12,29 @@ public static class VehiclesEndpoints
 {
     public static void MapVehiclesEndpoints(this IEndpointRouteBuilder app)
     {
+        app.MapGet(
+                "/api/vehicles/suggest",
+                async (
+                    string? plate,
+                    string? field,
+                    SuggestPairQueryHandler handler,
+                    CancellationToken ct) =>
+                {
+                    if (string.IsNullOrWhiteSpace(plate))
+                    {
+                        return Results.BadRequest(new { error = "plate is required." });
+                    }
+
+                    if (string.IsNullOrWhiteSpace(field) || !SuggestPairQueryHandler.ValidFields.Contains(field))
+                    {
+                        return Results.BadRequest(new { error = $"field must be one of: {string.Join(", ", SuggestPairQueryHandler.ValidFields)}." });
+                    }
+
+                    var value = await handler.HandleAsync(plate, field, ct);
+                    return Results.Ok(new VehicleSuggestResponse(value));
+                })
+            .RequireAuthorization(B2Policies.AnyAuthenticated);
+
         app.MapGet(
                 "/api/vehicles/search",
                 async (
