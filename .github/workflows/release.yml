@@ -79,7 +79,8 @@ jobs:
         shell: bash
         run: |
           dotnet publish src/B2.Desktop/B2.Desktop.csproj \
-            -c Release -p:RuntimeIdentifierOverride=win-x64 \
+            -c Release -f net8.0-windows10.0.19041.0 \
+            -p:RuntimeIdentifierOverride=win-x64 \
             -p:Version="${VERSION}" \
             -o publish/desktop
 
