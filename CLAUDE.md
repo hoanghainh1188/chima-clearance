@@ -1,6 +1,6 @@
 ﻿# chima-clearance Development Guidelines
 
-Auto-generated from all feature plans. Last updated: 2026-05-04
+Auto-generated from all feature plans. Last updated: 2026-06-02
 
 > **For AI coding agents (Claude Code, Cursor, Spec Kit)**: this file is the
 > short-form briefing. Authoritative sources are `specs/01-overview.md`,
@@ -16,16 +16,18 @@ Auto-generated from all feature plans. Last updated: 2026-05-04
 | --- | --- | --- | --- |
 | `001-b2-clearance` — Customs Gate B2 vehicle clearance log replacement | [spec.md](specs/001-b2-clearance/spec.md) | [plan.md](specs/001-b2-clearance/plan.md) | [v1.1.0](.specify/memory/constitution.md) |
 
-Active phase: **Sprint S4 merged on `main`** (PR #18 / `9f0d15b`). Next is
-Sprint S5 (Sổ B2 Excel export + Litestream backup + on-demand snapshot +
-audit viewer + admin health). S3 visual-polish backlog (child-vehicle
-expand/collapse, right-click context menu, 300/400 ms SignalR animations,
-sidebar collapse toggle, focus-ring sweep, quick-settings menu, top-right
-toast position) and S4 review carry-overs (`T-S4-CO-01..09`) remain in
-the pool of low-priority items. Carry-over highlights: strengthen
-`EndpointPolicyAlignmentTests` to FR-027 specificity, multi-day catch-up
-in `DailyHeaderCatchupHostedService`, GetByOfficerAsync transaction
-+ KVGS-only-officer fix, ConnectivityService.Dispose hub teardown.
+Active phase: **Sprint S5 complete on `main`** (PRs #40–#55, head
+`fcb0412`). Next is **Sprint S6 — Hardening & Release**: F-17 simple-v1
+settings page, accessibility audit sweep (WCAG / tab-order / focus-ring),
+FR-021 annual archive, ops runbook, Velopack installer + the carried
+T-S6-11 installer-side recovery-code print UI, and end-to-end UAT. Two
+S5 remainders roll into S6: `T-S5-06` NBomber export-throughput scenario
+is still a placeholder, and `T-S5-13`'s install-time recovery-code print
+surface is installer-bound (→ `T-S6-11`). S3 visual-polish backlog
+(child-vehicle expand/collapse, right-click context menu, 300/400 ms
+SignalR animations, sidebar collapse toggle, focus-ring sweep,
+quick-settings menu, top-right toast position) remains a low-priority
+pool. S4 review carry-overs `T-S4-CO-01..09` were all cleared in PR #40.
 
 **Done**: S0 (scaffold, ADRs 0001–0006), S1 (F-01/F-02/F-03/F-04 — auth,
 users, master data, force-rotate password), S2 (F-05/F-06/F-07/F-08 —
@@ -33,12 +35,22 @@ declaration entry, add child vehicle, suffix search, mark exit), S3 core
 (F-09 KVGS + F-10 ledger + SignalR realtime + wireframe § 5 sidebar shell
 + Modal popup focus-trap + Toast severity timing + FR-028 Serilog logging
 + Constitution VI tokens + functional Cỡ chữ dropdown + KVGS row fade-out
-animation + self-monitoring counter), **S4 (F-11/F-12/F-14 + FR-025 —
+animation + self-monitoring counter), S4 (F-11/F-12/F-14 + FR-025 —
 Quartz daily-header + daily-summary jobs, officer-name inline edit with
 SignalR `DailyHeaderOfficerChanged` push and optimistic edit, full
 ReportsPage rebuild with sortable columns + clipboard + ClosedXML export,
-Admin recompute action, GET /api/daily-headers list endpoint).** All
-merged to `main`.
+Admin recompute action, GET /api/daily-headers list endpoint), **S5
+(F-13/FR-022/F-16/F-18/F-15 — template-based Sổ B2 Excel export
+(`GET /api/reports/excel` + `ExportPage`), declaration cancellation
+(`POST /api/declarations/{id}/cancel`, INV-9/INV-10, ledger
+strike-through), Admin audit viewer (`GET /api/admin/audit` +
+`AuditPage`), Admin health dashboard + in-app log viewer
+(`GET /api/admin/logs` + `/health/detail` + tabbed `HealthPage`),
+encrypted backup/restore (AES-256-GCM dual-PBKDF2 wrap, on-demand
+snapshot `POST /api/admin/backup-now`, apply-on-startup restore
+`POST /api/admin/restore`, `BackupPage`, recovery-code generator +
+DPAPI-sealed secrets store, Litestream continuous-backup supervisor).**
+All merged to `main`.
 
 ---
 
@@ -250,6 +262,48 @@ Yellow / red banners stay persistent in their respective states (no toast spam).
 
 ## Recent Changes
 
+- **2026-06-02** — **Sprint S5 complete** on `main` (PRs #40–#55, head
+  `fcb0412`). Shipped feature-by-feature:
+  - **PR #40** (`12e8737`) — cleared S4 review carry-overs `T-S4-CO-01..09`
+    (FR-027-specific `EndpointPolicyAlignmentTests`, multi-day
+    `DailyHeaderCatchupHostedService`, `GetByOfficerAsync` transaction +
+    KVGS-only-officer union, `ConnectivityService.Dispose` hub teardown).
+  - **F-13 Sổ B2 Excel export** — PR #41 backend (`ExportSoB2QueryHandler`
+    + `ClosedXmlSoB2Exporter` against embedded `Excel/Templates/MauSoB2.xlsx`
+    template, `SoB2ExportRepository` two-flat-query stitch to dodge the
+    SQLite `DateTimeOffset` ORDER BY limit, `GET /api/reports/excel`
+    `SupervisorOrAbove`) + PR #43 desktop `ExportPage` / `ExportViewModel`
+    (`FileSaver`).
+  - **FR-022 cancellation** — PR #44: `Declaration.Cancel(role,userId,reason,
+    clock)` (INV-9 Open-only, INV-10 reason required), `Vehicle.MarkExit`
+    rejects cancelled, `POST /api/declarations/{id}/cancel`, ledger
+    strike-through `DataTrigger` on `Row.IsCancelled`.
+  - **F-16 audit viewer** — PR #45: `AuditRepository` ((Id,At)-project +
+    in-memory sort), `ListAuditQueryHandler`, new `AdminEndpoints`
+    `GET /api/admin/audit` (`AdminOnly`), `Admin/AuditPage`.
+  - **F-18 health + logs** — PR #46: `InMemoryLogReader` (Serilog-connected
+    in Service, `TryAddSingleton` default for tests), `SystemHealthProbe`,
+    `GET /api/admin/logs` + `/health/detail`, tabbed `Admin/HealthPage`.
+    Note: source lives under `Admin/LogViewer/` — `.gitignore` `[Ll]ogs/`
+    silently drops an `Admin/Logs/` folder.
+  - **F-15 backup/restore** (5 slices, PRs #48/#50/#52/#53/#55) —
+    `BackupSnapshotService` (AES-256-GCM data key wrapped twice via
+    PBKDF2-SHA256 100k under install password **and** FR-026 recovery code,
+    `Pooling=False` on snapshot connections), `POST /api/admin/backup-now`;
+    `DatabaseRestoreService` apply-on-startup (`ApplyPending()` before EF
+    opens) + `POST /api/admin/restore` (multipart); `Admin/BackupPage`;
+    `RecoveryCodeGenerator` (24-char Crockford base32) + DPAPI-sealed
+    `BackupSecretsStore`; `LitestreamSupervisor` IHostedService
+    (`AddB2Litestream`, no-ops when disabled / binary absent) +
+    `LitestreamConfigWriter`.
+  - **CI** — PRs #42 + #47 (`0ee78ca`): killed the recurring
+    `setup-dotnet@v5` "Unable to locate dotnet CLI" flake with a per-step
+    `export PATH="$DOTNET_DIR:$PATH"` in every bash step (immune to the
+    `GITHUB_PATH`/`GITHUB_ENV` propagation race) + a "Locate .NET SDK"
+    diagnostic step.
+  - Server.Api test suite grew 62 → 100. Two S5 remainders carry to S6:
+    `T-S5-06` NBomber export scenario (placeholder) and `T-S5-13`
+    install-time recovery-code print UI (installer-bound → `T-S6-11`).
 - **2026-05-05** — Sprint S4 merged via PR #18 (`9f0d15b`): Quartz cron
   jobs (`CreateDailyHeader` 0 1 0 * * ? + `GenerateDailySummary` 0 0 23
   * * ? in `Asia/Ho_Chi_Minh`); five `/api/reports/*` endpoints
