@@ -16,6 +16,10 @@ public partial class AppShell : Shell
                 Content = loginPage,
                 Route = "login",
             });
-        Routing.RegisterRoute("auth/change-password", typeof(ChangePasswordPage));
+
+        // The forced password-change page (FR-017) is hosted directly via
+        // MainPage (see MainShellFactory.CreateForcedPasswordChange) rather than
+        // a Shell route — Shell route-factory DI resolution of a page with a
+        // constructor dependency proved unreliable and silently broke the flow.
     }
 }

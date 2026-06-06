@@ -57,7 +57,7 @@ public partial class LoginViewModel : ObservableObject
 
             if (response.MustChangePassword)
             {
-                await Shell.Current.GoToAsync("auth/change-password");
+                Application.Current!.MainPage = _mainShellFactory.CreateForcedPasswordChange();
                 return;
             }
 
@@ -78,6 +78,13 @@ public partial class LoginViewModel : ObservableObject
         }
         catch (HttpRequestException)
         {
+            ErrorMessage = AppResources.Login_Error_Generic;
+        }
+        catch (Exception)
+        {
+            // Defensive: any unexpected failure (e.g. navigation / page
+            // construction) surfaces the generic login error rather than
+            // leaving the UI in a blank / hung state.
             ErrorMessage = AppResources.Login_Error_Generic;
         }
         finally
