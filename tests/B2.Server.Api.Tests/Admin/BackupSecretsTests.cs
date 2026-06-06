@@ -1,3 +1,4 @@
+using B2.Domain;
 using B2.Infrastructure.Backup;
 using FluentAssertions;
 
@@ -33,6 +34,29 @@ public sealed class BackupSecretsTests
             var reloaded = new BackupSecretsStore(dir).GetOrCreate();
             reloaded.InstallPassword.Should().Be(first.InstallPassword);
             reloaded.RecoveryCode.Should().Be(first.RecoveryCode);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    [Trait("Requirement", "FR-026")]
+    public void Should_refuse_to_rotate_secrets_when_existing_file_is_unreadable()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), $"b2-secrets-{Guid.NewGuid():N}");
+        var keys = Path.Combine(dir, "keys");
+        Directory.CreateDirectory(keys);
+        var devPath = Path.Combine(keys, "backup-secrets.dev.json");
+        File.WriteAllText(devPath, "{ this is not valid json");
+
+        try
+        {
+            var act = () => new BackupSecretsStore(dir).GetOrCreate();
+            act.Should().Throw<DomainException>()
+                .Which.Code.Should().Be("BACKUP_SECRETS_UNREADABLE");
+            File.ReadAllText(devPath).Should().Contain("not valid json", "corrupt file must not be overwritten");
         }
         finally
         {
