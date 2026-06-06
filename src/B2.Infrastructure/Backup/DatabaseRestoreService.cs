@@ -1,3 +1,4 @@
+using System.Text.Json;
 using B2.Application.Abstractions;
 using Microsoft.Data.Sqlite;
 
@@ -5,24 +6,30 @@ namespace B2.Infrastructure.Backup;
 
 /// <summary>
 /// F-15 restore staging + apply-on-startup. <see cref="Stage"/> drops the decrypted DB at
-/// <c>{db}.restore-pending</c>; <see cref="ApplyPending"/> (run before EF opens the DB)
-/// clears the SQLite pool, removes the live DB + WAL/SHM sidecars, and promotes the pending
-/// file. Doing the swap before any connection opens avoids file-lock conflicts.
+/// <c>{db}.restore-pending</c> plus a JSON sidecar for post-restore audit; <see cref="ApplyPending"/>
+/// (run before EF opens the DB) atomically promotes the pending file via <see cref="File.Replace"/>
+/// when a live DB already exists. Doing the swap before any connection opens avoids file-lock conflicts.
 /// </summary>
 public sealed class DatabaseRestoreService : IDatabaseRestoreService
 {
+    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = false };
+
     private readonly string _dbPath;
     private readonly string _pendingPath;
+    private readonly string _metadataPath;
 
     public DatabaseRestoreService(string dbPath)
     {
         _dbPath = dbPath;
         _pendingPath = dbPath + ".restore-pending";
+        _metadataPath = _pendingPath + ".meta.json";
     }
 
-    public void Stage(byte[] databaseBytes)
+    public void Stage(byte[] databaseBytes, RestoreStagingMetadata metadata)
     {
         ArgumentNullException.ThrowIfNull(databaseBytes);
+        ArgumentNullException.ThrowIfNull(metadata);
+
         var directory = Path.GetDirectoryName(_pendingPath);
         if (!string.IsNullOrEmpty(directory))
         {
@@ -32,17 +39,19 @@ public sealed class DatabaseRestoreService : IDatabaseRestoreService
         var temp = _pendingPath + ".tmp";
         File.WriteAllBytes(temp, databaseBytes);
         File.Move(temp, _pendingPath, overwrite: true);
+        File.WriteAllText(_metadataPath, JsonSerializer.Serialize(metadata, JsonOptions));
     }
 
     public bool IsRestorePending() => File.Exists(_pendingPath);
 
-    public bool ApplyPending()
+    public RestoreStagingMetadata? ApplyPending()
     {
         if (!File.Exists(_pendingPath))
         {
-            return false;
+            return null;
         }
 
+        var metadata = ReadMetadataOrDefault();
         SqliteConnection.ClearAllPools();
 
         foreach (var sidecar in new[] { _dbPath + "-wal", _dbPath + "-shm" })
@@ -53,26 +62,65 @@ public sealed class DatabaseRestoreService : IDatabaseRestoreService
             }
         }
 
-        // Replace the live DB atomically so a failed promote cannot leave no database file.
-        var rollback = _dbPath + ".pre-restore.bak";
-        if (File.Exists(rollback))
+        var preRestoreBackup = _dbPath + ".pre-restore";
+        try
         {
-            File.Delete(rollback);
-        }
-
-        if (File.Exists(_dbPath))
-        {
-            File.Replace(_pendingPath, _dbPath, rollback);
-            if (File.Exists(rollback))
+            if (File.Exists(_dbPath))
             {
-                File.Delete(rollback);
+                File.Replace(_pendingPath, _dbPath, preRestoreBackup, ignoreMetadataErrors: true);
+                if (File.Exists(preRestoreBackup))
+                {
+                    File.Delete(preRestoreBackup);
+                }
             }
+            else
+            {
+                var directory = Path.GetDirectoryName(_dbPath);
+                if (!string.IsNullOrEmpty(directory))
+                {
+                    Directory.CreateDirectory(directory);
+                }
+
+                File.Move(_pendingPath, _dbPath);
+            }
+
+            DeleteMetadataFile();
+            return metadata;
         }
-        else
+        catch
         {
-            File.Move(_pendingPath, _dbPath);
+            if (File.Exists(preRestoreBackup) && !File.Exists(_dbPath))
+            {
+                File.Move(preRestoreBackup, _dbPath);
+            }
+
+            throw;
+        }
+    }
+
+    private RestoreStagingMetadata ReadMetadataOrDefault()
+    {
+        if (!File.Exists(_metadataPath))
+        {
+            return new RestoreStagingMetadata(null, DateTimeOffset.UtcNow, null);
         }
 
-        return true;
+        try
+        {
+            return JsonSerializer.Deserialize<RestoreStagingMetadata>(File.ReadAllText(_metadataPath), JsonOptions)
+                ?? new RestoreStagingMetadata(null, DateTimeOffset.UtcNow, null);
+        }
+        catch (JsonException)
+        {
+            return new RestoreStagingMetadata(null, DateTimeOffset.UtcNow, null);
+        }
+    }
+
+    private void DeleteMetadataFile()
+    {
+        if (File.Exists(_metadataPath))
+        {
+            File.Delete(_metadataPath);
+        }
     }
 }

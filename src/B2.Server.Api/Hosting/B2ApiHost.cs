@@ -9,6 +9,7 @@ using B2.Server.Api.Auth;
 using B2.Server.Api.Middleware;
 using B2.Server.Api.Realtime;
 using B2.Application.Abstractions;
+using B2.Infrastructure.Backup;
 using B2.Infrastructure.Diagnostics;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.Extensions.DependencyInjection.Extensions;
@@ -114,8 +115,12 @@ public static class B2ApiHost
     public static async Task InitializeDatabaseAsync(WebApplication app, CancellationToken cancellationToken = default)
     {
         // F-15: apply any staged restore before EF opens the DB (no mid-run file swap).
-        app.Services.GetRequiredService<IDatabaseRestoreService>().ApplyPending();
+        var restoreMetadata = app.Services.GetRequiredService<IDatabaseRestoreService>().ApplyPending();
         await app.Services.EnsureDatabaseAsync(cancellationToken);
+        if (restoreMetadata is not null)
+        {
+            await RestoreAuditPersistence.PersistAfterApplyAsync(app.Services, restoreMetadata, cancellationToken);
+        }
     }
 
     public static void MapPipeline(WebApplication app)

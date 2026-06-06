@@ -121,7 +121,7 @@ public static class AdminEndpoints
                     container = buffer.ToArray();
                 }
 
-                handler.Handle(container, secret, http.User.GetB2UserId());
+                handler.Handle(container, secret, http.User.GetB2UserId(), file.FileName);
 
                 if (!env.IsEnvironment("Testing"))
                 {

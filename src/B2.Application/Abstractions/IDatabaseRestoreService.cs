@@ -6,12 +6,13 @@ namespace B2.Application.Abstractions;
 /// </summary>
 public interface IDatabaseRestoreService
 {
-    /// <summary>Writes the decrypted SQLite bytes to the pending-restore staging file.</summary>
-    void Stage(byte[] databaseBytes);
+    /// <summary>Writes the decrypted SQLite bytes and restore audit metadata to staging files.</summary>
+    void Stage(byte[] databaseBytes, RestoreStagingMetadata metadata);
 
     /// <summary>If a staged restore exists, swaps it into the live DB path (clearing pools
-    /// and WAL sidecars first) and returns true. Called once at startup before the DB opens.</summary>
-    bool ApplyPending();
+    /// and WAL sidecars first). Returns the staged metadata when a swap occurred; otherwise null.
+    /// Called once at startup before the DB opens.</summary>
+    RestoreStagingMetadata? ApplyPending();
 
     /// <summary>True while a restore is staged and awaiting apply (writes must be refused).</summary>
     bool IsRestorePending();
