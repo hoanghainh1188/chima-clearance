@@ -1,6 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <ItemGroup>
+    <!-- App icon (navy customs-barrier glyph) + matching splash. MAUI Resizetizer
+         renders the SVGs into every platform size (incl. the Windows .ico). -->
+    <MauiIcon Include="Resources\AppIcon\appicon.svg"
+              ForegroundFile="Resources\AppIcon\appiconfg.svg"
+              Color="#1A3A6E" />
+    <MauiSplashScreen Include="Resources\Splash\splash.svg"
+                      Color="#1A3A6E"
+                      BaseSize="180,180" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\B2.Shared.Contracts\B2.Shared.Contracts.csproj" />
     <!-- .NET 8+: UseMaui no longer pulls Controls implicitly (MA002). Align with installed MAUI SDK band. -->
     <PackageReference Include="Microsoft.Maui.Controls" Version="8.0.100" />
