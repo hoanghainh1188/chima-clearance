@@ -131,6 +131,7 @@ public static class B2ApiHost
         app.UseAuthentication();
         app.UseMiddleware<RequirePasswordChangeMiddleware>();
         app.UseAuthorization();
+        app.UseMiddleware<RestoreWriteBlockMiddleware>();
         app.UseMiddleware<AuditPersistenceMiddleware>();
         app.UseMiddleware<IdempotencyMiddleware>();
 
