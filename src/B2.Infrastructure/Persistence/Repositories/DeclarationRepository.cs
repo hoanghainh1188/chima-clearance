@@ -2,7 +2,9 @@ using System.Data;
 using B2.Application.Abstractions;
 using B2.Application.Declarations.Exit;
 using B2.Application.Declarations.List;
+using B2.Domain;
 using B2.Domain.Declarations;
+using B2.Domain.Users;
 using B2.Shared.Contracts.Declarations;
 using B2.Shared.Contracts.MasterData;
 using Microsoft.EntityFrameworkCore;
@@ -69,6 +71,39 @@ public sealed class DeclarationRepository : IDeclarationRepository
                 vehicle.ExitTime!.Value,
                 vehicle.Declaration.Id,
                 vehicle.Declaration.Status.ToString());
+        }
+        catch
+        {
+            await tx.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
+
+    public async Task<Declaration> CancelDeclarationAsync(
+        Guid declarationId,
+        Role actorRole,
+        Guid actorUserId,
+        string reason,
+        DateTimeOffset cancelledAtUtc,
+        CancellationToken cancellationToken)
+    {
+        await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        try
+        {
+            var declaration = await _db.Declarations
+                .Include(d => d.Vehicles)
+                .FirstOrDefaultAsync(d => d.Id == declarationId, cancellationToken);
+
+            if (declaration is null)
+            {
+                await tx.RollbackAsync(cancellationToken);
+                throw new DomainException("DECLARATION_NOT_FOUND", "Declaration not found.", 404);
+            }
+
+            declaration.Cancel(actorRole, actorUserId, reason, cancelledAtUtc);
+            await _db.SaveChangesAsync(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+            return declaration;
         }
         catch
         {

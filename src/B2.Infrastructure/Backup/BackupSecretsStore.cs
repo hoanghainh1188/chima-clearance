@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using B2.Application.Abstractions;
+using B2.Domain;
 
 namespace B2.Infrastructure.Backup;
 
@@ -37,10 +38,7 @@ public sealed class BackupSecretsStore : IBackupSecretsStore
             }
 
             Directory.CreateDirectory(Path.GetDirectoryName(_sealedPath)!);
-            _cached = TryLoad() ?? Persist(new BackupSecrets(
-                RecoveryCodeGenerator.Generate(SecretLength),
-                RecoveryCodeGenerator.Generate(SecretLength),
-                AcknowledgedAtInstall: false));
+            _cached = TryLoad() ?? CreateAndPersist();
             return _cached;
         }
     }
@@ -53,10 +51,7 @@ public sealed class BackupSecretsStore : IBackupSecretsStore
             if (current is null)
             {
                 Directory.CreateDirectory(Path.GetDirectoryName(_sealedPath)!);
-                current = Persist(new BackupSecrets(
-                    RecoveryCodeGenerator.Generate(SecretLength),
-                    RecoveryCodeGenerator.Generate(SecretLength),
-                    AcknowledgedAtInstall: false));
+                current = CreateAndPersist();
             }
 
             if (current.AcknowledgedAtInstall)
@@ -71,29 +66,39 @@ public sealed class BackupSecretsStore : IBackupSecretsStore
 
     private BackupSecrets? TryLoad()
     {
+        if (!SecretsFileExists())
+        {
+            return null;
+        }
+
         try
         {
             if (OperatingSystem.IsWindows())
             {
-                if (!File.Exists(_sealedPath))
-                {
-                    return null;
-                }
-
                 var json = Encoding.UTF8.GetString(ProtectedData.Unprotect(
                     File.ReadAllBytes(_sealedPath), optionalEntropy: null, scope: DataProtectionScope.LocalMachine));
                 return JsonSerializer.Deserialize<BackupSecrets>(json);
             }
 
-            return File.Exists(_devPath)
-                ? JsonSerializer.Deserialize<BackupSecrets>(File.ReadAllText(_devPath))
-                : null;
+            return JsonSerializer.Deserialize<BackupSecrets>(File.ReadAllText(_devPath));
         }
         catch (Exception ex) when (ex is JsonException or CryptographicException or IOException)
         {
-            return null;
+            throw new DomainException(
+                "BACKUP_SECRETS_UNREADABLE",
+                "Backup secrets exist but could not be read. Refusing to rotate them automatically.",
+                500);
         }
     }
+
+    private bool SecretsFileExists() =>
+        OperatingSystem.IsWindows() ? File.Exists(_sealedPath) : File.Exists(_devPath);
+
+    private BackupSecrets CreateAndPersist() =>
+        Persist(new BackupSecrets(
+            RecoveryCodeGenerator.Generate(SecretLength),
+            RecoveryCodeGenerator.Generate(SecretLength),
+            AcknowledgedAtInstall: false));
 
     private BackupSecrets Persist(BackupSecrets secrets)
     {
