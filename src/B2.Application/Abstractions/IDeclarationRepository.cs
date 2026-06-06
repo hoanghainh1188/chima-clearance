@@ -1,6 +1,7 @@
 using B2.Application.Declarations.Exit;
 using B2.Application.Declarations.List;
 using B2.Domain.Declarations;
+using B2.Domain.Users;
 using B2.Shared.Contracts.Declarations;
 
 namespace B2.Application.Abstractions;
@@ -22,6 +23,14 @@ public interface IDeclarationRepository
         CancellationToken cancellationToken);
 
     Task<UnExitVehicleResult> UnExitVehicleAsync(Guid vehicleId, CancellationToken cancellationToken);
+
+    Task<Declaration> CancelDeclarationAsync(
+        Guid declarationId,
+        Role actorRole,
+        Guid actorUserId,
+        string reason,
+        DateTimeOffset cancelledAtUtc,
+        CancellationToken cancellationToken);
 
     Task<(IReadOnlyList<DeclarationSummaryRow> Items, int TotalCount)> ListDeclarationsAsync(
         ListDeclarationsRepositoryQuery query,

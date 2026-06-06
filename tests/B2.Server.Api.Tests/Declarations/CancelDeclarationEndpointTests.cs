@@ -1,5 +1,7 @@
 using System.Net;
 using System.Net.Http.Json;
+using B2.Application.Abstractions;
+using B2.Domain;
 using B2.Domain.Audit;
 using B2.Domain.Declarations;
 using B2.Infrastructure.Persistence;
@@ -202,6 +204,79 @@ public sealed class CancelDeclarationEndpointTests
             new UnExitVehicleRequest("Không được sửa tờ đã hủy"),
             TestJson.Options);
         unExit.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    [Trait("Requirement", "FR-022")]
+    public async Task Should_not_cancel_when_concurrent_exit_marks_vehicle()
+    {
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+        var decl = await CreateOpenDeclarationAsync(client, "31A40008");
+
+        Guid vehicleId;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+            vehicleId = await db.Vehicles.AsNoTracking()
+                .Where(v => v.DeclarationId == decl.Id)
+                .Select(v => v.Id)
+                .SingleAsync();
+        }
+
+        var exitTask = Task.Run(async () =>
+        {
+            await using var scope = factory.Services.CreateAsyncScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IDeclarationRepository>();
+            try
+            {
+                await repo.MarkVehicleExitAsync(vehicleId, admin.UserId, DateTimeOffset.UtcNow, CancellationToken.None);
+            }
+            catch (DomainException)
+            {
+                // Expected when cancel wins the Serializable race first.
+            }
+        });
+
+        var cancelTask = Task.Run(async () =>
+        {
+            await using var scope = factory.Services.CreateAsyncScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IDeclarationRepository>();
+            try
+            {
+                await repo.CancelDeclarationAsync(
+                    decl.Id,
+                    Role.Admin,
+                    admin.UserId,
+                    "Đua tranh với xuất cổng",
+                    DateTimeOffset.UtcNow,
+                    CancellationToken.None);
+            }
+            catch (DomainException)
+            {
+                // Expected when exit wins the Serializable race first.
+            }
+        });
+
+        await Task.WhenAll(exitTask, cancelTask);
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+            var entity = await db.Declarations.AsNoTracking().SingleAsync(d => d.Id == decl.Id);
+            var exited = await db.Vehicles.AsNoTracking()
+                .Where(v => v.DeclarationId == decl.Id)
+                .AnyAsync(v => v.ExitMarked);
+
+            if (exited)
+            {
+                entity.Status.Should().Be(
+                    DeclarationStatus.AllExited,
+                    "a concurrent exit must not be overwritten by cancel (INV-9)");
+            }
+        }
     }
 
     [Fact]
