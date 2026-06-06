@@ -202,6 +202,7 @@ public partial class EntryViewModel : ObservableObject, IDisposable
         _suggestCts?.Cancel();
         _suggestCts?.Dispose();
         _suggestCts = null;
+        GC.SuppressFinalize(this);
     }
 
     [RelayCommand]
