@@ -104,7 +104,7 @@ integration sweeps where appropriate.
 | S3 | T-S3-01 .. T-S3-12 (12) | F-09, F-10 + FR-027/FR-028 | ~2 500 | ✅ Merged (PRs #6/#7/#8/#9/#11/#12/#15/#16, #13 CI fix) |
 | S4 | T-S4-01 .. T-S4-15 (15) | F-11, F-12, F-14 + FR-025 | ~2 800 | ✅ Merged (PR #18 `9f0d15b` + docs PR #19 `6514c2e`); 9 carry-overs `T-S4-CO-01..09` deferred to S5 |
 | S5 | T-S5-01 .. T-S5-19 (19) | F-13, F-15, F-16, F-18 + FR-022/026 | ~3 800 | ✅ **Complete** (PRs #40–#55, head `fcb0412`). #40 cleared S4 carry-overs `T-S4-CO-01..09`; **F-13** (#41/#43), **FR-022** (#44), **F-16** (#45), **F-18** (#46), **F-15** slices 1–5 (#48/#50/#52/#53/#55: codec + FR-026 dual-wrap + backup-now + restore apply-on-startup + BackupPage UI + recovery-code/secrets store + Litestream supervisor); CI flake fixed for good (#42→#47). Remainders roll to S6: install-time recovery-code print UI (T-S6-11) + the T-S5-06 NBomber placeholder. Next: **Sprint S6** |
-| S6 | T-S6-01 .. T-S6-12 (12) | F-17 simple v1 + a11y + runbook + UAT | ~1 800 | 🔄 In progress — T-S6-01..10 complete (T-S6-07 done in S3); T-S6-11..12 remain |
+| S6 | T-S6-01 .. T-S6-12 (12) | F-17 simple v1 + a11y + runbook + UAT | ~1 800 | 🔄 In progress — T-S6-01..11 complete (T-S6-07 done in S3); T-S6-12 (on-site UAT) remains |
 | **Total** | **113 tasks** | 18 features + 7 cross-cutting FRs | **~19 500 LOC** | **75/113 tasks merged (S0–S4 done)** |
 
 > Per directive rule 1: every task is PR-sized (≤ 1 dev-day or ≤ 400 LOC diff).
@@ -1062,14 +1062,19 @@ cheat sheet lists every keyboard shortcut; runbook delivered.
   manually, restore + warning, read Health, 3 common-error fixes, escalation
   contact. **Dep**: T-S5-13. **LOC**: ~400 (markdown).
   *(Created `docs/runbook.md` — 229 lines, 7 sections in Vietnamese.)*
-- [ ] **T-S6-11** Build the Velopack installer in `src/B2.Installer/`
+- [x] **T-S6-11** Build the Velopack installer in `src/B2.Installer/`
   bundling: dotnet runtime, self-signed cert, Litestream binary, Sổ B2
   template, recovery-code generator. Output: single `.exe`. **Dep**: T-S5-13,
   T-S5-05. **LOC**: ~250 (config + scripts).
-- [ ] **T-S6-12** Run on-site UAT per quickstart § 5 spec-VM checklist (all
-  10 steps) **on real hardware** (not VM). Capture findings; fix any
-  CRITICAL/HIGH; re-run smoke. Sign-off into `docs/uat-001-b2-clearance.md`.
+  *(Velopack 0.0.915; WithAfterInstallFastCallback + WithBeforeUninstallFastCallback;
+  RSA-2048 self-signed cert → LocalMachine\\Root; RecoveryCodeSetup inlined DPAPI seal +
+  console/Desktop print; release.yml tag-triggered vpk pack + GitHub Release upload;
+  B2.Installer removed from B2.NoMaui.slnf; UAC requireAdministrator manifest.)*
+- [ ] **T-S6-12** Run on-site UAT per `04-implementation-plan.md § 8` smoke checklist
+  (all 10 steps) **on real hardware** (not VM). Capture findings; fix any CRITICAL/HIGH;
+  re-run smoke. Sign-off into `docs/uat-001-b2-clearance.md`.
   **Dep**: T-S6-11, all prior. **LOC**: ~150 (markdown report).
+  *(Template `docs/uat-001-b2-clearance.md` created — requires on-site execution.)*
 
 **Sprint S6 exit gate** = Phase-1 GA Deliverables Checklist from
 [`04-implementation-plan.md § 13`](../04-implementation-plan.md):
