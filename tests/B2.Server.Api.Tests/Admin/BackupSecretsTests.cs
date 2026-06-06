@@ -48,15 +48,27 @@ public sealed class BackupSecretsTests
         var dir = Path.Combine(Path.GetTempPath(), $"b2-secrets-{Guid.NewGuid():N}");
         var keys = Path.Combine(dir, "keys");
         Directory.CreateDirectory(keys);
-        var devPath = Path.Combine(keys, "backup-secrets.dev.json");
-        File.WriteAllText(devPath, "{ this is not valid json");
+
+        // Write corrupt content to the platform-appropriate secrets file.
+        // On Windows the store checks backup-secrets.dpapi; on non-Windows it checks backup-secrets.dev.json.
+        string corruptFilePath;
+        if (OperatingSystem.IsWindows())
+        {
+            corruptFilePath = Path.Combine(keys, "backup-secrets.dpapi");
+            File.WriteAllBytes(corruptFilePath, [0xDE, 0xAD, 0xBE, 0xEF]); // invalid DPAPI blob
+        }
+        else
+        {
+            corruptFilePath = Path.Combine(keys, "backup-secrets.dev.json");
+            File.WriteAllText(corruptFilePath, "{ this is not valid json");
+        }
 
         try
         {
             var act = () => new BackupSecretsStore(dir).GetOrCreate();
             act.Should().Throw<DomainException>()
                 .Which.Code.Should().Be("BACKUP_SECRETS_UNREADABLE");
-            File.ReadAllText(devPath).Should().Contain("not valid json", "corrupt file must not be overwritten");
+            File.Exists(corruptFilePath).Should().BeTrue("corrupt file must not be deleted or overwritten");
         }
         finally
         {
