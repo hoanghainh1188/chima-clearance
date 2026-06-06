@@ -1,4 +1,4 @@
-﻿name: CI
+name: CI
 
 on:
   push:
@@ -16,13 +16,13 @@ jobs:
   build-and-test:
     runs-on: windows-2022
     timeout-minutes: 30
-    # Static, job-level DOTNET_ROOT so every step resolves the SDK without depending on
-    # setup-dotnet's GITHUB_ENV write (which intermittently failed to propagate, surfacing
-    # as "Unable to locate dotnet CLI" at Verify formatting — PR #42's GITHUB_ENV-based
-    # pin shared that flaky mechanism and still missed on PR #46). Job-level env is plain
-    # YAML, always present.
-    env:
-      DOTNET_ROOT: 'C:\Program Files\dotnet'
+    # NOTE: No job-level DOTNET_ROOT hardcode here.
+    # setup-dotnet@v5 installs the SDK to hostedtoolcache (not necessarily
+    # C:\Program Files\dotnet) and writes the real path via $GITHUB_ENV.
+    # A hardcoded fallback here masked that write when it succeeded, and pointed
+    # to the wrong location when it failed — both paths lead to
+    # "Unable to locate dotnet CLI" in MSBuild child processes.
+    # The "Pin dotnet on PATH" step below handles discovery robustly.
 
     steps:
       - name: Checkout
@@ -30,7 +30,8 @@ jobs:
         with:
           fetch-depth: 0
 
-      # Windows runners often use core.autocrlf=true; working tree CRLF fails dotnet format vs .editorconfig (LF).
+      # Windows runners often use core.autocrlf=true; working tree CRLF fails
+      # dotnet format vs .editorconfig (LF).
       - name: Normalize line endings for format/build
         run: |
           git config --global core.autocrlf false
@@ -41,65 +42,57 @@ jobs:
         with:
           dotnet-version: '8.0.x'
 
-      # Diagnostic (always runs): if the muxer ever goes missing again this reveals the
-      # real SDK location instead of just "Unable to locate dotnet CLI".
-      - name: Locate .NET SDK
+      # Detect where setup-dotnet actually placed the SDK (hostedtoolcache path
+      # varies by run), then publish it to GITHUB_PATH + GITHUB_ENV so every
+      # subsequent step sees it without per-step PATH exports or hardcoded dirs.
+      #
+      # Two writes, belt-and-suspenders:
+      #   GITHUB_PATH → adds the dir to PATH for all later steps (bash lookup)
+      #   GITHUB_ENV  → sets DOTNET_ROOT so MSBuild child processes find the SDK
+      #
+      # Replaces the old "Locate .NET SDK" diagnostic + per-step
+      # `export PATH="$DOTNET_DIR:$PATH"` / `env: DOTNET_DIR:` pattern which
+      # hardcoded /c/Program Files/dotnet and broke whenever setup-dotnet used
+      # a different install path (PR #9, R3b ×2, #40–#42, #46–#47, #61).
+      - name: Pin dotnet on PATH
         shell: bash
         run: |
-          echo "DOTNET_ROOT=$DOTNET_ROOT"
-          command -v dotnet || echo "dotnet not found on PATH"
-          ls -la "/c/Program Files/dotnet" || true
-
-      # Every dotnet step prepends the SDK dir to PATH in its OWN shell. Git Bash spawns a
-      # fresh shell per step, so this is immune to the setup-dotnet GITHUB_PATH/GITHUB_ENV
-      # propagation race that produced "Unable to locate dotnet CLI" at Verify formatting
-      # (PR #9 first run, R3b ×2, PR #40-#42, #46, #47). DOTNET_ROOT is the static
-      # job-level env above. Defining a reusable env var keeps the prefix DRY.
-      - name: Install MAUI workload
-        shell: bash
-        run: |
-          export PATH="$DOTNET_DIR:$PATH"
-          dotnet workload install maui
-        env:
-          DOTNET_DIR: '/c/Program Files/dotnet'
+          DOTNET_EXE="$(command -v dotnet)"
+          DOTNET_BASH_DIR="$(dirname "${DOTNET_EXE}")"
+          DOTNET_WIN_DIR="$(cygpath -w "${DOTNET_BASH_DIR}")"
+          echo "dotnet binary   : ${DOTNET_EXE}"
+          echo "POSIX SDK dir   : ${DOTNET_BASH_DIR}"
+          echo "Windows SDK dir : ${DOTNET_WIN_DIR}"
+          echo "${DOTNET_BASH_DIR}" >> "${GITHUB_PATH}"
+          echo "DOTNET_ROOT=${DOTNET_WIN_DIR}" >> "${GITHUB_ENV}"
+          dotnet --version
 
       # B2.Desktop declares <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
       # so restore pulls Microsoft.NETCore.App.Runtime.win-x64. Build/test stay
       # solution-level and framework-dependent (NETSDK1134 forbids -r at solution
       # build). The plural form is the documented way to make restore RID-aware
       # without forcing platform-specific build outputs.
+      - name: Install MAUI workload
+        shell: bash
+        run: dotnet workload install maui
+
       - name: Restore
         shell: bash
         run: |
-          export PATH="$DOTNET_DIR:$PATH"
           dotnet workload restore B2.sln
           dotnet restore B2.sln
-        env:
-          DOTNET_DIR: '/c/Program Files/dotnet'
 
       - name: Verify formatting (Constitution III)
         shell: bash
-        run: |
-          export PATH="$DOTNET_DIR:$PATH"
-          dotnet format B2.sln --verify-no-changes --no-restore
-        env:
-          DOTNET_DIR: '/c/Program Files/dotnet'
+        run: dotnet format B2.sln --verify-no-changes --no-restore
 
       - name: Build (Release; TreatWarningsAsErrors=true)
         shell: bash
-        run: |
-          export PATH="$DOTNET_DIR:$PATH"
-          dotnet build B2.sln -c Release --no-restore -p:TreatWarningsAsErrors=true
-        env:
-          DOTNET_DIR: '/c/Program Files/dotnet'
+        run: dotnet build B2.sln -c Release --no-restore -p:TreatWarningsAsErrors=true
 
       - name: Test (Release) with coverage
         shell: bash
-        run: |
-          export PATH="$DOTNET_DIR:$PATH"
-          dotnet test B2.sln -c Release --no-build --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx"
-        env:
-          DOTNET_DIR: '/c/Program Files/dotnet'
+        run: dotnet test B2.sln -c Release --no-build --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx"
 
       - name: Upload coverage
         if: always()
