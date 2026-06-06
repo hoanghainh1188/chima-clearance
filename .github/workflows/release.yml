@@ -105,9 +105,12 @@ jobs:
       - name: Download Litestream
         shell: bash
         run: |
-          LITESTREAM_VERSION="v0.3.13"
+          # v0.5.11 is the first release with a Windows x86_64 binary.
+          # Filename format: litestream-0.5.11-windows-x86_64.zip (no 'v' prefix, x86_64 not amd64)
+          LITESTREAM_TAG="v0.5.11"
+          LITESTREAM_VER="0.5.11"
           curl -sSL \
-            "https://github.com/benbjohnson/litestream/releases/download/${LITESTREAM_VERSION}/litestream-${LITESTREAM_VERSION}-windows-amd64.zip" \
+            "https://github.com/benbjohnson/litestream/releases/download/${LITESTREAM_TAG}/litestream-${LITESTREAM_VER}-windows-x86_64.zip" \
             -o litestream.zip
           unzip -q litestream.zip -d litestream-bin
           cp litestream-bin/litestream.exe publish/installer/litestream.exe
