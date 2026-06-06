@@ -271,9 +271,9 @@ historical traceability; this section is the authoritative current state.
 
 ### S4 carry-overs surfaced after the original audit
 
-These items came out of the PR #18 code-review pass and live as
-`T-S4-CO-01..09` in `tasks.md` Phase 5 tail. They are slated for early
-Sprint S5:
+These items came out of the PR #18 code-review pass and lived as
+`T-S4-CO-01..09` in `tasks.md` Phase 5 tail. **All nine were cleared in
+PR #40 (`12e8737`)** at the head of Sprint S5:
 
 - **T-S4-CO-01** Strengthen `EndpointPolicyAlignmentTests` to verify each
   route maps to the *specific* FR-027 policy (not just any auth attribute).
@@ -299,7 +299,7 @@ Sprint S5:
   `PATCH /api/daily-headers/{date}/officer`, `GET /api/daily-headers`) as
   shipped. Currently they live in code only. Cleanup, no behavioural impact.
 
-### Sprint completion status (2026-05-05)
+### Sprint completion status (2026-06-02)
 
 | Sprint | Tasks | PRs | Status |
 | --- | --- | --- | --- |
@@ -307,9 +307,12 @@ Sprint S5:
 | S1 | T-S1-01..21 | #4 (`3407a5c`) | ✅ Merged |
 | S2 | T-S2-01..22 | #5 (`de24ec5`) | ✅ Merged |
 | S3 | T-S3-01..12 | #6, #7, #8, #9, #11, #12, #15, #16 (+ #13 CI fix) | ✅ Merged |
-| **S4** | **T-S4-01..15** | **#18 (`9f0d15b`) + #19 docs (`6514c2e`)** | ✅ **Merged** |
-| S5 | T-S5-01..19 | — | ⏳ Pending |
+| S4 | T-S4-01..15 | #18 (`9f0d15b`) + #19 docs (`6514c2e`) | ✅ Merged |
+| **S5** | **T-S5-01..19** | **#40–#55 (head `fcb0412`; #42/#47 CI)** | ✅ **Merged** |
 | S6 | T-S6-01..12 | — | ⏳ Pending |
 
-Carry-overs (`T-S4-CO-01..09`) are tracked at the tail of Phase 5 in
-`tasks.md` and will be picked up alongside Sprint S5 planning.
+Carry-overs (`T-S4-CO-01..09`) were all cleared in **PR #40** (`12e8737`)
+at the head of Sprint S5. Two S5 remainders roll into Sprint S6:
+`T-S5-06` (NBomber export-throughput scenario, still a placeholder) and
+`T-S5-13`'s install-time recovery-code print UI (installer-bound →
+`T-S6-11`).
