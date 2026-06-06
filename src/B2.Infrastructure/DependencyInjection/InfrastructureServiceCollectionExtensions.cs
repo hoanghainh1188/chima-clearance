@@ -37,6 +37,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IYardRepository, YardRepository>();
         services.AddScoped<IDeclarationRepository, DeclarationRepository>();
         services.AddScoped<IVehicleSuffixSearchRepository, VehicleSuffixSearchRepository>();
+        services.AddScoped<IVehicleSuggestRepository, VehicleSuggestRepository>();
         services.AddScoped<IDailyHeaderRepository, DailyHeaderRepository>();
         services.AddScoped<IReportsRepository, ReportsRepository>();
         services.AddScoped<ISoB2ExportRepository, SoB2ExportRepository>();

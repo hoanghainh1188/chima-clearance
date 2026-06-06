@@ -71,6 +71,34 @@
           <Entry Text="{Binding PlateNumber}"
                  MaxLength="12"
                  SemanticProperties.Hint="{x:Static s:AppResources.Entry_PlateLabel}" />
+          <!-- F-17: ghost-text suggestion zone (hidden when no suggestions available) -->
+          <Border Padding="{StaticResource SpacingS}"
+                  BackgroundColor="{StaticResource ColorLedgerDailyHeaderBg}"
+                  IsVisible="{Binding HasSuggestions}"
+                  SemanticProperties.Description="{x:Static s:AppResources.Entry_Suggest_Hint}">
+            <VerticalStackLayout Spacing="2">
+              <Label Text="{x:Static s:AppResources.Entry_Suggest_Hint}"
+                     FontSize="Small"
+                     TextColor="{StaticResource ColorOnSurfaceMuted}" />
+              <Label Text="{Binding SuggestedTrailer}"
+                     FontAttributes="Italic"
+                     TextColor="{StaticResource ColorOnSurfaceMuted}"
+                     IsVisible="{Binding SuggestedTrailer, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+              <Label Text="{Binding SuggestedCompany}"
+                     FontAttributes="Italic"
+                     TextColor="{StaticResource ColorOnSurfaceMuted}"
+                     IsVisible="{Binding SuggestedCompany, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+              <Label Text="{Binding SuggestedGoods}"
+                     FontAttributes="Italic"
+                     TextColor="{StaticResource ColorOnSurfaceMuted}"
+                     IsVisible="{Binding SuggestedGoods, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+              <Button Text="Tab — Chấp nhận gợi ý"
+                      Command="{Binding AcceptSuggestionCommand}"
+                      FontSize="Small"
+                      HeightRequest="32"
+                      SemanticProperties.Hint="{x:Static s:AppResources.Entry_Suggest_Hint}" />
+            </VerticalStackLayout>
+          </Border>
           <Label Text="{x:Static s:AppResources.Entry_TrailerLabel}" />
           <Entry Text="{Binding TrailerOrContainerNumber}"
                  MaxLength="20"

@@ -104,7 +104,7 @@ integration sweeps where appropriate.
 | S3 | T-S3-01 .. T-S3-12 (12) | F-09, F-10 + FR-027/FR-028 | ~2 500 | ✅ Merged (PRs #6/#7/#8/#9/#11/#12/#15/#16, #13 CI fix) |
 | S4 | T-S4-01 .. T-S4-15 (15) | F-11, F-12, F-14 + FR-025 | ~2 800 | ✅ Merged (PR #18 `9f0d15b` + docs PR #19 `6514c2e`); 9 carry-overs `T-S4-CO-01..09` deferred to S5 |
 | S5 | T-S5-01 .. T-S5-19 (19) | F-13, F-15, F-16, F-18 + FR-022/026 | ~3 800 | 🔄 In progress — **F-13** (#41+#43), **FR-022** (#44), **F-16** (#45), **F-18** (#46) complete; CI flake fixed (#42→#47); ✅ **Sprint S5 functionally complete.** F-13 (#41/#43), FR-022 (#44), F-16 (#45), F-18 (#46), F-15 slices 1–5 (#48/#50/#52/#53 + `feat/F-15-litestream`: codec + FR-026 dual-wrap + backup-now + restore apply-on-startup + BackupPage UI + recovery-code/secrets store + Litestream supervisor). Remainders are installer-bound (T-S6-11) + the T-S5-06 NBomber placeholder. Next: **Sprint S6** |
-| S6 | T-S6-01 .. T-S6-12 (12) | F-17 simple v1 + a11y + runbook + UAT | ~1 800 | ⏳ Pending |
+| S6 | T-S6-01 .. T-S6-12 (12) | F-17 simple v1 + a11y + runbook + UAT | ~1 800 | 🔄 In progress — T-S6-01..04 (F-17) complete; T-S6-07 already done in S3 |
 | **Total** | **113 tasks** | 18 features + 7 cross-cutting FRs | **~19 500 LOC** | **75/113 tasks merged (S0–S4 done)** |
 
 > Per directive rule 1: every task is PR-sized (≤ 1 dev-day or ≤ 400 LOC diff).
@@ -1003,23 +1003,23 @@ cheat sheet lists every keyboard shortcut; runbook delivered.
 
 ### F-17 Smart Suggestions (simple v1, P1)
 
-- [ ] **T-S6-01** [P] [F-17] Write Gherkin tests in
+- [x] **T-S6-01** [P] [F-17] Write Gherkin tests in
   `tests/B2.Server.Api.Tests/Vehicles/SuggestEndpointTests.cs` verbatim from
   `spec.md` F-17 + the Phase-1 scope box. Tag
   `[Trait("Feature","F-17")]`. **Dep**: T-S5-19. **LOC**: ~180.
-- [ ] **T-S6-02** [F-17] Implement `SuggestPairQueryHandler` per
+- [x] **T-S6-02** [F-17] Implement `SuggestPairQueryHandler` per
   [`research.md § 7`](./research.md): top-1 only, last-90-day window, no ML.
   Use `IX_Vehicle_PlateEntry` (added in T-S1-06 baseline migration). Auto-
   disable + INFO log on two consecutive overruns of the < 100 ms budget.
   Files: `src/B2.Application/Vehicles/Suggest/SuggestPairQueryHandler.cs`,
   `src/B2.Server.Api/Endpoints/VehiclesEndpoints.cs` (add suggest endpoint).
   **Dep**: T-S2-08. **LOC**: ~200.
-- [ ] **T-S6-03** [F-17] Activate ghost-text suggestion UI on
+- [x] **T-S6-03** [F-17] Activate ghost-text suggestion UI on
   `EntryPage.xaml` (the wireframe-§ 6.3 affordance disabled in S2). Hook to
   `GET /api/vehicles/suggest`. Tab accepts; any other key dismisses. Footer
   hint "💡 Gợi ý gần đây …" wires from the same data source. **Dep**:
   T-S6-02, T-S2-12. **LOC**: ~250.
-- [ ] **T-S6-04** [F-17] NBomber latency scenario in
+- [x] **T-S6-04** [F-17] NBomber latency scenario in
   `tests/B2.Performance.Tests/SuggestScenarios.cs` asserting < 100 ms p95 over
   a 90-day primed DB. **Dep**: T-S6-02. **LOC**: ~100.
 
@@ -1034,9 +1034,10 @@ cheat sheet lists every keyboard shortcut; runbook delivered.
   reachability, no missing aria-live regions. Files:
   `tests/B2.Desktop.Tests/Accessibility/AxeRunner.cs`,
   `.github/workflows/ci.yml` (add a11y job). **Dep**: T-S6-05. **LOC**: ~180.
-- [ ] **T-S6-07** [P] Add Cỡ chữ: Bình thường / Lớn / Rất lớn toggle in
+- [x] **T-S6-07** [P] Add Cỡ chữ: Bình thường / Lớn / Rất lớn toggle in
   `AppShellViewModel`; persists to `Preferences`; resizes by `Font.SizeLargeMode`
   delta per wireframe § 5 status bar. **Dep**: T-S3-11. **LOC**: ~150.
+  *(Shipped in Sprint S3 Round 3b via PR #11 — `IUserSettingsService` + MAUI Preferences.)*
 
 ### Annual archive (FR-021 + INV-12)
 

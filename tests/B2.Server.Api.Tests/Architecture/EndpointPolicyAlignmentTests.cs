@@ -66,6 +66,7 @@ public sealed class EndpointPolicyAlignmentTests
         ["POST /api/declarations/{id:guid}/cancel"] = B2Policies.AdminOnly,
 
         // Vehicles
+        ["GET /api/vehicles/suggest"] = B2Policies.AnyAuthenticated,
         ["GET /api/vehicles/search"] = B2Policies.AnyAuthenticated,
         ["POST /api/vehicles/{id:guid}/exit"] = B2Policies.GateOperator,
         ["POST /api/vehicles/{id:guid}/un-exit"] = B2Policies.AdminOnly,

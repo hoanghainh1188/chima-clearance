@@ -369,6 +369,9 @@
   <data name="Entry_Toast_VehicleAdded" xml:space="preserve">
     <value>Đã thêm xe</value>
   </data>
+  <data name="Entry_Suggest_Hint" xml:space="preserve">
+    <value>💡 Gợi ý gần đây — nhấn Tab để chấp nhận</value>
+  </data>
   <data name="Exit_PageTitle" xml:space="preserve">
     <value>Xác nhận xe ra</value>
   </data>

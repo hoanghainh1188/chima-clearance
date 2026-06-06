@@ -14,6 +14,7 @@ using B2.Application.MasterData;
 using B2.Application.Reports;
 using B2.Application.Users;
 using B2.Application.Vehicles;
+using B2.Application.Vehicles.Suggest;
 using FluentValidation;
 using Microsoft.Extensions.DependencyInjection;
 
@@ -37,6 +38,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<ListDeclarationsQueryHandler>();
         services.AddScoped<GetDeclarationDetailQueryHandler>();
         services.AddScoped<SearchVehiclesBySuffixQueryHandler>();
+        services.AddScoped<SuggestPairQueryHandler>();
         services.AddScoped<EnsureTodayHeaderCommandHandler>();
         services.AddScoped<RecomputeDailySummaryCommandHandler>();
         services.AddScoped<UpdateOfficerNameCommandHandler>();

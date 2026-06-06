@@ -12,7 +12,7 @@ using Refit;
 
 namespace B2.Desktop.ViewModels;
 
-public partial class EntryViewModel : ObservableObject
+public partial class EntryViewModel : ObservableObject, IDisposable
 {
     private static readonly Regex DeclNumber = new("^[0-9]{12}$", RegexOptions.Compiled);
     private static readonly Regex Plate = new("^[0-9]{2}[A-Za-z]{1,2}[0-9]{4,5}$", RegexOptions.Compiled);
@@ -20,6 +20,11 @@ public partial class EntryViewModel : ObservableObject
 
     private readonly IB2Api _api;
     private readonly IToastService _toast;
+
+    // F-17 Smart Suggestions
+    private bool _suggestionsDisabled;
+    private int _consecutiveOverruns;
+    private CancellationTokenSource? _suggestCts;
 
     [ObservableProperty]
     private bool _isLoading;
@@ -54,6 +59,19 @@ public partial class EntryViewModel : ObservableObject
     [ObservableProperty]
     private string? _trailerOrContainerNumber;
 
+    // F-17: ghost-text suggestions
+    [ObservableProperty]
+    private string? _suggestedTrailer;
+
+    [ObservableProperty]
+    private string? _suggestedCompany;
+
+    [ObservableProperty]
+    private string? _suggestedGoods;
+
+    [ObservableProperty]
+    private bool _hasSuggestions;
+
     [ObservableProperty]
     private string? _vehicleNote;
 
@@ -70,6 +88,120 @@ public partial class EntryViewModel : ObservableObject
     {
         _api = api;
         _toast = toast;
+    }
+
+    // F-17: triggered by CommunityToolkit.Mvvm whenever PlateNumber changes.
+    partial void OnPlateNumberChanged(string value) => _ = FetchSuggestionsAsync(value);
+
+    // F-17: Tab key handler — copy suggestions into the actual fields.
+    [RelayCommand]
+    private void AcceptSuggestion()
+    {
+        if (!HasSuggestions)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(TrailerOrContainerNumber) && !string.IsNullOrWhiteSpace(SuggestedTrailer))
+        {
+            TrailerOrContainerNumber = SuggestedTrailer;
+        }
+
+        if (string.IsNullOrWhiteSpace(CompanyName) && !string.IsNullOrWhiteSpace(SuggestedCompany))
+        {
+            CompanyName = SuggestedCompany;
+        }
+
+        if (string.IsNullOrWhiteSpace(GoodsName) && !string.IsNullOrWhiteSpace(SuggestedGoods))
+        {
+            GoodsName = SuggestedGoods;
+        }
+
+        ClearSuggestions();
+    }
+
+    private async Task FetchSuggestionsAsync(string plate)
+    {
+        ClearSuggestions();
+
+        if (_suggestionsDisabled || !Plate.IsMatch(plate.Trim()))
+        {
+            return;
+        }
+
+        // Cancel any in-flight request for a previous plate value.
+        _suggestCts?.Cancel();
+        _suggestCts?.Dispose();
+        _suggestCts = new CancellationTokenSource();
+        var ct = _suggestCts.Token;
+
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        try
+        {
+            var plateNormalized = plate.Trim().ToUpperInvariant();
+            var trailerTask = _api.SuggestVehiclePairAsync(plateNormalized, "trailer", ct);
+            var companyTask = _api.SuggestVehiclePairAsync(plateNormalized, "company", ct);
+            var goodsTask = _api.SuggestVehiclePairAsync(plateNormalized, "goods", ct);
+
+            await Task.WhenAll(trailerTask, companyTask, goodsTask).ConfigureAwait(false);
+            sw.Stop();
+
+            if (ct.IsCancellationRequested)
+            {
+                return;
+            }
+
+            // Latency guard: auto-disable after 2 consecutive overruns (> 100ms).
+            if (sw.ElapsedMilliseconds > 100)
+            {
+                _consecutiveOverruns++;
+                if (_consecutiveOverruns >= 2)
+                {
+                    _suggestionsDisabled = true;
+                    // INFO log is emitted by the server; desktop just hides the zone.
+                    return;
+                }
+            }
+            else
+            {
+                _consecutiveOverruns = 0;
+            }
+
+            var trailer = trailerTask.Result.Value;
+            var company = companyTask.Result.Value;
+            var goods = goodsTask.Result.Value;
+
+            if (!string.IsNullOrWhiteSpace(trailer) || !string.IsNullOrWhiteSpace(company) || !string.IsNullOrWhiteSpace(goods))
+            {
+                SuggestedTrailer = trailer;
+                SuggestedCompany = company;
+                SuggestedGoods = goods;
+                HasSuggestions = true;
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // Stale request — ignore.
+        }
+        catch (Exception)
+        {
+            // Network errors silently suppress suggestions; never block the form.
+        }
+    }
+
+    private void ClearSuggestions()
+    {
+        SuggestedTrailer = null;
+        SuggestedCompany = null;
+        SuggestedGoods = null;
+        HasSuggestions = false;
+    }
+
+    public void Dispose()
+    {
+        _suggestCts?.Cancel();
+        _suggestCts?.Dispose();
+        _suggestCts = null;
     }
 
     [RelayCommand]
@@ -245,6 +377,7 @@ public partial class EntryViewModel : ObservableObject
         PlateNumber = string.Empty;
         TrailerOrContainerNumber = null;
         VehicleNote = null;
+        ClearSuggestions();
     }
 
     private void ResetEntireForm()

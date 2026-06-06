@@ -74,6 +74,7 @@ public static class AppResources
     public static string Entry_SwitchDeclaration => ResourceManager.GetString(nameof(Entry_SwitchDeclaration), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Entry_Toast_Saved => ResourceManager.GetString(nameof(Entry_Toast_Saved), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Entry_Toast_VehicleAdded => ResourceManager.GetString(nameof(Entry_Toast_VehicleAdded), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Entry_Suggest_Hint => ResourceManager.GetString(nameof(Entry_Suggest_Hint), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Entry_TrailerLabel => ResourceManager.GetString(nameof(Entry_TrailerLabel), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Entry_YardLabel => ResourceManager.GetString(nameof(Entry_YardLabel), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Exit_Error_MarkExit => ResourceManager.GetString(nameof(Exit_Error_MarkExit), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
