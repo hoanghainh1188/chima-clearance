@@ -64,12 +64,15 @@
                  Text="{Binding PlateSearch}"
                  HorizontalOptions="FillAndExpand"
                  ReturnType="Search"
-                 ReturnCommand="{Binding SearchFromFilterCommand}" />
+                 ReturnCommand="{Binding SearchFromFilterCommand}"
+                 SemanticProperties.Hint="{x:Static s:AppResources.Ledger_Search_Label}" />
           <Button Text="{x:Static s:AppResources.Ledger_Search_Button}"
                   Command="{Binding SearchFromFilterCommand}" />
         </HorizontalStackLayout>
         <HorizontalStackLayout Spacing="{StaticResource SpacingM}">
-          <CheckBox IsChecked="{Binding FilterOnlyUnexited}" VerticalOptions="Center" />
+          <CheckBox IsChecked="{Binding FilterOnlyUnexited}"
+                    VerticalOptions="Center"
+                    SemanticProperties.Hint="{x:Static s:AppResources.Ledger_UnexitedOnly}" />
           <Label Text="{x:Static s:AppResources.Ledger_UnexitedOnly}"
                  VerticalOptions="Center"
                  TextColor="{StaticResource ColorOnSurface}" />
@@ -88,7 +91,8 @@
         <Picker Grid.Row="1"
                 Grid.Column="0"
                 ItemsSource="{Binding DatePresetOptions}"
-                SelectedIndex="{Binding DatePresetIndex}" />
+                SelectedIndex="{Binding DatePresetIndex}"
+                SemanticProperties.Hint="{x:Static s:AppResources.Ledger_Filter_DateLabel}" />
         <Label Grid.Row="0"
                Grid.Column="1"
                Text="{x:Static s:AppResources.Ledger_Filter_StatusLabel}"
@@ -96,7 +100,8 @@
         <Picker Grid.Row="1"
                 Grid.Column="1"
                 ItemsSource="{Binding StatusFilterOptions}"
-                SelectedIndex="{Binding StatusFilterIndex}" />
+                SelectedIndex="{Binding StatusFilterIndex}"
+                SemanticProperties.Hint="{x:Static s:AppResources.Ledger_Filter_StatusLabel}" />
         <Label Grid.Row="0"
                Grid.Column="2"
                Text="{x:Static s:AppResources.Ledger_Filter_YardLabel}"
@@ -105,7 +110,8 @@
                 Grid.Column="2"
                 ItemsSource="{Binding YardPickerSource}"
                 ItemDisplayBinding="{Binding Name}"
-                SelectedItem="{Binding SelectedYard}" />
+                SelectedItem="{Binding SelectedYard}"
+                SemanticProperties.Hint="{x:Static s:AppResources.Ledger_Filter_YardLabel}" />
         <Button Grid.Row="0"
                 Grid.RowSpan="2"
                 Grid.Column="3"
@@ -131,7 +137,8 @@
                            LineBreakMode="WordWrap" />
                     <Entry Grid.Column="1"
                            Text="{Binding OfficerName}"
-                           Placeholder="{x:Static s:AppResources.Ledger_Header_OfficerPlaceholder}" />
+                           Placeholder="{x:Static s:AppResources.Ledger_Header_OfficerPlaceholder}"
+                           SemanticProperties.Hint="{x:Static s:AppResources.Ledger_Header_OfficerPlaceholder}" />
                     <Button Grid.Column="2"
                             Text="{x:Static s:AppResources.Common_Save}"
                             Command="{Binding Source={x:Reference LedgerRoot}, Path=BindingContext.SaveOfficerNameCommand}"
@@ -161,7 +168,8 @@
                                          Spacing="2"
                                          VerticalOptions="Center">
                     <Label Text="{Binding Row.StatusIcon}" />
-                    <Label Text="{Binding Row.StatusLabel}">
+                    <Label Text="{Binding Row.StatusLabel}"
+                           SemanticProperties.Description="{Binding Row.StatusLabel}">
                       <Label.Triggers>
                         <DataTrigger TargetType="Label"
                                      Binding="{Binding Row.Dto.Status}"

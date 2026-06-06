@@ -255,6 +255,7 @@ public static class AppResources
     public static string Export_Error_Network => ResourceManager.GetString(nameof(Export_Error_Network), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Export_Error_InvalidRange => ResourceManager.GetString(nameof(Export_Error_InvalidRange), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Export_LastExport_Format => ResourceManager.GetString(nameof(Export_LastExport_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Export_DatePreset_Hint => ResourceManager.GetString(nameof(Export_DatePreset_Hint), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Sidebar_Item_Audit => ResourceManager.GetString(nameof(Sidebar_Item_Audit), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Audit_Title => ResourceManager.GetString(nameof(Audit_Title), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Audit_Filter_All => ResourceManager.GetString(nameof(Audit_Filter_All), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;

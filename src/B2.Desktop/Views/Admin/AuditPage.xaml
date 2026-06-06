@@ -27,14 +27,16 @@
       <Picker Grid.Row="1" Grid.Column="0"
               WidthRequest="140"
               ItemsSource="{Binding EntityTypeOptions}"
-              SelectedIndex="{Binding EntityTypeIndex}" />
+              SelectedIndex="{Binding EntityTypeIndex}"
+              SemanticProperties.Hint="{x:Static s:AppResources.Audit_Filter_EntityType}" />
       <Label Grid.Row="0" Grid.Column="1"
              Text="{x:Static s:AppResources.Audit_Filter_Action}"
              TextColor="{StaticResource ColorOnSurfaceMuted}" />
       <Picker Grid.Row="1" Grid.Column="1"
               WidthRequest="160"
               ItemsSource="{Binding ActionOptions}"
-              SelectedIndex="{Binding ActionIndex}" />
+              SelectedIndex="{Binding ActionIndex}"
+              SemanticProperties.Hint="{x:Static s:AppResources.Audit_Filter_Action}" />
       <Label Grid.Row="0" Grid.Column="2"
              Text="{x:Static s:AppResources.Audit_Filter_From}"
              TextColor="{StaticResource ColorOnSurfaceMuted}" />

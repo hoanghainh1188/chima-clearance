@@ -38,7 +38,8 @@
       <Button Grid.Column="0"
               Text="{x:Static s:AppResources.Kvgs_Refresh}"
               Command="{Binding RefreshCommand}"
-              HorizontalOptions="Start" />
+              HorizontalOptions="Start"
+              SemanticProperties.Hint="{x:Static s:AppResources.Kvgs_Refresh}" />
       <Label Grid.Column="2"
              Text="{Binding ConfirmedTodayLabel}"
              VerticalOptions="Center"
@@ -56,7 +57,8 @@
                                   IsVisible="{Binding Source={x:Reference KvgsRoot}, Path=BindingContext.ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
           <Button Text="{x:Static s:AppResources.Common_Retry}"
                   Command="{Binding RefreshCommand}"
-                  IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+                  IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}"
+                  SemanticProperties.Hint="{x:Static s:AppResources.Common_Retry}" />
           <Label Text="{x:Static s:AppResources.Kvgs_Empty}"
                  IsVisible="{Binding ShowEmpty}"
                  TextColor="{StaticResource ColorOnSurfaceMuted}"
@@ -84,7 +86,8 @@
                           Text="{x:Static s:AppResources.Kvgs_ConfirmButton}"
                           VerticalOptions="Center"
                           Command="{Binding Source={x:Reference KvgsRoot}, Path=BindingContext.ConfirmCommand}"
-                          CommandParameter="{Binding .}" />
+                          CommandParameter="{Binding .}"
+                          SemanticProperties.Hint="{x:Static s:AppResources.Kvgs_ConfirmButton}" />
                 </Grid>
               </DataTemplate>
             </CollectionView.ItemTemplate>

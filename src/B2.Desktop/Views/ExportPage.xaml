@@ -28,7 +28,8 @@
             <Picker ItemsSource="{Binding Presets}"
                     SelectedIndex="{Binding DatePresetIndex}"
                     WidthRequest="280"
-                    HorizontalOptions="Start" />
+                    HorizontalOptions="Start"
+                    SemanticProperties.Hint="{x:Static s:AppResources.Export_DatePreset_Hint}" />
             <Grid ColumnDefinitions="Auto,Auto,Auto,Auto"
                   ColumnSpacing="{StaticResource SpacingS}"
                   IsVisible="{Binding IsCustomRange}">
@@ -107,10 +108,12 @@
           <HorizontalStackLayout Spacing="{StaticResource SpacingS}" HorizontalOptions="End">
             <Button Text="{x:Static s:AppResources.Export_Action_Cancel}"
                     Command="{Binding CancelCommand}"
-                    IsEnabled="{Binding IsExporting}" />
+                    IsEnabled="{Binding IsExporting}"
+                    SemanticProperties.Hint="{x:Static s:AppResources.Export_Action_Cancel}" />
             <Button Text="{x:Static s:AppResources.Export_Action_Export}"
                     Command="{Binding ExportCommand}"
-                    IsEnabled="{Binding IsExporting, Converter={StaticResource InvertedBoolConverter}}" />
+                    IsEnabled="{Binding IsExporting, Converter={StaticResource InvertedBoolConverter}}"
+                    SemanticProperties.Hint="{x:Static s:AppResources.Export_Action_Export}" />
           </HorizontalStackLayout>
 
           <!-- Progress -->

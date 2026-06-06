@@ -1,5 +1,6 @@
 using B2.Application.Abstractions;
 using B2.Application.Common;
+using B2.Infrastructure.Archive;
 using B2.Infrastructure.Auth;
 using B2.Infrastructure.Backup;
 using B2.Infrastructure.Clock;
@@ -42,6 +43,8 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddScoped<IReportsRepository, ReportsRepository>();
         services.AddScoped<ISoB2ExportRepository, SoB2ExportRepository>();
         services.AddScoped<IAuditRepository, AuditRepository>();
+        services.AddScoped<IAnnualArchiveRepository, AnnualArchiveRepository>();
+        services.AddSingleton<IAnnualArchiveWriter>(_ => new FileSystemArchiveWriter(Path.Combine(dataDirectory, "archive")));
         services.AddScoped<ISystemHealthProbe>(sp => new SystemHealthProbe(
             sp.GetRequiredService<B2DbContext>(),
             sp.GetRequiredService<IClock>(),
@@ -77,6 +80,14 @@ public static class InfrastructureServiceCollectionExtensions
                     .ForJob(summaryJobKey)
                     .WithIdentity("GenerateDailySummary-trigger")
                     .WithCronSchedule("0 0 23 * * ?", x => x.InTimeZone(vietnamTimeZone)));
+
+                // FR-021 — annual archive: 01:00 on 1 February (default; Admin-configurable).
+                var archiveJobKey = new JobKey("AnnualArchive");
+                q.AddJob<AnnualArchiveJob>(opts => opts.WithIdentity(archiveJobKey));
+                q.AddTrigger(opts => opts
+                    .ForJob(archiveJobKey)
+                    .WithIdentity("AnnualArchive-trigger")
+                    .WithCronSchedule("0 0 1 1 2 ?", x => x.InTimeZone(vietnamTimeZone)));
             });
 
             services.AddQuartzHostedService(options => options.WaitForJobsToComplete = true);
