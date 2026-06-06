@@ -51,7 +51,7 @@ public sealed class AnnualArchiveRepository : IAnnualArchiveRepository
         // 1. AuditLog rows for declarations and vehicles
         await _db.AuditLogs
             .Where(a => (a.EntityType == "Declaration" && declarationIds.Contains(a.EntityId))
-                     || (a.EntityType == "Vehicle"      && vehicleIds.Contains(a.EntityId)))
+                     || (a.EntityType == "Vehicle" && vehicleIds.Contains(a.EntityId)))
             .ExecuteDeleteAsync(ct);
 
         // 2. Vehicles
