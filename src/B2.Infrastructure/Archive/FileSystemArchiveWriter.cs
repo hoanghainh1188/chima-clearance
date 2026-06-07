@@ -46,13 +46,43 @@ public sealed class FileSystemArchiveWriter : IAnnualArchiveWriter
             if (ws is null)
                 return false;
 
-            // Count non-header, non-empty rows.
-            var dataRows = ws.RowsUsed().Count();
-            return dataRows >= 1; // at least header row must be present
+            // Parent declaration rows carry the declaration number in column C (see
+            // ClosedXmlSoB2Exporter). Day-header banners and child vehicle rows omit it.
+            var declarationRows = CountDeclarationParentRows(ws);
+
+            // INV-12: refuse delete when the archive is missing declarations we counted
+            // in the live DB. An empty year (minimumRows == 0) only needs a readable file.
+            return minimumRows == 0
+                ? declarationRows == 0
+                : declarationRows >= minimumRows;
         }
         catch
         {
             return false;
         }
+    }
+
+    private static int CountDeclarationParentRows(IXLWorksheet ws)
+    {
+        const int firstDataRow = 2;
+        const int declarationNumberColumn = 3;
+
+        var lastRow = ws.LastRowUsed()?.RowNumber() ?? 1;
+        if (lastRow < firstDataRow)
+        {
+            return 0;
+        }
+
+        var count = 0;
+        for (var row = firstDataRow; row <= lastRow; row++)
+        {
+            var declarationNumber = ws.Cell(row, declarationNumberColumn).GetString();
+            if (!string.IsNullOrEmpty(declarationNumber))
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 }
