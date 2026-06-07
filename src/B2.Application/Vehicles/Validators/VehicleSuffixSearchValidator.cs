@@ -12,8 +12,9 @@ public sealed class VehicleSuffixSearchQueryValidator : AbstractValidator<Vehicl
 {
     public VehicleSuffixSearchQueryValidator()
     {
+        // Empty suffix is allowed and means "return all (unexited) vehicles".
+        // A non-empty suffix must be the last 3-4 plate digits.
         RuleFor(x => x.Suffix)
-            .NotEmpty()
-            .Matches("^[0-9]{3,4}$");
+            .Matches("^([0-9]{3,4})?$");
     }
 }

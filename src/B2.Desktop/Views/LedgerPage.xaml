@@ -9,8 +9,11 @@
              xmlns:common="clr-namespace:B2.Desktop.Views.Common"
              x:DataType="vm:LedgerViewModel"
              BackgroundColor="{StaticResource ColorSurface}">
-  <Grid ColumnDefinitions="*,Auto">
-    <Grid Grid.Column="0"
+  <!-- Single cell: the detail drawer overlays the right edge (HorizontalOptions=End)
+       rather than sitting in an Auto column. A Border inside an Auto-width column
+       renders its content blank on WinUI; the overlay measures deterministically. -->
+  <Grid>
+    <Grid
           Padding="{StaticResource SpacingM}"
           RowDefinitions="Auto,Auto,Auto,*"
           RowSpacing="{StaticResource SpacingS}">
@@ -36,7 +39,7 @@
              TextColor="{StaticResource ColorOnSurface}" />
     </HorizontalStackLayout>
     <Grid Grid.Row="3"
-          RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,*"
+          RowDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto"
           RowSpacing="{StaticResource SpacingS}">
       <common:SkeletonRows Grid.Row="0"
                            IsVisible="{Binding IsLoading}" />
@@ -59,16 +62,19 @@
                            IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
         <Label Text="{x:Static s:AppResources.Ledger_Search_Label}"
                TextColor="{StaticResource ColorOnSurfaceMuted}" />
-        <HorizontalStackLayout Spacing="{StaticResource SpacingS}">
+        <Grid ColumnDefinitions="360,Auto"
+              ColumnSpacing="{StaticResource SpacingS}"
+              HorizontalOptions="Start">
           <Entry x:Name="PlateSearchEntry"
+                 Grid.Column="0"
                  Text="{Binding PlateSearch}"
-                 HorizontalOptions="FillAndExpand"
                  ReturnType="Search"
                  ReturnCommand="{Binding SearchFromFilterCommand}"
                  SemanticProperties.Hint="{x:Static s:AppResources.Ledger_Search_Label}" />
-          <Button Text="{x:Static s:AppResources.Ledger_Search_Button}"
+          <Button Grid.Column="1"
+                  Text="{x:Static s:AppResources.Ledger_Search_Button}"
                   Command="{Binding SearchFromFilterCommand}" />
-        </HorizontalStackLayout>
+        </Grid>
         <HorizontalStackLayout Spacing="{StaticResource SpacingM}">
           <CheckBox IsChecked="{Binding FilterOnlyUnexited}"
                     VerticalOptions="Center"
@@ -120,8 +126,27 @@
                 VerticalOptions="Center" />
       </Grid>
       <Grid Grid.Row="5"
+            RowDefinitions="Auto,*"
             IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
-        <CollectionView ItemsSource="{Binding DisplayItems}"
+        <!-- Sticky column header (wireframe § 6.2). Same column template as the
+             data rows below so the titles line up. -->
+        <Grid Grid.Row="0"
+              IsVisible="{Binding ShowDataGrid}"
+              Padding="{StaticResource SpacingS}"
+              BackgroundColor="{StaticResource ColorLedgerDailyHeaderBg}"
+              ColumnDefinitions="32,100,*,*,*,*,*,64"
+              ColumnSpacing="6">
+          <Label Grid.Column="0" Text="{x:Static s:AppResources.Ledger_Col_No}" FontAttributes="Bold" FontSize="{StaticResource FontSizeS}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
+          <Label Grid.Column="1" Text="{x:Static s:AppResources.Ledger_Col_Status}" FontAttributes="Bold" FontSize="{StaticResource FontSizeS}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
+          <Label Grid.Column="2" Text="{x:Static s:AppResources.Ledger_Col_Declaration}" FontAttributes="Bold" FontSize="{StaticResource FontSizeS}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
+          <Label Grid.Column="3" Text="{x:Static s:AppResources.Ledger_Col_Company}" FontAttributes="Bold" FontSize="{StaticResource FontSizeS}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
+          <Label Grid.Column="4" Text="{x:Static s:AppResources.Ledger_Col_Processor}" FontAttributes="Bold" FontSize="{StaticResource FontSizeS}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
+          <Label Grid.Column="5" Text="{x:Static s:AppResources.Ledger_Col_Vehicle}" FontAttributes="Bold" FontSize="{StaticResource FontSizeS}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
+          <Label Grid.Column="6" Text="{x:Static s:AppResources.Ledger_Col_Yard}" FontAttributes="Bold" FontSize="{StaticResource FontSizeS}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
+          <Label Grid.Column="7" Text="{x:Static s:AppResources.Ledger_Col_Time}" FontAttributes="Bold" FontSize="{StaticResource FontSizeS}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
+        </Grid>
+        <CollectionView Grid.Row="1"
+                        ItemsSource="{Binding DisplayItems}"
                         IsVisible="{Binding ShowDataGrid}"
                         SelectionMode="None">
           <CollectionView.ItemTemplate>
@@ -152,7 +177,7 @@
                 </Border>
                 <Grid IsVisible="{Binding IsDataRow}"
                       Padding="{StaticResource SpacingS}"
-                      ColumnDefinitions="Auto,Auto,*,*,*,*,*,Auto"
+                      ColumnDefinitions="32,100,*,*,*,*,*,64"
                       ColumnSpacing="6">
                   <Grid.GestureRecognizers>
                     <TapGestureRecognizer NumberOfTapsRequired="2"
@@ -247,7 +272,8 @@
             </DataTemplate>
           </CollectionView.ItemTemplate>
         </CollectionView>
-        <Label Text="{x:Static s:AppResources.Ledger_Empty}"
+        <Label Grid.Row="1"
+               Text="{x:Static s:AppResources.Ledger_Empty}"
                IsVisible="{Binding ShowEmpty}"
                TextColor="{StaticResource ColorOnSurfaceMuted}"
                HorizontalOptions="Center"
@@ -270,13 +296,14 @@
       </HorizontalStackLayout>
     </Grid>
     </Grid>
-    <Border Grid.Column="1"
-            IsVisible="{Binding IsDrawerOpen}"
-            WidthRequest="420"
-            BackgroundColor="{StaticResource ColorSidebarBg}"
-            Stroke="{StaticResource ColorBorder}"
-            StrokeThickness="1,0,0,0"
-            Padding="{StaticResource SpacingM}">
+    <Grid HorizontalOptions="End"
+          IsVisible="{Binding IsDrawerOpen}"
+          WidthRequest="420"
+          BackgroundColor="{StaticResource ColorSidebarBg}"
+          Padding="{StaticResource SpacingM}">
+      <!-- A CollectionView nested in the drawer rendered the whole panel blank
+           on WinUI (infinite-height measurement). The vehicle list uses
+           BindableLayout (inline, finite height) inside a single ScrollView. -->
       <ScrollView>
         <VerticalStackLayout Spacing="{StaticResource SpacingM}">
           <Grid ColumnDefinitions="*,Auto">
@@ -297,6 +324,7 @@
                              HorizontalOptions="Center" />
           <Label Text="{Binding DrawerErrorMessage}"
                  TextColor="{StaticResource ColorError}"
+                 LineBreakMode="WordWrap"
                  IsVisible="{Binding DrawerErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
           <VerticalStackLayout Spacing="{StaticResource SpacingS}"
                                IsVisible="{Binding HasDrawerData}">
@@ -310,7 +338,7 @@
             <HorizontalStackLayout Spacing="{StaticResource SpacingS}">
               <Label Text="{x:Static s:AppResources.Ledger_Drawer_StatusLabel}"
                      TextColor="{StaticResource ColorOnSurfaceMuted}" />
-              <Label Text="{Binding SelectedDeclarationDetail.Declaration.Status}"
+              <Label Text="{Binding SelectedDeclarationDetail.Declaration.Status, Converter={StaticResource DeclarationStatusToTextConverter}}"
                      FontAttributes="Bold"
                      TextColor="{StaticResource ColorOnSurface}" />
             </HorizontalStackLayout>
@@ -345,9 +373,9 @@
                    FontSize="{StaticResource FontSizeL}"
                    TextColor="{StaticResource ColorPrimary}"
                    Margin="0,8,0,0" />
-            <CollectionView ItemsSource="{Binding SelectedDeclarationDetail.Vehicles}"
-                            SelectionMode="None">
-              <CollectionView.ItemTemplate>
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding SelectedDeclarationDetail.Vehicles}"
+                                 Spacing="0">
+              <BindableLayout.ItemTemplate>
                 <DataTemplate x:DataType="decl:VehicleDetailDto">
                   <Border Padding="{StaticResource SpacingS}"
                           Stroke="{StaticResource ColorBorder}"
@@ -377,11 +405,11 @@
                     </VerticalStackLayout>
                   </Border>
                 </DataTemplate>
-              </CollectionView.ItemTemplate>
-            </CollectionView>
+              </BindableLayout.ItemTemplate>
+            </VerticalStackLayout>
           </VerticalStackLayout>
         </VerticalStackLayout>
       </ScrollView>
-    </Border>
+    </Grid>
   </Grid>
 </ContentView>

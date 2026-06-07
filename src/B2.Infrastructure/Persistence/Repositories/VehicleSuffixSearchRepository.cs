@@ -23,6 +23,7 @@ public sealed class VehicleSuffixSearchRepository : IVehicleSuffixSearchReposito
     {
         var s = suffix.Trim().ToUpperInvariant();
         var isFour = s.Length == 4;
+        var hasSuffix = s.Length > 0;
 
         // SQLite cannot translate DateTimeOffset in ORDER BY from LINQ; use parameterized SQL.
         await _db.Database.OpenConnectionAsync(cancellationToken).ConfigureAwait(false);
@@ -43,7 +44,8 @@ public sealed class VehicleSuffixSearchRepository : IVehicleSuffixSearchReposito
                 INNER JOIN "Declarations" AS d ON d."Id" = v."DeclarationId"
                 WHERE (@unexitedOnly = 0 OR v."ExitMarked" = 0)
                   AND (
-                    (@isFour = 1 AND v."PlateLast4" = @suffix)
+                    @hasSuffix = 0
+                    OR (@isFour = 1 AND v."PlateLast4" = @suffix)
                     OR (@isFour = 0 AND substr(upper(v."PlateNumber"), 0 - @suffixLen) = @suffix)
                   )
                 ORDER BY v."EntryTime"
@@ -51,6 +53,7 @@ public sealed class VehicleSuffixSearchRepository : IVehicleSuffixSearchReposito
                 """;
 
             AddIntParameter(command, "@unexitedOnly", unexitedOnly ? 1 : 0);
+            AddIntParameter(command, "@hasSuffix", hasSuffix ? 1 : 0);
             AddIntParameter(command, "@isFour", isFour ? 1 : 0);
             AddTextParameter(command, "@suffix", s);
             AddIntParameter(command, "@suffixLen", s.Length);

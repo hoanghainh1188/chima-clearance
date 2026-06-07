@@ -338,17 +338,20 @@ public sealed class DeclarationRepository : IDeclarationRepository
             return null;
         }
 
-        var vehicles = await _db.Vehicles.AsNoTracking()
-            .Where(v => v.DeclarationId == id)
+        // SQLite cannot ORDER BY a DateTimeOffset column, so materialize first
+        // and sort the entry times in memory (LINQ to Objects).
+        var vehicles = (await _db.Vehicles.AsNoTracking()
+                .Where(v => v.DeclarationId == id)
+                .Select(v => new VehicleDetailDto(
+                    v.Id,
+                    v.PlateNumber,
+                    v.TrailerOrContainerNumber,
+                    v.EntryTime,
+                    v.ExitMarked,
+                    v.ExitTime))
+                .ToListAsync(cancellationToken))
             .OrderBy(v => v.EntryTime)
-            .Select(v => new VehicleDetailDto(
-                v.Id,
-                v.PlateNumber,
-                v.TrailerOrContainerNumber,
-                v.EntryTime,
-                v.ExitMarked,
-                v.ExitTime))
-            .ToListAsync(cancellationToken);
+            .ToList();
 
         var d = row.dec;
         var dto = new DeclarationDto(
