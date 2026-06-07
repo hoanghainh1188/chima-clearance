@@ -15,12 +15,15 @@
            TextColor="{StaticResource ColorOnSurface}" />
     <HorizontalStackLayout Grid.Row="1" Spacing="{StaticResource SpacingS}">
       <Entry Text="{Binding Suffix}"
-             FontSize="{StaticResource FontSizeSearchInput}"
-             HeightRequest="56"
+             FontSize="{StaticResource FontSizeL}"
+             HeightRequest="44"
              MinimumWidthRequest="200"
+             VerticalOptions="Center"
              SemanticProperties.Hint="{x:Static s:AppResources.Exit_SearchLabel}" />
       <Button Text="{x:Static s:AppResources.Exit_SearchButton}"
               Command="{Binding SearchCommand}"
+              HeightRequest="44"
+              VerticalOptions="Center"
               SemanticProperties.Hint="{x:Static s:AppResources.Exit_SearchButton}" />
     </HorizontalStackLayout>
     <common:SkeletonRows Grid.Row="2"

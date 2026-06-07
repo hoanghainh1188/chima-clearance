@@ -95,6 +95,44 @@ public sealed class SearchEndpointTests
 
     [Fact]
     [Trait("Feature", "F-07")]
+    public async Task Should_list_all_unexited_vehicles_when_suffix_is_empty()
+    {
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+
+        await client.PostAsJsonAsync(
+            "/api/declarations",
+            new DeclarationCreateRequest(
+                TestDeclarationNumbers.Next(),
+                SeedIds.ProcessorId,
+                "C1",
+                "G1",
+                SeedIds.YardId,
+                new VehicleAddRequest("51A11111", null, null)),
+            TestJson.Options);
+        await client.PostAsJsonAsync(
+            "/api/declarations",
+            new DeclarationCreateRequest(
+                TestDeclarationNumbers.Next(),
+                SeedIds.ProcessorId,
+                "C2",
+                "G2",
+                SeedIds.YardId,
+                new VehicleAddRequest("52B22222", null, null)),
+            TestJson.Options);
+
+        // Empty suffix → all unexited vehicles (no 400), unlike the 3-4 digit path.
+        var search = await client.GetAsync("/api/vehicles/search?suffix=&unexited=true");
+        search.StatusCode.Should().Be(HttpStatusCode.OK);
+        var list = (await search.Content.ReadFromJsonAsync<List<VehicleSearchResultDto>>(TestJson.Options))!;
+        list.Should().Contain(v => v.PlateNumber == "51A11111");
+        list.Should().Contain(v => v.PlateNumber == "52B22222");
+    }
+
+    [Fact]
+    [Trait("Feature", "F-07")]
     public async Task Should_search_multiple_matches_ordered_by_entry_time_ascending()
     {
         await using var factory = new B2ApiFactory();

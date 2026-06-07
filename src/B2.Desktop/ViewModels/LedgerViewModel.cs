@@ -368,6 +368,12 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
         {
             DrawerErrorMessage = AppResources.Ledger_Drawer_LoadError;
         }
+        catch (Exception)
+        {
+            // Defensive: any other failure (e.g. deserialization) shows the
+            // friendly load error instead of leaving the drawer blank.
+            DrawerErrorMessage = AppResources.Ledger_Drawer_LoadError;
+        }
         finally
         {
             IsDrawerLoading = false;

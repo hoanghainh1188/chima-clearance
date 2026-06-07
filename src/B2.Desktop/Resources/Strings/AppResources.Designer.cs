@@ -96,6 +96,7 @@ public static class AppResources
     public static string Exit_Toast_DeclarationAllExited => ResourceManager.GetString(nameof(Exit_Toast_DeclarationAllExited), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Exit_Toast_ExitMarked_Format => ResourceManager.GetString(nameof(Exit_Toast_ExitMarked_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Exit_Warning_TooMany => ResourceManager.GetString(nameof(Exit_Warning_TooMany), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Exit_Empty_NoVehicles => ResourceManager.GetString(nameof(Exit_Empty_NoVehicles), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Kvgs_ConfirmButton => ResourceManager.GetString(nameof(Kvgs_ConfirmButton), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Kvgs_ConfirmMessage_Format => ResourceManager.GetString(nameof(Kvgs_ConfirmMessage_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Kvgs_ConfirmTitle => ResourceManager.GetString(nameof(Kvgs_ConfirmTitle), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
@@ -144,6 +145,14 @@ public static class AppResources
     public static string Ledger_ResetFilters => ResourceManager.GetString(nameof(Ledger_ResetFilters), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_Search_Button => ResourceManager.GetString(nameof(Ledger_Search_Button), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_Search_Label => ResourceManager.GetString(nameof(Ledger_Search_Label), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Ledger_Col_No => ResourceManager.GetString(nameof(Ledger_Col_No), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Ledger_Col_Status => ResourceManager.GetString(nameof(Ledger_Col_Status), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Ledger_Col_Declaration => ResourceManager.GetString(nameof(Ledger_Col_Declaration), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Ledger_Col_Company => ResourceManager.GetString(nameof(Ledger_Col_Company), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Ledger_Col_Processor => ResourceManager.GetString(nameof(Ledger_Col_Processor), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Ledger_Col_Vehicle => ResourceManager.GetString(nameof(Ledger_Col_Vehicle), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Ledger_Col_Yard => ResourceManager.GetString(nameof(Ledger_Col_Yard), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Ledger_Col_Time => ResourceManager.GetString(nameof(Ledger_Col_Time), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_Status_AllExited => ResourceManager.GetString(nameof(Ledger_Status_AllExited), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_Status_Cancelled => ResourceManager.GetString(nameof(Ledger_Status_Cancelled), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_Status_KvgsConfirmed => ResourceManager.GetString(nameof(Ledger_Status_KvgsConfirmed), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;

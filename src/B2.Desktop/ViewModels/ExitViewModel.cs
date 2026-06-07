@@ -87,10 +87,15 @@ public partial class ExitViewModel : ObservableObject, IDisposable
         SelectedResult = null;
 
         var q = Suffix.Trim();
-        if (q.Length < 3)
+
+        // Empty query → list all (unexited) vehicles in the gate. A partial
+        // 1-2 char query is ignored (wait for 3-4 digits); >4 is never valid.
+        if (q.Length is 1 or 2 || q.Length > 4)
         {
             return;
         }
+
+        var isListAll = q.Length == 0;
 
         IsSearching = true;
         try
@@ -103,10 +108,14 @@ public partial class ExitViewModel : ObservableObject, IDisposable
 
             if (list.Count == 0)
             {
-                ErrorMessage = string.Format(CultureInfo.CurrentCulture, ExitErrorNoMatchFormat, q);
+                ErrorMessage = isListAll
+                    ? AppResources.Exit_Empty_NoVehicles
+                    : string.Format(CultureInfo.CurrentCulture, ExitErrorNoMatchFormat, q);
             }
-            else if (list.Count > TooManyThreshold)
+            else if (!isListAll && list.Count > TooManyThreshold)
             {
+                // When the user deliberately lists all, a large result set is
+                // expected — don't nag them to narrow it down.
                 WarningMessage = AppResources.Exit_Warning_TooMany;
             }
 

@@ -22,6 +22,17 @@ public sealed class IdempotencyKeyEvictionJob : IJob
         var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
         var clock = scope.ServiceProvider.GetRequiredService<IClock>();
         var cutoff = clock.UtcNow.AddHours(-24);
-        await db.IdempotencyKeys.Where(k => k.CreatedAt < cutoff).ExecuteDeleteAsync(context.CancellationToken);
+
+        // SQLite cannot translate a DateTimeOffset comparison inside
+        // ExecuteDelete, so materialize and filter the (small, 24h-bounded)
+        // key set in memory, then remove the stale rows.
+        var stale = (await db.IdempotencyKeys.ToListAsync(context.CancellationToken))
+            .Where(k => k.CreatedAt < cutoff)
+            .ToList();
+        if (stale.Count > 0)
+        {
+            db.IdempotencyKeys.RemoveRange(stale);
+            await db.SaveChangesAsync(context.CancellationToken);
+        }
     }
 }

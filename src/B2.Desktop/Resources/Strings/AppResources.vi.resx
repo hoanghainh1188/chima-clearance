@@ -282,6 +282,30 @@
   <data name="Ledger_Search_Label" xml:space="preserve">
     <value>Tìm (biển / số tờ khai)</value>
   </data>
+  <data name="Ledger_Col_No" xml:space="preserve">
+    <value>#</value>
+  </data>
+  <data name="Ledger_Col_Status" xml:space="preserve">
+    <value>Trạng thái</value>
+  </data>
+  <data name="Ledger_Col_Declaration" xml:space="preserve">
+    <value>Số tờ khai</value>
+  </data>
+  <data name="Ledger_Col_Company" xml:space="preserve">
+    <value>Công ty</value>
+  </data>
+  <data name="Ledger_Col_Processor" xml:space="preserve">
+    <value>Người làm</value>
+  </data>
+  <data name="Ledger_Col_Vehicle" xml:space="preserve">
+    <value>Biển số / Mooc</value>
+  </data>
+  <data name="Ledger_Col_Yard" xml:space="preserve">
+    <value>Bãi</value>
+  </data>
+  <data name="Ledger_Col_Time" xml:space="preserve">
+    <value>Giờ vào</value>
+  </data>
   <data name="Ledger_Subtitle_Format" xml:space="preserve">
     <value>Sổ B2 — {0}</value>
   </data>
@@ -397,7 +421,7 @@
     <value>Xác nhận xe ra</value>
   </data>
   <data name="Exit_SearchLabel" xml:space="preserve">
-    <value>Nhập 3–4 số cuối biển số</value>
+    <value>Nhập 3–4 số cuối biển số (để trống để xem tất cả)</value>
   </data>
   <data name="Exit_SearchButton" xml:space="preserve">
     <value>Tìm</value>
@@ -419,6 +443,9 @@
   </data>
   <data name="Exit_Warning_TooMany" xml:space="preserve">
     <value>Quá nhiều kết quả. Hãy nhập đủ 4 chữ số.</value>
+  </data>
+  <data name="Exit_Empty_NoVehicles" xml:space="preserve">
+    <value>Hiện không có xe nào đang ở trong cổng.</value>
   </data>
   <data name="Exit_Toast_ExitMarked_Format" xml:space="preserve">
     <value>Đã đánh dấu {0} ra cổng</value>

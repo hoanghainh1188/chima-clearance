@@ -13,6 +13,7 @@
       <toolkit:InvertedBoolConverter x:Key="InvertedBoolConverter" />
       <toolkit:IsStringNotNullOrEmptyConverter x:Key="IsStringNotNullOrEmptyConverter" />
       <conv:GreaterThanZeroConverter x:Key="GreaterThanZeroConverter" />
+      <conv:DeclarationStatusToTextConverter x:Key="DeclarationStatusToTextConverter" />
     </ResourceDictionary>
   </Application.Resources>
 </Application>
