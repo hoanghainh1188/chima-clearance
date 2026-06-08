@@ -209,6 +209,203 @@ public sealed class CancelDeclarationEndpointTests
 
     [Fact]
     [Trait("Requirement", "FR-022")]
+    public async Task Repository_un_exit_after_cancel_throws_declaration_cancelled()
+    {
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+        var decl = await CreateOpenDeclarationAsync(client, "31A40014");
+
+        (await client.PostAsJsonAsync(
+            $"/api/declarations/{decl.Id}/vehicles",
+            new VehicleAddRequest("31A40015", null, null),
+            TestJson.Options)).EnsureSuccessStatusCode();
+
+        Guid exitedVehicleId;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+            exitedVehicleId = await db.Vehicles.AsNoTracking()
+                .Where(v => v.DeclarationId == decl.Id && v.PlateNumber == "31A40014")
+                .Select(v => v.Id)
+                .SingleAsync();
+        }
+
+        (await client.SendAsync(ExitRequest(exitedVehicleId, Guid.NewGuid().ToString("N")))).EnsureSuccessStatusCode();
+
+        await using (var cancelScope = factory.Services.CreateAsyncScope())
+        {
+            var repo = cancelScope.ServiceProvider.GetRequiredService<IDeclarationRepository>();
+            await repo.CancelDeclarationAsync(
+                decl.Id,
+                Role.Admin,
+                admin.UserId,
+                "Hủy trước un-exit",
+                DateTimeOffset.UtcNow,
+                CancellationToken.None);
+        }
+
+        await using var unExitScope = factory.Services.CreateAsyncScope();
+        var unExitRepo = unExitScope.ServiceProvider.GetRequiredService<IDeclarationRepository>();
+        var act = async () => await unExitRepo.UnExitVehicleAsync(exitedVehicleId, CancellationToken.None);
+        var ex = await act.Should().ThrowAsync<DomainException>();
+        ex.Which.Code.Should().Be("DECLARATION_CANCELLED");
+    }
+
+    [Fact]
+    [Trait("Requirement", "FR-022")]
+    public async Task Should_not_un_exit_when_concurrent_cancel_wins()
+    {
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+        var decl = await CreateOpenDeclarationAsync(client, "31A40011");
+
+        (await client.PostAsJsonAsync(
+            $"/api/declarations/{decl.Id}/vehicles",
+            new VehicleAddRequest("31A40012", null, null),
+            TestJson.Options)).EnsureSuccessStatusCode();
+
+        Guid exitedVehicleId;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+            exitedVehicleId = await db.Vehicles.AsNoTracking()
+                .Where(v => v.DeclarationId == decl.Id && v.PlateNumber == "31A40011")
+                .Select(v => v.Id)
+                .SingleAsync();
+        }
+
+        (await client.SendAsync(ExitRequest(exitedVehicleId, Guid.NewGuid().ToString("N")))).EnsureSuccessStatusCode();
+
+        var cancelTask = Task.Run(async () =>
+        {
+            await using var scope = factory.Services.CreateAsyncScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IDeclarationRepository>();
+            try
+            {
+                await repo.CancelDeclarationAsync(
+                    decl.Id,
+                    Role.Admin,
+                    admin.UserId,
+                    "Đua tranh với un-exit",
+                    DateTimeOffset.UtcNow,
+                    CancellationToken.None);
+            }
+            catch (DomainException)
+            {
+                // Expected when un-exit wins the Serializable race first.
+            }
+        });
+
+        var unExitTask = Task.Run(async () =>
+        {
+            await using var scope = factory.Services.CreateAsyncScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IDeclarationRepository>();
+            try
+            {
+                await repo.UnExitVehicleAsync(exitedVehicleId, CancellationToken.None);
+            }
+            catch (DomainException)
+            {
+                // Expected when cancel wins the Serializable race first.
+            }
+        });
+
+        await Task.WhenAll(cancelTask, unExitTask);
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+            var entity = await db.Declarations.AsNoTracking().SingleAsync(d => d.Id == decl.Id);
+            var cancelAudit = await db.AuditLogs.AsNoTracking()
+                .AnyAsync(a => a.EntityId == decl.Id && a.Action == AuditAction.Cancel);
+
+            // A stale deferred snapshot can call RecomputeStatus() with an in-memory Open
+            // declaration and overwrite a committed Cancelled row back to Open (INV-9 / FR-022).
+            if (cancelAudit)
+            {
+                entity.Status.Should().Be(
+                    DeclarationStatus.Cancelled,
+                    "stale un-exit must not overwrite Cancelled via RecomputeStatus");
+            }
+        }
+    }
+
+    [Fact]
+    [Trait("Requirement", "FR-022")]
+    public async Task Should_not_exit_when_concurrent_cancel_wins()
+    {
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+        var decl = await CreateOpenDeclarationAsync(client, "31A40013");
+
+        Guid vehicleId;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+            vehicleId = await db.Vehicles.AsNoTracking()
+                .Where(v => v.DeclarationId == decl.Id)
+                .Select(v => v.Id)
+                .SingleAsync();
+        }
+
+        var cancelTask = Task.Run(async () =>
+        {
+            await using var scope = factory.Services.CreateAsyncScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IDeclarationRepository>();
+            try
+            {
+                await repo.CancelDeclarationAsync(
+                    decl.Id,
+                    Role.Admin,
+                    admin.UserId,
+                    "Đua tranh với exit",
+                    DateTimeOffset.UtcNow,
+                    CancellationToken.None);
+            }
+            catch (DomainException)
+            {
+            }
+        });
+
+        var exitTask = Task.Run(async () =>
+        {
+            await using var scope = factory.Services.CreateAsyncScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IDeclarationRepository>();
+            try
+            {
+                await repo.MarkVehicleExitAsync(vehicleId, admin.UserId, DateTimeOffset.UtcNow, CancellationToken.None);
+            }
+            catch (DomainException)
+            {
+            }
+        });
+
+        await Task.WhenAll(cancelTask, exitTask);
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+            var entity = await db.Declarations.AsNoTracking().SingleAsync(d => d.Id == decl.Id);
+            var exited = await db.Vehicles.AsNoTracking()
+                .Where(v => v.DeclarationId == decl.Id)
+                .AnyAsync(v => v.ExitMarked);
+
+            if (entity.Status == DeclarationStatus.Cancelled)
+            {
+                exited.Should().BeFalse(
+                    "a concurrent exit must not mutate vehicles on a cancelled declaration (FR-022)");
+            }
+        }
+    }
+
+    [Fact]
+    [Trait("Requirement", "FR-022")]
     public async Task Should_not_cancel_when_concurrent_exit_marks_vehicle()
     {
         await using var factory = new B2ApiFactory();
