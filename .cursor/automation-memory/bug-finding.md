@@ -1,19 +1,39 @@
 # Bug-finding automation notes
 
+## 2026-06-09 run (`cursor/critical-bug-investigation-a90d` @ e4da343)
+
+### Critical fixes (PR #68)
+
+1. **FR-021 VerifyExcel bypass (data loss)** — `FileSystemArchiveWriter.VerifyExcel` ignored `minimumRows`; header-only archive passed verification → `DeleteAsync` wiped live data. Fixed by counting declaration rows (column C).
+2. **F-08 KVGS un-exit** — Admin un-exit on `KVGSConfirmed` declaration left inconsistent state. Fixed domain guard `DECLARATION_LOCKED`.
+
+`dotnet test B2.NoMaui.slnf`: 119 passed, 2 skipped.
+
+### Below PR bar (not fixed)
+
+- `ConfirmKvgs` + concurrent `UnExit` TOCTOU (no Serializable on either path)
+- Idempotency middleware: handler commits before idempotency row persisted
+- Annual archive export/delete not single DB snapshot
+
+## 2026-06-06 run (branch `cursor/critical-bug-investigation-b9dd`)
+
+Reviewed S5 merges on `main` (head `fcb0412`, PRs #40–#55).
+
+### Fixed (PR #60)
+
+1. **FR-022 cancel TOCTOU** — cancel could overwrite concurrent `AllExited` because handler loaded outside tx and `RowVersion` never bumps. Fix: `CancelDeclarationAsync` under `IsolationLevel.Serializable`.
+2. **F-15 backup secrets** — DPAPI read failure caused silent secret rotation, undecrypting all `.bak` files. Fix: throw `BACKUP_SECRETS_UNREADABLE`.
+
+### Validation
+
+`dotnet test B2.NoMaui.slnf`: 102 passed, 2 skipped.
+
 ## 2026-06-02 run (`cursor/critical-bug-investigation-25fa` @ 53b663b + fix)
 
-### Critical fix (PR opened)
+### Critical fix
 
-**F-15 restore write window (data loss)**
-
-- **Trigger**: Admin calls `POST /api/admin/restore` → `DatabaseRestoreService.Stage` writes `b2.db.restore-pending` → `StopApplication()` → graceful shutdown (seconds). Operators can still POST declarations/exit during that window; on next startup `ApplyPending` replaces the DB with the snapshot — post-stage writes vanish.
-- **Spec**: `specs/03-functional-spec.md` F-15 / `specs/02-architecture.md` § 9 — "service stops accepting writes".
-- **Fix**: `RestoreWriteBlockMiddleware` returns 503 `RESTORE_PENDING` for mutating verbs while pending file exists; `ApplyPending` uses `File.Replace` instead of delete-all-then-move.
-- **Tests**: `Should_reject_mutating_requests_while_restore_is_pending` + existing restore suite (10 tests).
+**F-15 restore write window (data loss)** — `RestoreWriteBlockMiddleware` + `File.Replace` in `ApplyPending`.
 
 ### Reviewed, below PR bar
 
-- **Idempotency parallel race** (commit `408fe67` on orphan branch): Desktop uses new `Guid` per submit; concurrent same-key retry is rare.
-- **ApplyPending** crash between delete and move — mitigated by `File.Replace` in same fix.
-- **BackupSecretsStore** regenerates secrets if DPAPI load fails — requires machine/key corruption.
-- **DailyHeader catch-up** does not fill internal date gaps — Admin recompute exists.
+- Idempotency parallel race; DailyHeader catch-up gaps.
