@@ -46,9 +46,16 @@ public sealed class FileSystemArchiveWriter : IAnnualArchiveWriter
             if (ws is null)
                 return false;
 
-            // Count non-header, non-empty rows.
-            var dataRows = ws.RowsUsed().Count();
-            return dataRows >= 1; // at least header row must be present
+            // Parent declaration rows carry the 12-digit declaration number in column C.
+            // Day-header banners and child vehicle rows leave column C empty.
+            const int headerTitleRow = 1;
+            const int declarationNumberColumn = 3;
+            var declarationRows = ws.RowsUsed()
+                .Where(r => r.RowNumber() > headerTitleRow)
+                .Count(r => !r.Cell(declarationNumberColumn).IsEmpty()
+                            && !string.IsNullOrWhiteSpace(r.Cell(declarationNumberColumn).GetString()));
+
+            return declarationRows >= minimumRows;
         }
         catch
         {
