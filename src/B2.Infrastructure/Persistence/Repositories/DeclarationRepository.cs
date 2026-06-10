@@ -114,25 +114,104 @@ public sealed class DeclarationRepository : IDeclarationRepository
 
     public async Task<UnExitVehicleResult> UnExitVehicleAsync(Guid vehicleId, CancellationToken cancellationToken)
     {
-        var vehicle = await _db.Vehicles
-            .Include(v => v.Declaration)
-            .ThenInclude(d => d!.Vehicles)
-            .FirstOrDefaultAsync(v => v.Id == vehicleId, cancellationToken);
-
-        if (vehicle?.Declaration is null)
+        await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        try
         {
-            return new UnExitVehicleNotFound();
-        }
+            var vehicle = await _db.Vehicles
+                .Include(v => v.Declaration)
+                .ThenInclude(d => d!.Vehicles)
+                .FirstOrDefaultAsync(v => v.Id == vehicleId, cancellationToken);
 
-        if (!vehicle.ExitMarked)
+            if (vehicle?.Declaration is null)
+            {
+                await tx.RollbackAsync(cancellationToken);
+                return new UnExitVehicleNotFound();
+            }
+
+            if (!vehicle.ExitMarked)
+            {
+                await tx.RollbackAsync(cancellationToken);
+                return new UnExitVehicleInvalidState("Vehicle is not marked as exited.");
+            }
+
+            vehicle.UnExit();
+            vehicle.Declaration.RecomputeStatus();
+            await _db.SaveChangesAsync(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+            return new UnExitVehicleApplied(vehicle.Id, vehicle.Declaration.Id, vehicle.Declaration.Status.ToString());
+        }
+        catch
         {
-            return new UnExitVehicleInvalidState("Vehicle is not marked as exited.");
+            await tx.RollbackAsync(cancellationToken);
+            throw;
         }
+    }
 
-        vehicle.UnExit();
-        vehicle.Declaration.RecomputeStatus();
-        await _db.SaveChangesAsync(cancellationToken);
-        return new UnExitVehicleApplied(vehicle.Id, vehicle.Declaration.Id, vehicle.Declaration.Status.ToString());
+    public async Task<Declaration> ConfirmKvgsAsync(
+        Guid declarationId,
+        Role actorRole,
+        Guid actorUserId,
+        DateTimeOffset confirmedAtUtc,
+        CancellationToken cancellationToken)
+    {
+        await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        try
+        {
+            var declaration = await _db.Declarations
+                .Include(d => d.Vehicles)
+                .FirstOrDefaultAsync(d => d.Id == declarationId, cancellationToken);
+
+            if (declaration is null)
+            {
+                await tx.RollbackAsync(cancellationToken);
+                throw new DomainException("DECLARATION_NOT_FOUND", "Declaration not found.", 404);
+            }
+
+            declaration.ConfirmKvgs(actorRole, actorUserId, confirmedAtUtc);
+            await _db.SaveChangesAsync(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+            return declaration;
+        }
+        catch
+        {
+            await tx.RollbackAsync(cancellationToken);
+            throw;
+        }
+    }
+
+    public async Task<Vehicle> AddVehicleAsync(
+        Guid declarationId,
+        Guid vehicleId,
+        PlateNumber plate,
+        DateTimeOffset entryTime,
+        Guid enteredByUserId,
+        ContainerNumber? container,
+        string? note,
+        CancellationToken cancellationToken)
+    {
+        await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        try
+        {
+            var declaration = await _db.Declarations
+                .Include(d => d.Vehicles)
+                .FirstOrDefaultAsync(d => d.Id == declarationId, cancellationToken);
+
+            if (declaration is null)
+            {
+                await tx.RollbackAsync(cancellationToken);
+                throw new DomainException("DECLARATION_NOT_FOUND", "Declaration not found.", 404);
+            }
+
+            var vehicle = declaration.AddVehicle(vehicleId, plate, entryTime, enteredByUserId, container, note);
+            await _db.SaveChangesAsync(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+            return vehicle;
+        }
+        catch
+        {
+            await tx.RollbackAsync(cancellationToken);
+            throw;
+        }
     }
 
     private async Task<string> WinnerNameAsync(Guid? exitConfirmedByUserId, CancellationToken cancellationToken)

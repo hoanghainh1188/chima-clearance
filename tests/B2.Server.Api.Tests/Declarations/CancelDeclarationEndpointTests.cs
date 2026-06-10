@@ -282,6 +282,78 @@ public sealed class CancelDeclarationEndpointTests
 
     [Fact]
     [Trait("Requirement", "FR-022")]
+    public async Task Should_not_cancel_when_concurrent_add_vehicle()
+    {
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+        var decl = await CreateOpenDeclarationAsync(client, "31A40011");
+
+        var cancelTask = Task.Run(async () =>
+        {
+            await using var scope = factory.Services.CreateAsyncScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IDeclarationRepository>();
+            try
+            {
+                await repo.CancelDeclarationAsync(
+                    decl.Id,
+                    Role.Admin,
+                    admin.UserId,
+                    "Đua tranh với thêm xe",
+                    DateTimeOffset.UtcNow,
+                    CancellationToken.None);
+            }
+            catch (DomainException)
+            {
+                // Expected when add-vehicle wins the Serializable race first.
+            }
+        });
+
+        var addTask = Task.Run(async () =>
+        {
+            await using var scope = factory.Services.CreateAsyncScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IDeclarationRepository>();
+            try
+            {
+                await repo.AddVehicleAsync(
+                    decl.Id,
+                    Guid.NewGuid(),
+                    PlateNumber.Parse("31A40012"),
+                    DateTimeOffset.UtcNow,
+                    admin.UserId,
+                    null,
+                    null,
+                    CancellationToken.None);
+            }
+            catch (DomainException)
+            {
+                // Expected when cancel wins the Serializable race first.
+            }
+        });
+
+        await Task.WhenAll(cancelTask, addTask);
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+            var entity = await db.Declarations.AsNoTracking().SingleAsync(d => d.Id == decl.Id);
+            var vehicleCount = await db.Vehicles.AsNoTracking().CountAsync(v => v.DeclarationId == decl.Id);
+
+            if (entity.Status == DeclarationStatus.Cancelled)
+            {
+                vehicleCount.Should().Be(1, "cancel must not be overwritten by a concurrent add-vehicle");
+            }
+            else
+            {
+                vehicleCount.Should().Be(2);
+                entity.Status.Should().Be(DeclarationStatus.Open);
+            }
+        }
+    }
+
+    [Fact]
+    [Trait("Requirement", "FR-022")]
     public async Task Should_prevent_add_vehicle_after_cancel()
     {
         await using var factory = new B2ApiFactory();

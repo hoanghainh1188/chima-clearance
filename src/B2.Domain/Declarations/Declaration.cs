@@ -105,6 +105,14 @@ public sealed class Declaration
                 409);
         }
 
+        if (!Vehicles.TrueForAll(v => v.ExitMarked))
+        {
+            throw new DomainException(
+                "DECLARATION_NOT_READY_FOR_KVGS",
+                "All vehicles must be exited before KVGS confirmation.",
+                409);
+        }
+
         Status = DeclarationStatus.KVGSConfirmed;
         KvgsConfirmedByUserId = actorUserId;
         KvgsConfirmedAt = confirmedAtUtc;

@@ -24,6 +24,23 @@ public interface IDeclarationRepository
 
     Task<UnExitVehicleResult> UnExitVehicleAsync(Guid vehicleId, CancellationToken cancellationToken);
 
+    Task<Declaration> ConfirmKvgsAsync(
+        Guid declarationId,
+        Role actorRole,
+        Guid actorUserId,
+        DateTimeOffset confirmedAtUtc,
+        CancellationToken cancellationToken);
+
+    Task<Vehicle> AddVehicleAsync(
+        Guid declarationId,
+        Guid vehicleId,
+        PlateNumber plate,
+        DateTimeOffset entryTime,
+        Guid enteredByUserId,
+        ContainerNumber? container,
+        string? note,
+        CancellationToken cancellationToken);
+
     Task<Declaration> CancelDeclarationAsync(
         Guid declarationId,
         Role actorRole,

@@ -12,20 +12,17 @@ public sealed class ConfirmKvgsCommandHandler
 {
     private readonly IDeclarationRepository _declarations;
     private readonly IClock _clock;
-    private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditContext _audit;
     private readonly ISignalRDomainEventDispatcher _realtime;
 
     public ConfirmKvgsCommandHandler(
         IDeclarationRepository declarations,
         IClock clock,
-        IUnitOfWork unitOfWork,
         IAuditContext audit,
         ISignalRDomainEventDispatcher realtime)
     {
         _declarations = declarations;
         _clock = clock;
-        _unitOfWork = unitOfWork;
         _audit = audit;
         _realtime = realtime;
     }
@@ -37,14 +34,13 @@ public sealed class ConfirmKvgsCommandHandler
             throw new DomainException("FORBIDDEN", "Missing or invalid role.", 403);
         }
 
-        var declaration = await _declarations.GetByIdWithVehiclesAsync(command.DeclarationId, cancellationToken);
-        if (declaration is null)
-        {
-            throw new DomainException("DECLARATION_NOT_FOUND", "Declaration not found.", 404);
-        }
-
-        var before = JsonSerializer.Serialize(new { declaration.Status });
-        declaration.ConfirmKvgs(actorRole, actorUserId, _clock.UtcNow);
+        var before = JsonSerializer.Serialize(new { Status = nameof(DeclarationStatus.AllExited) });
+        var declaration = await _declarations.ConfirmKvgsAsync(
+            command.DeclarationId,
+            actorRole,
+            actorUserId,
+            _clock.UtcNow,
+            cancellationToken);
         var after = JsonSerializer.Serialize(
             new
             {
@@ -52,7 +48,6 @@ public sealed class ConfirmKvgsCommandHandler
                 declaration.KvgsConfirmedByUserId,
                 declaration.KvgsConfirmedAt,
             });
-        await _unitOfWork.SaveChangesAsync(cancellationToken);
         _audit.Set(new AuditEnvelope(actorUserId, AuditAction.Update, nameof(Declaration), declaration.Id, before, after, null));
         await _realtime.PublishDeclarationLedgerChangedAsync(declaration.Id, cancellationToken);
     }

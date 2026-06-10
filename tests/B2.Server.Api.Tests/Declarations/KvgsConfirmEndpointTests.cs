@@ -104,6 +104,113 @@ public sealed class KvgsConfirmEndpointTests
 
     [Fact]
     [Trait("Feature", "F-09")]
+    public async Task Should_prevent_un_exit_after_kvgs_confirm()
+    {
+        await using var factory = new B2ApiFactory();
+        var (declId, client) = await CreateAllExitedWithClientAsync(factory);
+
+        Guid vehicleId;
+        using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+            vehicleId = await db.Vehicles.AsNoTracking()
+                .Where(v => v.DeclarationId == declId)
+                .Select(v => v.Id)
+                .SingleAsync();
+        }
+
+        client.DefaultRequestHeaders.Remove("Authorization");
+        var sup = await client.LoginAsNewSupervisorAsync();
+        client.SetBearer(sup.AccessToken);
+        (await client.PostAsync($"/api/declarations/{declId}/kvgs-confirm", null)).EnsureSuccessStatusCode();
+
+        client.DefaultRequestHeaders.Remove("Authorization");
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+        var unExit = await client.PostAsJsonAsync(
+            $"/api/vehicles/{vehicleId}/un-exit",
+            new UnExitVehicleRequest("Không được sửa sau KVGS"),
+            TestJson.Options);
+        unExit.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
+    [Trait("Feature", "F-09")]
+    public async Task Should_not_confirm_kvgs_when_concurrent_un_exit()
+    {
+        await using var factory = new B2ApiFactory();
+        var (declId, _) = await CreateAllExitedWithClientAsync(factory);
+
+        Guid vehicleId;
+        Guid adminUserId;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+            vehicleId = await db.Vehicles.AsNoTracking()
+                .Where(v => v.DeclarationId == declId)
+                .Select(v => v.Id)
+                .SingleAsync();
+            adminUserId = await db.Users.AsNoTracking()
+                .Where(u => u.Role == B2.Domain.Users.Role.Admin)
+                .Select(u => u.Id)
+                .FirstAsync();
+        }
+
+        var confirmTask = Task.Run(async () =>
+        {
+            await using var scope = factory.Services.CreateAsyncScope();
+            var repo = scope.ServiceProvider.GetRequiredService<B2.Application.Abstractions.IDeclarationRepository>();
+            try
+            {
+                await repo.ConfirmKvgsAsync(
+                    declId,
+                    B2.Domain.Users.Role.Supervisor,
+                    adminUserId,
+                    DateTimeOffset.UtcNow,
+                    CancellationToken.None);
+            }
+            catch (B2.Domain.DomainException)
+            {
+                // Expected when un-exit wins the Serializable race first.
+            }
+        });
+
+        var unExitTask = Task.Run(async () =>
+        {
+            await using var scope = factory.Services.CreateAsyncScope();
+            var repo = scope.ServiceProvider.GetRequiredService<B2.Application.Abstractions.IDeclarationRepository>();
+            try
+            {
+                await repo.UnExitVehicleAsync(vehicleId, CancellationToken.None);
+            }
+            catch (B2.Domain.DomainException)
+            {
+                // Expected when KVGS confirm wins the Serializable race first.
+            }
+        });
+
+        await Task.WhenAll(confirmTask, unExitTask);
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+            var entity = await db.Declarations.AsNoTracking().SingleAsync(d => d.Id == declId);
+            var vehicle = await db.Vehicles.AsNoTracking().SingleAsync(v => v.Id == vehicleId);
+
+            if (entity.Status == DeclarationStatus.KVGSConfirmed)
+            {
+                vehicle.ExitMarked.Should().BeTrue("KVGS confirm must not commit while a vehicle is un-exited");
+            }
+            else
+            {
+                entity.Status.Should().Be(DeclarationStatus.Open);
+                vehicle.ExitMarked.Should().BeFalse();
+            }
+        }
+    }
+
+    [Fact]
+    [Trait("Feature", "F-09")]
     public async Task Should_cannot_confirm_before_all_exited_returns_409()
     {
         await using var factory = new B2ApiFactory();

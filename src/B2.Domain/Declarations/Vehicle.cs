@@ -58,14 +58,7 @@ public sealed class Vehicle
                 409);
         }
 
-        // FR-022: no vehicle under a cancelled declaration can be exited.
-        if (Declaration is { Status: DeclarationStatus.Cancelled })
-        {
-            throw new DomainException(
-                "DECLARATION_CANCELLED",
-                "Cannot mark exit for a vehicle on a cancelled declaration.",
-                409);
-        }
+        EnsureDeclarationAllowsVehicleWrites();
 
         ExitMarked = true;
         ExitTime = exitTime;
@@ -79,17 +72,29 @@ public sealed class Vehicle
             throw new DomainException("VEHICLE_NOT_EXITED", "Vehicle is not marked as exited.", 400);
         }
 
-        // FR-022: cancelled declarations are immutable — no vehicle writes permitted.
-        if (Declaration is { Status: DeclarationStatus.Cancelled })
-        {
-            throw new DomainException(
-                "DECLARATION_CANCELLED",
-                "Cannot un-exit a vehicle on a cancelled declaration.",
-                409);
-        }
+        EnsureDeclarationAllowsVehicleWrites();
 
         ExitMarked = false;
         ExitTime = null;
         ExitConfirmedByUserId = null;
+    }
+
+    private void EnsureDeclarationAllowsVehicleWrites()
+    {
+        if (Declaration is { Status: DeclarationStatus.Cancelled })
+        {
+            throw new DomainException(
+                "DECLARATION_CANCELLED",
+                "Cannot modify a vehicle on a cancelled declaration.",
+                409);
+        }
+
+        if (Declaration is { Status: DeclarationStatus.KVGSConfirmed })
+        {
+            throw new DomainException(
+                "DECLARATION_LOCKED",
+                "Cannot modify a vehicle on a KVGS-confirmed declaration.",
+                409);
+        }
     }
 }
