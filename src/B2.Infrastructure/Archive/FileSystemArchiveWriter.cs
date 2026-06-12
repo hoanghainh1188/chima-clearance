@@ -10,6 +10,9 @@ namespace B2.Infrastructure.Archive;
 /// </summary>
 public sealed class FileSystemArchiveWriter : IAnnualArchiveWriter
 {
+    private const int HeaderTitleRow = 1;
+    private const int DeclarationNumberColumn = 3;
+
     private readonly string _archiveBasePath;
 
     public FileSystemArchiveWriter(string archiveBasePath) =>
@@ -46,13 +49,30 @@ public sealed class FileSystemArchiveWriter : IAnnualArchiveWriter
             if (ws is null)
                 return false;
 
-            // Count non-header, non-empty rows.
-            var dataRows = ws.RowsUsed().Count();
-            return dataRows >= 1; // at least header row must be present
+            var declarationRows = CountDeclarationRows(ws);
+            return declarationRows >= minimumRows;
         }
         catch
         {
             return false;
         }
+    }
+
+    /// <summary>
+    /// Parent declaration rows carry the declaration number in column C. Day-header
+    /// banner rows and child vehicle rows leave that column empty (same rule as F-13
+    /// export tests). Row 1 is the template column-title row and is excluded.
+    /// </summary>
+    private static int CountDeclarationRows(IXLWorksheet ws)
+    {
+        var used = ws.RangeUsed();
+        if (used is null)
+        {
+            return 0;
+        }
+
+        return used.Rows()
+            .Where(r => r.RangeAddress.FirstAddress.RowNumber > HeaderTitleRow)
+            .Count(r => !string.IsNullOrWhiteSpace(r.Cell(DeclarationNumberColumn).GetString()));
     }
 }
