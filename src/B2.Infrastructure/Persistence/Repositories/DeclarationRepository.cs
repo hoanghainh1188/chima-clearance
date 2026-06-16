@@ -134,6 +134,17 @@ public sealed class DeclarationRepository : IDeclarationRepository
                 return new UnExitVehicleInvalidState("Vehicle is not marked as exited.");
             }
 
+            // Re-read under the Serializable lock so a concurrent cancel cannot be
+            // overwritten by a stale in-memory Open graph (FR-022 / INV-9).
+            await _db.Entry(vehicle).ReloadAsync(cancellationToken);
+            await _db.Entry(vehicle.Declaration).ReloadAsync(cancellationToken);
+
+            if (!vehicle.ExitMarked)
+            {
+                await tx.RollbackAsync(cancellationToken);
+                return new UnExitVehicleInvalidState("Vehicle is not marked as exited.");
+            }
+
             vehicle.UnExit();
             vehicle.Declaration.RecomputeStatus();
             await _db.SaveChangesAsync(cancellationToken);
