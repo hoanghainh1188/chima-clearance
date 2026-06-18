@@ -44,15 +44,42 @@ public sealed class FileSystemArchiveWriter : IAnnualArchiveWriter
 
             var ws = wb.Worksheets.FirstOrDefault();
             if (ws is null)
+            {
                 return false;
+            }
 
-            // Count non-header, non-empty rows.
-            var dataRows = ws.RowsUsed().Count();
-            return dataRows >= 1; // at least header row must be present
+            // Row 1 is the template column-title header. When there is nothing to archive,
+            // a readable workbook is sufficient.
+            if (minimumRows <= 0)
+            {
+                return true;
+            }
+
+            // Parent declaration rows always populate column C (declaration number);
+            // day-banner rows and child-vehicle rows leave it blank.
+            const int declarationNumberColumn = 3;
+            var declarationRowCount = CountDeclarationRows(ws, declarationNumberColumn);
+            return declarationRowCount >= minimumRows;
         }
         catch
         {
             return false;
         }
+    }
+
+    private static int CountDeclarationRows(IXLWorksheet ws, int declarationNumberColumn)
+    {
+        var lastRow = ws.LastRowUsed()?.RowNumber() ?? 1;
+        var count = 0;
+        for (var row = 2; row <= lastRow; row++)
+        {
+            var declarationNumber = ws.Cell(row, declarationNumberColumn).GetString();
+            if (!string.IsNullOrWhiteSpace(declarationNumber))
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 }
