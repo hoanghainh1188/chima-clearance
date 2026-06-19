@@ -282,6 +282,83 @@ public sealed class CancelDeclarationEndpointTests
 
     [Fact]
     [Trait("Requirement", "FR-022")]
+    public async Task Should_not_un_exit_when_concurrent_cancel_commits_first()
+    {
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+        var decl = await CreateOpenDeclarationAsync(client, "31A40011");
+
+        (await client.PostAsJsonAsync(
+            $"/api/declarations/{decl.Id}/vehicles",
+            new VehicleAddRequest("31A40012", null, null),
+            TestJson.Options)).EnsureSuccessStatusCode();
+
+        Guid exitedVehicleId;
+        using (var scope = factory.Services.CreateScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+            exitedVehicleId = await db.Vehicles.AsNoTracking()
+                .Where(v => v.DeclarationId == decl.Id && v.PlateNumber == "31A40011")
+                .Select(v => v.Id)
+                .SingleAsync();
+        }
+
+        (await client.SendAsync(ExitRequest(exitedVehicleId, Guid.NewGuid().ToString("N")))).EnsureSuccessStatusCode();
+
+        var unExitTask = Task.Run(async () =>
+        {
+            await using var scope = factory.Services.CreateAsyncScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IDeclarationRepository>();
+            try
+            {
+                await repo.UnExitVehicleAsync(exitedVehicleId, CancellationToken.None);
+            }
+            catch (DomainException)
+            {
+                // Expected when cancel wins the Serializable race first.
+            }
+        });
+
+        var cancelTask = Task.Run(async () =>
+        {
+            await using var scope = factory.Services.CreateAsyncScope();
+            var repo = scope.ServiceProvider.GetRequiredService<IDeclarationRepository>();
+            try
+            {
+                await repo.CancelDeclarationAsync(
+                    decl.Id,
+                    Role.Admin,
+                    admin.UserId,
+                    "Đua tranh với un-exit",
+                    DateTimeOffset.UtcNow,
+                    CancellationToken.None);
+            }
+            catch (DomainException)
+            {
+                // Expected when un-exit wins the Serializable race first.
+            }
+        });
+
+        await Task.WhenAll(unExitTask, cancelTask);
+
+        await using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+            var entity = await db.Declarations.AsNoTracking().SingleAsync(d => d.Id == decl.Id);
+
+            if (entity.Status == DeclarationStatus.Cancelled)
+            {
+                var vehicle = await db.Vehicles.AsNoTracking().SingleAsync(v => v.Id == exitedVehicleId);
+                vehicle.ExitMarked.Should().BeTrue(
+                    "cancel must not be undone by a concurrent un-exit (FR-022)");
+            }
+        }
+    }
+
+    [Fact]
+    [Trait("Requirement", "FR-022")]
     public async Task Should_prevent_add_vehicle_after_cancel()
     {
         await using var factory = new B2ApiFactory();
