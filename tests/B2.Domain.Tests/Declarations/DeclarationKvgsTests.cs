@@ -42,6 +42,35 @@ public sealed class DeclarationKvgsTests
     }
 
     [Fact]
+    public void UnExit_on_kvgs_confirmed_declaration_throws()
+    {
+        var now = DateTimeOffset.Parse("2026-05-04T10:00:00Z", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
+        var decl = Declaration.CreateNew(
+            Guid.NewGuid(),
+            DeclarationNumber.Parse("123456789012"),
+            Guid.NewGuid(),
+            "Co",
+            "Hang",
+            Guid.NewGuid(),
+            Guid.NewGuid(),
+            now,
+            DateOnly.Parse("2026-05-04", CultureInfo.InvariantCulture));
+        var v = decl.AddVehicle(
+            Guid.NewGuid(),
+            PlateNumber.Parse("29A12345"),
+            now,
+            Guid.NewGuid(),
+            null,
+            null);
+        v.MarkExit(Guid.NewGuid(), now.AddMinutes(1));
+        decl.RecomputeStatus();
+        decl.ConfirmKvgs(Role.Supervisor, Guid.NewGuid(), now.AddMinutes(2));
+
+        var act = () => v.UnExit();
+        act.Should().Throw<DomainException>().Which.Code.Should().Be("DECLARATION_LOCKED");
+    }
+
+    [Fact]
     public void ConfirmKvgs_when_open_throws_not_ready()
     {
         var now = DateTimeOffset.Parse("2026-05-04T10:00:00Z", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
