@@ -347,12 +347,14 @@ public sealed class CancelDeclarationEndpointTests
         {
             var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
             var entity = await db.Declarations.AsNoTracking().SingleAsync(d => d.Id == decl.Id);
+            var wasCancelled = await db.AuditLogs.AsNoTracking()
+                .AnyAsync(a => a.EntityId == decl.Id && a.Action == AuditAction.Cancel);
 
-            if (entity.Status == DeclarationStatus.Cancelled)
+            if (wasCancelled)
             {
-                var vehicle = await db.Vehicles.AsNoTracking().SingleAsync(v => v.Id == exitedVehicleId);
-                vehicle.ExitMarked.Should().BeTrue(
-                    "cancel must not be undone by a concurrent un-exit (FR-022)");
+                entity.Status.Should().Be(
+                    DeclarationStatus.Cancelled,
+                    "a recorded cancellation must not be undone by concurrent un-exit (FR-022)");
             }
         }
     }
