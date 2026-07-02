@@ -282,6 +282,98 @@ public sealed class CancelDeclarationEndpointTests
 
     [Fact]
     [Trait("Requirement", "FR-022")]
+    public async Task Should_not_undo_cancel_when_concurrent_un_exit_runs()
+    {
+        const int maxAttempts = 15;
+        for (var attempt = 0; attempt < maxAttempts; attempt++)
+        {
+            await using var factory = new B2ApiFactory();
+            var client = factory.CreateClient();
+            var admin = await client.LoginAsAdminAsync();
+            client.SetBearer(admin.AccessToken);
+            var plate = FormattableString.Invariant($"31A4{attempt:0000}");
+            var decl = await CreateOpenDeclarationAsync(client, plate);
+
+            (await client.PostAsJsonAsync(
+                $"/api/declarations/{decl.Id}/vehicles",
+                new VehicleAddRequest(FormattableString.Invariant($"31A5{attempt:0000}"), null, null),
+                TestJson.Options)).EnsureSuccessStatusCode();
+
+            Guid exitedVehicleId;
+            using (var scope = factory.Services.CreateAsyncScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+                exitedVehicleId = await db.Vehicles.AsNoTracking()
+                    .Where(v => v.DeclarationId == decl.Id && v.PlateNumber == plate)
+                    .Select(v => v.Id)
+                    .SingleAsync();
+            }
+
+            (await client.SendAsync(ExitRequest(exitedVehicleId, Guid.NewGuid().ToString("N")))).EnsureSuccessStatusCode();
+
+            var cancelTask = Task.Run(async () =>
+            {
+                await using var scope = factory.Services.CreateAsyncScope();
+                var repo = scope.ServiceProvider.GetRequiredService<IDeclarationRepository>();
+                try
+                {
+                    await repo.CancelDeclarationAsync(
+                        decl.Id,
+                        Role.Admin,
+                        admin.UserId,
+                        "Đua tranh với un-exit",
+                        DateTimeOffset.UtcNow,
+                        CancellationToken.None);
+                }
+                catch (DomainException)
+                {
+                    // Expected when un-exit wins the Serializable race first.
+                }
+            });
+
+            var unExitTask = Task.Run(async () =>
+            {
+                // Bias cancel to acquire the Serializable lock first so we exercise
+                // the stale-graph overwrite path rather than un-exit winning outright.
+                await Task.Delay(50);
+                await using var scope = factory.Services.CreateAsyncScope();
+                var repo = scope.ServiceProvider.GetRequiredService<IDeclarationRepository>();
+                try
+                {
+                    await repo.UnExitVehicleAsync(exitedVehicleId, CancellationToken.None);
+                }
+                catch (DomainException)
+                {
+                    // Expected when cancel wins the Serializable race first.
+                }
+            });
+
+            await Task.WhenAll(cancelTask, unExitTask);
+
+            await using (var scope = factory.Services.CreateAsyncScope())
+            {
+                var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+                var entity = await db.Declarations.AsNoTracking().SingleAsync(d => d.Id == decl.Id);
+
+                if (entity.Status != DeclarationStatus.Cancelled)
+                {
+                    continue;
+                }
+
+                var vehicle = await db.Vehicles.AsNoTracking().SingleAsync(v => v.Id == exitedVehicleId);
+                if (vehicle.ExitMarked)
+                {
+                    return;
+                }
+            }
+        }
+
+        throw new Xunit.Sdk.XunitException(
+            $"Could not observe a cancel-winning race that preserved ExitMarked within {maxAttempts} attempts");
+    }
+
+    [Fact]
+    [Trait("Requirement", "FR-022")]
     public async Task Should_prevent_add_vehicle_after_cancel()
     {
         await using var factory = new B2ApiFactory();
