@@ -88,6 +88,15 @@ public sealed class Vehicle
                 409);
         }
 
+        // Once KVGS is confirmed the declaration is locked (spec: no further vehicle writes).
+        if (Declaration is { Status: DeclarationStatus.KVGSConfirmed })
+        {
+            throw new DomainException(
+                "DECLARATION_LOCKED",
+                "Cannot un-exit a vehicle on a KVGS-confirmed declaration.",
+                409);
+        }
+
         ExitMarked = false;
         ExitTime = null;
         ExitConfirmedByUserId = null;
