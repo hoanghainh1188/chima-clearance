@@ -114,25 +114,48 @@ public sealed class DeclarationRepository : IDeclarationRepository
 
     public async Task<UnExitVehicleResult> UnExitVehicleAsync(Guid vehicleId, CancellationToken cancellationToken)
     {
-        var vehicle = await _db.Vehicles
-            .Include(v => v.Declaration)
-            .ThenInclude(d => d!.Vehicles)
-            .FirstOrDefaultAsync(v => v.Id == vehicleId, cancellationToken);
-
-        if (vehicle?.Declaration is null)
+        await using var tx = await _db.Database.BeginTransactionAsync(IsolationLevel.Serializable, cancellationToken);
+        try
         {
-            return new UnExitVehicleNotFound();
-        }
+            var vehicle = await _db.Vehicles
+                .Include(v => v.Declaration)
+                .ThenInclude(d => d!.Vehicles)
+                .FirstOrDefaultAsync(v => v.Id == vehicleId, cancellationToken);
 
-        if (!vehicle.ExitMarked)
+            if (vehicle?.Declaration is null)
+            {
+                await tx.RollbackAsync(cancellationToken);
+                return new UnExitVehicleNotFound();
+            }
+
+            if (!vehicle.ExitMarked)
+            {
+                await tx.RollbackAsync(cancellationToken);
+                return new UnExitVehicleInvalidState("Vehicle is not marked as exited.");
+            }
+
+            // Re-read under the Serializable lock so a concurrent cancel cannot be
+            // overwritten by a stale in-memory Open graph (FR-022 / INV-9).
+            await _db.Entry(vehicle).ReloadAsync(cancellationToken);
+            await _db.Entry(vehicle.Declaration).ReloadAsync(cancellationToken);
+
+            if (!vehicle.ExitMarked)
+            {
+                await tx.RollbackAsync(cancellationToken);
+                return new UnExitVehicleInvalidState("Vehicle is not marked as exited.");
+            }
+
+            vehicle.UnExit();
+            vehicle.Declaration.RecomputeStatus();
+            await _db.SaveChangesAsync(cancellationToken);
+            await tx.CommitAsync(cancellationToken);
+            return new UnExitVehicleApplied(vehicle.Id, vehicle.Declaration.Id, vehicle.Declaration.Status.ToString());
+        }
+        catch
         {
-            return new UnExitVehicleInvalidState("Vehicle is not marked as exited.");
+            await tx.RollbackAsync(cancellationToken);
+            throw;
         }
-
-        vehicle.UnExit();
-        vehicle.Declaration.RecomputeStatus();
-        await _db.SaveChangesAsync(cancellationToken);
-        return new UnExitVehicleApplied(vehicle.Id, vehicle.Declaration.Id, vehicle.Declaration.Status.ToString());
     }
 
     private async Task<string> WinnerNameAsync(Guid? exitConfirmedByUserId, CancellationToken cancellationToken)
