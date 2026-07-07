@@ -19,7 +19,7 @@ public sealed class KvgsConfirmEndpointTests
         return msg;
     }
 
-    private static async Task<(Guid DeclarationId, HttpClient Client)> CreateAllExitedWithClientAsync(B2ApiFactory factory)
+    public static async Task<(Guid DeclarationId, HttpClient Client)> CreateAllExitedWithClientAsync(B2ApiFactory factory)
     {
         var client = factory.CreateClient();
         var admin = await client.LoginAsAdminAsync();
