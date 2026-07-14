@@ -44,15 +44,34 @@ public sealed class FileSystemArchiveWriter : IAnnualArchiveWriter
 
             var ws = wb.Worksheets.FirstOrDefault();
             if (ws is null)
+            {
                 return false;
+            }
 
-            // Count non-header, non-empty rows.
-            var dataRows = ws.RowsUsed().Count();
-            return dataRows >= 1; // at least header row must be present
+            // Export template row 1 is column titles; each declaration's parent row
+            // writes a sequential STT in column A (see ClosedXmlSoB2Exporter).
+            var declarationRows = CountDeclarationRows(ws);
+            return declarationRows >= minimumRows;
         }
         catch
         {
             return false;
         }
+    }
+
+    private static int CountDeclarationRows(IXLWorksheet ws)
+    {
+        var firstRow = ws.FirstRowUsed()?.RowNumber() ?? 1;
+        var lastRow = ws.LastRowUsed()?.RowNumber() ?? firstRow;
+        var count = 0;
+        for (var row = firstRow + 1; row <= lastRow; row++)
+        {
+            if (ws.Cell(row, 1).TryGetValue(out int stt) && stt > 0)
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 }
