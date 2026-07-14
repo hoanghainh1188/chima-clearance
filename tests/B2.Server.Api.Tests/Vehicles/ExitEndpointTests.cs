@@ -5,6 +5,7 @@ using System.Text.Json;
 using B2.Domain.Audit;
 using B2.Domain.Declarations;
 using B2.Infrastructure.Persistence;
+using B2.Server.Api.Tests.Declarations;
 using B2.Server.Api.Tests.Support;
 using B2.Shared.Contracts.Declarations;
 using FluentAssertions;
@@ -213,6 +214,37 @@ public sealed class ExitEndpointTests
             .OrderByDescending(a => a.At)
             .First();
         audit.Reason.Should().Be("wrong vehicle");
+    }
+
+    [Fact]
+    [Trait("Feature", "F-08")]
+    public async Task Should_reject_un_exit_on_kvgs_confirmed_declaration()
+    {
+        await using var factory = new B2ApiFactory();
+        var (declId, client) = await KvgsConfirmEndpointTests.CreateAllExitedWithClientAsync(factory);
+        client.DefaultRequestHeaders.Remove("Authorization");
+        var sup = await client.LoginAsNewSupervisorAsync();
+        client.SetBearer(sup.AccessToken);
+        (await client.PostAsync($"/api/declarations/{declId}/kvgs-confirm", null)).EnsureSuccessStatusCode();
+
+        Guid vehicleId;
+        using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+            vehicleId = await db.Vehicles.AsNoTracking()
+                .Where(v => v.DeclarationId == declId)
+                .Select(v => v.Id)
+                .SingleAsync();
+        }
+
+        client.DefaultRequestHeaders.Remove("Authorization");
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+        var un = await client.PostAsJsonAsync(
+            $"/api/vehicles/{vehicleId}/un-exit",
+            new UnExitVehicleRequest("Không được sửa tờ KVGS"),
+            TestJson.Options);
+        un.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
 
     [Fact]

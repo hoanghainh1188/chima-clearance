@@ -88,6 +88,15 @@ public sealed class Vehicle
                 409);
         }
 
+        // KVGSConfirmed is terminal — un-exit is only valid while the declaration is Open/AllExited.
+        if (Declaration is { Status: DeclarationStatus.KVGSConfirmed })
+        {
+            throw new DomainException(
+                "DECLARATION_LOCKED",
+                "Cannot un-exit a vehicle on a KVGS-confirmed declaration.",
+                409);
+        }
+
         ExitMarked = false;
         ExitTime = null;
         ExitConfirmedByUserId = null;
