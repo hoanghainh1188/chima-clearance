@@ -93,4 +93,17 @@ public sealed class DeclarationCancelTests
         var act = () => exited.UnExit();
         act.Should().Throw<DomainException>().Which.Code.Should().Be("DECLARATION_CANCELLED");
     }
+
+    [Fact]
+    public void UnExit_on_kvgs_confirmed_declaration_throws()
+    {
+        var decl = NewOpenDeclaration(out var exited);
+        exited.MarkExit(Guid.NewGuid(), Now.AddMinutes(1));
+        decl.RecomputeStatus();
+        decl.ConfirmKvgs(Role.Supervisor, Guid.NewGuid(), Now.AddMinutes(2));
+        decl.Status.Should().Be(DeclarationStatus.KVGSConfirmed);
+
+        var act = () => exited.UnExit();
+        act.Should().Throw<DomainException>().Which.Code.Should().Be("DECLARATION_LOCKED");
+    }
 }
