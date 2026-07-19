@@ -16,7 +16,8 @@ clients. SQLite + Litestream for persistence and continuous backup.
 > 6. [`specs/001-b2-clearance/`](./specs/001-b2-clearance/) — Spec Kit feature folder
 >    (spec.md, plan.md, research.md, data-model.md, contracts/openapi.yaml, tasks.md, analyze-report.md)
 > 7. [`.specify/memory/constitution.md`](./.specify/memory/constitution.md) — non-negotiable rules (v1.1.0)
-> 8. [`docs/adr/`](./docs/adr/) — Architecture Decision Records (ADR-0001..0006)
+> 8. [`docs/adr/`](./docs/adr/) — Architecture Decision Records (ADR-0001..0006 locked;
+>    ADR-0007 evaluates a Go-backend port — Proposed, not adopted)
 
 ---
 
@@ -37,7 +38,7 @@ chima-clearance/
 │   ├── B2.Server.Service/          # Windows Service host (worker template) hosts B2.Server.Api.
 │   ├── B2.Shared.Contracts/        # Server↔Desktop DTOs (no logic).
 │   ├── B2.Desktop/                 # .NET MAUI 8 (Windows target only Phase 1). Built only on Windows runners with the MAUI workload.
-│   └── B2.Installer/               # Velopack / Inno Setup config (S6 scaffold).
+│   └── B2.Installer/               # Standalone offline installer CLI (B2Clearance.exe install|uninstall).
 ├── tests/
 │   ├── B2.Domain.Tests/            # ≥ 90 % line coverage target.
 │   ├── B2.Application.Tests/       # ≥ 80 %.
@@ -45,7 +46,7 @@ chima-clearance/
 │   ├── B2.Desktop.Tests/           # ViewModel unit + accessibility AC.
 │   └── B2.Performance.Tests/       # NBomber scenarios; nightly on the spec VM.
 ├── docs/
-│   ├── adr/                        # ADR-0001..0006 (see § 9 of impl plan).
+│   ├── adr/                        # ADR-0001..0006 (see § 9 of impl plan) + ADR-0007 (Go-port eval).
 │   ├── runbook.md                  # Vietnamese operator runbook (S6 deliverable).
 │   ├── prompts.md                  # Spec Kit prompts (per-skill directives).
 │   └── BOOTSTRAP.md                # Workflow bootstrap notes.

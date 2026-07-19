@@ -12,6 +12,25 @@ from S3: ledger child-vehicle expand/collapse, right-click context menu,
 300/400 ms animations on SignalR push, sidebar collapse toggle, focus-ring
 style sweep, ⚙️ quick-settings menu, top-right toast position.
 
+### Changed
+
+#### Deployment — self-contained offline publish; Velopack → xcopy — `ADR-0007`
+
+Backend/DB stack kept on .NET + SQLite + MAUI after a spike evaluated (and rejected) a Go
+backend port (`spikes/go-backend/`, `docs/adr/ADR-0007-*`). To satisfy the **internet-free,
+no-runtime-install** deployment constraint:
+
+- **Server + Desktop now publish self-contained.** Desktop gains
+  `-p:WindowsAppSDKSelfContained=true` (bundles the .NET + Windows App SDK runtimes) so gate
+  PCs need no runtime install. Verified server single-file publish (`B2.Server.Service.exe`
+  112 MB, runtime embedded).
+- **Velopack removed.** `B2.Installer` is now a plain CLI (`B2Clearance.exe install|uninstall`)
+  driven by `deploy/install.ps1` (xcopy). The release pipeline ships one
+  `B2Clearance-<version>-offline.zip` instead of a Velopack setup + update feed. All tested
+  security logic (recovery code, DPAPI-sealed secrets, self-signed cert, service registration)
+  is retained. Offline OS prerequisites (VC++ x64 bundled; WebView2 standalone added on USB)
+  documented in `docs/deployment-offline.md`.
+
 ### Fixed
 
 #### CI — per-step SDK PATH (flake guard v2) — `ci/harden-dotnet-root`

@@ -1,13 +1,21 @@
 using B2.Installer;
-using Velopack;
 
-// VelopackApp.Build().Run() MUST be the first call. It intercepts veloapp-install,
-// veloapp-uninstall, and veloapp-updated before any app code executes.
-VelopackApp.Build()
-    .WithAfterInstallFastCallback(v =>
+// Standalone offline installer CLI (no update framework). Runs elevated (app.manifest
+// requests Administrator). Invoked by deploy/install.ps1 after the payload has been copied
+// to its permanent location, so AppContext.BaseDirectory points at the install folder that
+// holds B2.Server.Service.exe, litestream.exe, and Templates\.
+//
+//   B2Clearance.exe install    → scaffold dirs, TLS cert, service, firewall, recovery code, start
+//   B2Clearance.exe uninstall  → stop + remove the service and firewall rule (keeps data)
+//
+// All actions are idempotent, so re-running install over an existing deployment is safe.
+
+var command = args.Length > 0 ? args[0].Trim().ToLowerInvariant() : string.Empty;
+
+switch (command)
+{
+    case "install":
     {
-        // Runs after Velopack has extracted all files. Set up infrastructure,
-        // register the service, then generate and display the recovery code.
         var appDir = AppContext.BaseDirectory;
         InstallerActions.SetupDirectories();
         InstallerActions.InstallCertificate();
@@ -17,20 +25,23 @@ VelopackApp.Build()
         InstallerActions.AddFirewallRule();
         RecoveryCodeSetup.InitializeAndDisplay();
         InstallerActions.StartService();
-    })
-    .WithBeforeUninstallFastCallback(_ =>
+        Console.WriteLine("Cài đặt hoàn tất. Dịch vụ B2 đã được đăng ký và khởi động.");
+        return 0;
+    }
+
+    case "uninstall":
     {
         InstallerActions.Uninstall();
-    })
-    .WithAfterUpdateFastCallback(_ =>
-    {
-        // After a Velopack self-update the new version files are in place;
-        // restart the Windows Service so the new B2.Server.Service.exe picks up.
-        InstallerActions.RestartService();
-    })
-    .Run();
+        Console.WriteLine("Đã gỡ dịch vụ B2. Dữ liệu tại C:\\ProgramData\\B2 được giữ lại.");
+        return 0;
+    }
 
-// Normal run (no veloapp arg): print version and usage hint.
-var version = typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "dev";
-Console.WriteLine($"B2 Clearance Installer v{version}");
-Console.WriteLine("Chạy file setup.exe để cài đặt, hoặc dùng Add/Remove Programs để gỡ cài.");
+    default:
+    {
+        var version = typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "dev";
+        Console.WriteLine($"B2 Clearance Installer v{version}");
+        Console.WriteLine("Dùng: B2Clearance.exe install | uninstall   (chạy bằng quyền Administrator)");
+        Console.WriteLine("Thông thường bạn chạy deploy\\install.ps1 thay vì gọi trực tiếp.");
+        return 0;
+    }
+}

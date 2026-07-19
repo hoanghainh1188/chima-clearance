@@ -42,8 +42,8 @@
     <OutputType>Exe</OutputType>
     <RootNamespace>B2.Desktop</RootNamespace>
 
-    <!-- Required: ship as plain Win32 exe so Velopack / Inno Setup can deploy on
-         locked-down customs PCs (per `04-implementation-plan.md § 4.1`). -->
+    <!-- Required: ship as plain Win32 exe so the xcopy installer (deploy/install.ps1)
+         can deploy on locked-down customs PCs (per `04-implementation-plan.md § 4.1`). -->
     <WindowsPackageType>None</WindowsPackageType>
     <!-- WindowsAppSDK auto-enables its self-contained MSIX path when a RID is
          present, even with WindowsPackageType=None. That path needs an
@@ -74,6 +74,16 @@
        doesn't pull → NETSDK1112. Leave plain `dotnet build` framework-dependent. -->
   <PropertyGroup Condition="$([MSBuild]::GetTargetPlatformIdentifier('$(TargetFramework)')) == 'windows' and '$(RuntimeIdentifierOverride)' != ''">
     <RuntimeIdentifier>$(RuntimeIdentifierOverride)</RuntimeIdentifier>
+    <!-- OFFLINE DEPLOYMENT (customs PCs have no internet): publish MUST bundle the .NET
+         runtime AND the Windows App SDK runtime so the target needs no runtime install.
+         Per Microsoft Learn "Publish an unpackaged .NET MAUI app for Windows with the CLI",
+         without WindowsAppSDKSelfContained=true the output does NOT include the runtime and
+         requires it pre-installed. We flip it true ONLY at publish time (RuntimeIdentifierOverride
+         set); plain `dotnet build` keeps the framework-dependent path (false, above) to avoid
+         running the self-contained WinAppSDK targets. NOTE: even self-contained, MAUI/WinUI
+         still needs WebView2 Runtime + VC++ 2015–2022 x64 on the target — bundle those offline
+         (see docs/deployment-offline.md). -->
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
   </PropertyGroup>
 
 </Project>
