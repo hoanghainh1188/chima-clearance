@@ -59,11 +59,19 @@ jobs:
           echo "VERSION=${VERSION}" >> "${GITHUB_ENV}"
 
       # -----------------------------------------------------------------------
-      # Publish all three binaries as self-contained, framework-dependent,
-      # single-file win-x64. B2.Desktop requires the win-x64 RID but must NOT
-      # use --self-contained=true with MAUI (NETSDK1134). We publish each
-      # project individually to avoid MSB1008 "only one project" with multiple
-      # positional args on the Windows bash shell.
+      # Publish all three binaries as SELF-CONTAINED win-x64 so the offline
+      # customs PCs need NO .NET runtime install (they have no internet).
+      #   - Service/Installer: -r win-x64 --self-contained true + PublishSingleFile.
+      #   - Desktop (MAUI unpackaged): the .NET SDK forbids `--self-contained` here
+      #     (NETSDK1134); the MAUI-correct switch is -p:WindowsAppSDKSelfContained=true,
+      #     which bundles BOTH the .NET runtime and the Windows App SDK runtime
+      #     (per Microsoft Learn "Publish an unpackaged .NET MAUI app for Windows").
+      #     WITHOUT it the desktop is framework-dependent and will not start on a
+      #     machine that lacks the runtime — unacceptable offline.
+      # Publish each project individually to avoid MSB1008 on the Windows bash shell.
+      # NOTE: even self-contained, MAUI still needs WebView2 Runtime + VC++ 2015–2022
+      # x64 on the target; those are bundled below and installed offline (see
+      # docs/deployment-offline.md).
       # -----------------------------------------------------------------------
       - name: Publish B2.Server.Service
         shell: bash
@@ -81,6 +89,7 @@ jobs:
           dotnet publish src/B2.Desktop/B2.Desktop.csproj \
             -c Release -f net8.0-windows10.0.19041.0 \
             -p:RuntimeIdentifierOverride=win-x64 \
+            -p:WindowsAppSDKSelfContained=true \
             -p:Version="${VERSION}" \
             -o publish/desktop
 
@@ -94,13 +103,16 @@ jobs:
             -o publish/installer
 
       # -----------------------------------------------------------------------
-      # Assemble the Velopack package directory:
+      # Assemble the offline xcopy payload (no update framework — see ADR-0007):
       #   publish/pkg/
-      #     B2Clearance.exe            ← Velopack main exe (installer hooks)
-      #     B2.Server.Service.exe      ← Windows Service binary
-      #     B2.Desktop/                ← Desktop app folder
-      #     Templates/                 ← Sổ B2 Excel template
-      #     litestream.exe             ← Continuous backup binary
+      #     install.ps1 / uninstall.ps1 ← operator scripts (deploy/)
+      #     B2Clearance.exe             ← standalone installer CLI (install|uninstall)
+      #     B2.Server.Service.exe       ← Windows Service binary (self-contained)
+      #     Desktop/                    ← Desktop app folder (self-contained)
+      #     Templates/                  ← Sổ B2 Excel template
+      #     litestream.exe              ← Continuous backup binary
+      #     prereqs/                    ← VC++ redist (+ WebView2 added on USB)
+      # Shipped as a single .zip: extract on USB, run install.ps1 elevated on the gate PC.
       # -----------------------------------------------------------------------
       - name: Download Litestream
         shell: bash
@@ -115,60 +127,69 @@ jobs:
           unzip -q litestream.zip -d litestream-bin
           cp litestream-bin/litestream.exe publish/installer/litestream.exe
 
+      # Offline OS prerequisites that self-contained MAUI still needs on the target.
+      # VC++ 2015–2022 x64 has a STABLE Microsoft link, so we bundle it. The WebView2
+      # Evergreen *Standalone* (offline) installer has no stable direct URL — it is added
+      # to the USB manually per docs/deployment-offline.md; we drop a placeholder note.
+      - name: Bundle offline prerequisites
+        shell: bash
+        run: |
+          mkdir -p publish/prereqs
+          curl -sSL "https://aka.ms/vs/17/release/vc_redist.x64.exe" -o publish/prereqs/vc_redist.x64.exe
+          cat > publish/prereqs/README-WebView2.txt <<'EOF'
+          Place MicrosoftEdgeWebView2RuntimeInstaller x64 (Evergreen STANDALONE / offline
+          installer) here before copying this folder to the offline gate PC. Download it on
+          an internet-connected machine from:
+            https://developer.microsoft.com/microsoft-edge/webview2/  (Standalone Installer, x64)
+          Install order on the target: vc_redist.x64.exe, then the WebView2 standalone installer.
+          See docs/deployment-offline.md.
+          EOF
+
       - name: Assemble package dir
         shell: bash
         run: |
           mkdir -p publish/pkg
-          # Installer (Velopack entry + assets)
+          # Installer CLI (B2Clearance.exe) + litestream.exe + Templates/
           cp -r publish/installer/. publish/pkg/
-          # Service
+          # Service (self-contained single-file)
           cp -r publish/service/. publish/pkg/
-          # Desktop (into a subdirectory so it doesn't clash with service files)
+          # Desktop (self-contained) into a subdirectory so it doesn't clash with service files
           mkdir -p publish/pkg/Desktop
           cp -r publish/desktop/. publish/pkg/Desktop/
+          # Offline prerequisites (VC++ redist + WebView2 placeholder)
+          mkdir -p publish/pkg/prereqs
+          cp -r publish/prereqs/. publish/pkg/prereqs/
+          # Operator scripts at payload root
+          cp deploy/install.ps1 deploy/uninstall.ps1 publish/pkg/
 
       # -----------------------------------------------------------------------
-      # Velopack: install the vpk CLI tool, then pack the installer.
-      # Output: Releases/B2ClearanceSetup.exe  (full installer)
-      #         Releases/RELEASES              (update feed for future auto-updates)
+      # Ship the payload as a single offline .zip. No installer framework, no
+      # update feed — extract on USB, run install.ps1 elevated on the gate PC.
       # -----------------------------------------------------------------------
-      - name: Install vpk CLI
-        shell: bash
-        run: dotnet tool install -g vpk
-
-      - name: Pack with Velopack
+      - name: Zip offline package
         shell: bash
         run: |
-          vpk pack \
-            --packId B2Clearance \
-            --packVersion "${VERSION}" \
-            --packDir publish/pkg \
-            --mainExe B2Clearance.exe \
-            --outputDir Releases
-
-      # -----------------------------------------------------------------------
-      # Upload artifacts and create GitHub Release
-      # -----------------------------------------------------------------------
-      # List the Releases dir so we can see exact filenames in CI logs.
-      - name: List Releases dir
-        shell: bash
-        run: ls -lh Releases/
+          mkdir -p Releases
+          ZIP="Releases/B2Clearance-${VERSION}-offline.zip"
+          ( cd publish/pkg && 7z a -tzip "../../${ZIP}" ./* >/dev/null )
+          ls -lh Releases/
 
       - name: Create GitHub Release
         shell: bash
         run: |
-          # Collect all release artifacts except .nupkg delta/full packages
-          # (those are update-feed internal; end-users only need the setup exe + feed).
-          mapfile -t ASSETS < <(find Releases/ -maxdepth 1 -type f ! -name '*.nupkg' | sort)
           gh release create "${GITHUB_REF_NAME}" \
             --title "B2 Clearance ${GITHUB_REF_NAME}" \
-            --notes "Xem \`docs/runbook.md\` để biết hướng dẫn cài đặt và vận hành." \
-            "${ASSETS[@]}"
+            --notes "Cài đặt offline: giải nén zip, xem \`docs/deployment-offline.md\` (chạy install.ps1 bằng quyền Administrator)." \
+            "Releases/B2Clearance-${VERSION}-offline.zip"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Upload installer artifact
+      # Redundant convenience copy — the release .zip is already attached to the GitHub
+      # Release above (not subject to Actions artifact quota). Don't fail the release if
+      # the artifact-storage quota is hit.
+      - name: Upload offline package artifact
+        continue-on-error: true
         uses: actions/upload-artifact@v7
         with:
-          name: B2Clearance-${{ env.VERSION }}
+          name: B2Clearance-${{ env.VERSION }}-offline
           path: Releases/

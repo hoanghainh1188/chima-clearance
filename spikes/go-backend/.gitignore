@@ -1,0 +1,8 @@
+# Go build output
+/server
+/cmd/server/server
+*.exe
+
+# .NET probe build output
+clients/signalr-probe/bin/
+clients/signalr-probe/obj/

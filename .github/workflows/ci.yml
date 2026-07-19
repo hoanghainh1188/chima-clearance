@@ -94,8 +94,12 @@ jobs:
         shell: bash
         run: dotnet test B2.sln -c Release --no-build --collect:"XPlat Code Coverage" --logger "trx;LogFileName=test-results.trx"
 
+      # Non-essential diagnostics: never fail the build if artifact upload fails
+      # (e.g. GitHub Actions artifact storage quota hit). Build + test results above
+      # are the real gate.
       - name: Upload coverage
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v7
         with:
           name: coverage
@@ -103,6 +107,7 @@ jobs:
 
       - name: Upload test results
         if: always()
+        continue-on-error: true
         uses: actions/upload-artifact@v7
         with:
           name: test-results

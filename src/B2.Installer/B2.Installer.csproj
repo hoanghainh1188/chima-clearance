@@ -10,17 +10,14 @@
          MSIX when targeting net8.0-windows*. Same pattern as B2.Desktop. -->
     <WindowsPackageType>None</WindowsPackageType>
     <WindowsAppSDKSelfContained>false</WindowsAppSDKSelfContained>
-    <!-- Velopack uses the exe name as its app identifier in the Releases dir. -->
+    <!-- Produces B2Clearance.exe — the standalone offline installer CLI invoked by
+         deploy/install.ps1 (xcopy deployment; no update framework). -->
     <AssemblyName>B2Clearance</AssemblyName>
     <!-- UAC: installer must run as Administrator (installs cert + service). -->
     <ApplicationManifest>app.manifest</ApplicationManifest>
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- Velopack runtime: handles veloapp-install / veloapp-uninstall hooks and
-         future self-update. Constitution II allows this installer-scope dependency
-         without an ADR because it is an installer-only tool, not a production library. -->
-    <PackageReference Include="Velopack" Version="0.0.915" />
     <!-- DPAPI for sealing the backup install-password + recovery code at install time. -->
     <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="8.0.0" />
   </ItemGroup>
