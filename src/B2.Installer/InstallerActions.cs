@@ -120,10 +120,17 @@ internal static class InstallerActions
     {
         var serviceExe = Path.Combine(appDir, "B2.Server.Service.exe");
 
-        // Create (skip if already registered).
-        Run("sc.exe",
-            $"create \"{ServiceName}\" binpath=\"{serviceExe}\" " +
-            $"start=auto obj=LocalSystem displayname=\"{ServiceDisplayName}\"");
+        // Create on first install; on upgrade only refresh binpath (sc create → 1073).
+        if (ServiceExists())
+        {
+            Run("sc.exe", $"config \"{ServiceName}\" binpath=\"{serviceExe}\" start=auto");
+        }
+        else
+        {
+            Run("sc.exe",
+                $"create \"{ServiceName}\" binpath=\"{serviceExe}\" " +
+                $"start=auto obj=LocalSystem displayname=\"{ServiceDisplayName}\"");
+        }
 
         Run("sc.exe", $"description \"{ServiceName}\" \"{ServiceDescription}\"");
 
@@ -181,6 +188,20 @@ internal static class InstallerActions
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    private static bool ServiceExists()
+    {
+        var psi = new ProcessStartInfo("sc.exe", $"query \"{ServiceName}\"")
+        {
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+        };
+        using var proc = Process.Start(psi)!;
+        proc.WaitForExit(30_000);
+        return proc.ExitCode == 0;
+    }
 
     private static void Run(string exe, string args, bool expectSuccess = true)
     {
