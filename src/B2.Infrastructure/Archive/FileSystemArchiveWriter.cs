@@ -10,6 +10,13 @@ namespace B2.Infrastructure.Archive;
 /// </summary>
 public sealed class FileSystemArchiveWriter : IAnnualArchiveWriter
 {
+    // Layout mirrors ClosedXmlSoB2Exporter: row 1 is the column-title row; each parent
+    // declaration row carries the declaration number in column C (3). Day-header banner
+    // rows and child vehicle rows leave column C empty, so counting non-empty C cells
+    // below row 1 yields the number of archived declarations.
+    private const int HeaderTitleRow = 1;
+    private const int DeclarationNumberColumn = 3;
+
     private readonly string _archiveBasePath;
 
     public FileSystemArchiveWriter(string archiveBasePath) =>
@@ -44,15 +51,32 @@ public sealed class FileSystemArchiveWriter : IAnnualArchiveWriter
 
             var ws = wb.Worksheets.FirstOrDefault();
             if (ws is null)
+            {
                 return false;
+            }
 
-            // Count non-header, non-empty rows.
-            var dataRows = ws.RowsUsed().Count();
-            return dataRows >= 1; // at least header row must be present
+            // FR-021 / INV-12: only delete live data once the archive actually contains
+            // at least the number of declarations we exported. A truncated file must fail.
+            return CountDeclarationRows(ws) >= minimumRows;
         }
         catch
         {
             return false;
         }
+    }
+
+    private static int CountDeclarationRows(IXLWorksheet ws)
+    {
+        var lastRow = ws.LastRowUsed()?.RowNumber() ?? 0;
+        var count = 0;
+        for (var row = HeaderTitleRow + 1; row <= lastRow; row++)
+        {
+            if (!string.IsNullOrWhiteSpace(ws.Cell(row, DeclarationNumberColumn).GetString()))
+            {
+                count++;
+            }
+        }
+
+        return count;
     }
 }
