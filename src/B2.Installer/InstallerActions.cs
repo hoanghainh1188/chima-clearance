@@ -120,10 +120,20 @@ internal static class InstallerActions
     {
         var serviceExe = Path.Combine(appDir, "B2.Server.Service.exe");
 
-        // Create (skip if already registered).
-        Run("sc.exe",
-            $"create \"{ServiceName}\" binpath=\"{serviceExe}\" " +
-            $"start=auto obj=LocalSystem displayname=\"{ServiceDisplayName}\"");
+        if (ServiceExists(ServiceName))
+        {
+            // Upgrade path (deploy/install.ps1 re-run over an existing install): sc create
+            // would fail with exit 1073 (service already exists) and abort the upgrade.
+            // Update the binpath to the freshly copied executable instead.
+            Run("sc.exe",
+                $"config \"{ServiceName}\" binpath= \"{serviceExe}\" start= auto");
+        }
+        else
+        {
+            Run("sc.exe",
+                $"create \"{ServiceName}\" binpath=\"{serviceExe}\" " +
+                $"start=auto obj=LocalSystem displayname=\"{ServiceDisplayName}\"");
+        }
 
         Run("sc.exe", $"description \"{ServiceName}\" \"{ServiceDescription}\"");
 
@@ -181,6 +191,21 @@ internal static class InstallerActions
     // -------------------------------------------------------------------------
     // Helpers
     // -------------------------------------------------------------------------
+
+    /// <summary>Returns true if a Windows service with the given name is already registered.</summary>
+    private static bool ServiceExists(string serviceName)
+    {
+        var psi = new ProcessStartInfo("sc.exe", $"query \"{serviceName}\"")
+        {
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+            CreateNoWindow = true,
+        };
+        using var proc = Process.Start(psi)!;
+        proc.WaitForExit(30_000);
+        return proc.ExitCode == 0;
+    }
 
     private static void Run(string exe, string args, bool expectSuccess = true)
     {

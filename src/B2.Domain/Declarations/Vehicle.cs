@@ -88,6 +88,16 @@ public sealed class Vehicle
                 409);
         }
 
+        // FR-022: once KVGS is confirmed the declaration is terminal/locked — a later
+        // un-exit would leave ExitMarked=false while Status=KVGSConfirmed (ledger drift).
+        if (Declaration is { Status: DeclarationStatus.KVGSConfirmed })
+        {
+            throw new DomainException(
+                "DECLARATION_LOCKED",
+                "Cannot un-exit a vehicle on a KVGS-confirmed declaration.",
+                409);
+        }
+
         ExitMarked = false;
         ExitTime = null;
         ExitConfirmedByUserId = null;

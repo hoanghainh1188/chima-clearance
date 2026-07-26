@@ -216,6 +216,61 @@ public sealed class ExitEndpointTests
     }
 
     [Fact]
+    [Trait("Requirement", "FR-022")]
+    public async Task Should_reject_un_exit_after_kvgs_confirm_with_conflict()
+    {
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+
+        var create = await client.PostAsJsonAsync(
+            "/api/declarations",
+            new DeclarationCreateRequest(
+                TestDeclarationNumbers.Next(),
+                SeedIds.ProcessorId,
+                "C1",
+                "G1",
+                SeedIds.YardId,
+                new VehicleAddRequest("30A99991", null, null)),
+            TestJson.Options);
+        create.EnsureSuccessStatusCode();
+        var decl = await create.Content.ReadFromJsonAsync<DeclarationDto>(TestJson.Options);
+
+        Guid vehicleId;
+        using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+            vehicleId = await db.Vehicles.AsNoTracking()
+                .Where(v => v.DeclarationId == decl!.Id)
+                .Select(v => v.Id)
+                .SingleAsync();
+        }
+
+        // Exit the (only) vehicle so the declaration becomes AllExited, then KVGS-confirm it.
+        client.DefaultRequestHeaders.Remove("Authorization");
+        var op = await client.LoginAsNewOperatorAsync();
+        client.SetBearer(op.AccessToken);
+        (await client.SendAsync(ExitRequest(vehicleId, Guid.NewGuid().ToString("N")))).EnsureSuccessStatusCode();
+
+        client.DefaultRequestHeaders.Remove("Authorization");
+        var sup = await client.LoginAsNewSupervisorAsync();
+        client.SetBearer(sup.AccessToken);
+        (await client.PostAsync($"/api/declarations/{decl!.Id}/kvgs-confirm", null)).EnsureSuccessStatusCode();
+
+        // Admin un-exit must now be rejected (DECLARATION_LOCKED → 409).
+        client.DefaultRequestHeaders.Remove("Authorization");
+        var admin2 = await client.LoginAsAdminAsync();
+        client.SetBearer(admin2.AccessToken);
+        var unExit = await client.PostAsJsonAsync(
+            $"/api/vehicles/{vehicleId}/un-exit",
+            new UnExitVehicleRequest("Không được sửa tờ đã KVGS"),
+            TestJson.Options);
+
+        unExit.StatusCode.Should().Be(HttpStatusCode.Conflict);
+    }
+
+    [Fact]
     [Trait("Feature", "F-08")]
     public async Task Should_fr024_first_exit_wins_second_gets_conflict_payload()
     {
