@@ -63,6 +63,28 @@ declaration graph go through it.
 entry form still submits one number — the multi-number entry field and the drawer editor ship
 separately.
 
+#### Excel export: daily row in the wrong cells, times written as text — `F-13`
+
+Exporting a real file and putting it side by side with the unit's own `Mẫu sổ B2.xlsx` turned up
+two layout defects. Neither fails a test or looks wrong on screen; both only show up in Excel.
+
+- **Daily row.** The unit's file puts ngày in **cột D**, tổng số xe in **cột E as a number**, and
+  người trực in **cột F**. The exporter wrote one sentence into cột A and merged A:O, so the total
+  was part of a string — not summable, filterable or sortable by column. Now written to D/E/F with
+  no merge.
+- **Giờ nhập sổ / giờ xe ra.** The unit's file stores Excel date serials with a display format; the
+  exporter wrote strings like `"01/08/2026 23:04"`. As text the column sorts alphabetically and two
+  timestamps cannot be subtracted — which is how an operator works out how long a vehicle sat in
+  the yard. Now real date values with the format named in the business rules (`26/2/2026 13:16`).
+
+Verified by exporting against seeded data covering every shape the sheet can render (multi-number
+row, parent + child vehicles, all-exited + KVGS, cancelled, plate typed with a dash) and reading
+the resulting cells: `D2` text, `E2` number `6`, `F2` officer name, `I3`/`K7` numeric serials with
+format `d/M/yyyy H:mm` — the same shapes as the unit's file.
+
+The template itself was never the problem: the embedded copy is byte-identical to the unit's file
+(same MD5).
+
 ### Fixed — business rules re-checked against the customer's own documents
 
 A review of `docs/Business rules - Hướng dẫn điền sổ B2.md` and `docs/Định nghĩa yêu cầu.md`

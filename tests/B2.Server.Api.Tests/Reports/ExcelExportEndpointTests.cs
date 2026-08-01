@@ -12,6 +12,8 @@ public sealed class ExcelExportEndpointTests
 {
     private const int PlateColumn = 5;   // E
     private const int DeclarationNumberColumn = 3; // C
+    private const int EntryTimeColumn = 9;  // I
+    private const int ExitTimeColumn = 11; // K
 
     private static readonly string[] ExpectedPlates = { "31A30001", "31A30002", "31A30003", "31A30004" };
 
@@ -34,18 +36,40 @@ public sealed class ExcelExportEndpointTests
         await CreateDeclarationAsync(client, "31A30004");
 
         var date = first.BusinessDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        // Tổng xe on the daily row is only filled once the day is summarised (the 23:00 job, or
+        // the ledger's "Tính lại" button). Export before that and cột E is legitimately blank.
+        var recompute = await client.PostAsJsonAsync(
+            $"/api/daily-headers/{date}/recompute",
+            new RecomputeDailySummaryRequest("UAT export check"),
+            TestJson.Options);
+        recompute.StatusCode.Should().Be(HttpStatusCode.OK);
+
         var ws = await ExportWorksheetAsync(client, date, date);
 
         // Row 1 is the template column-title row: full Sổ B2 column set preserved.
         ws.Row(1).CellsUsed().Count().Should().BeGreaterThanOrEqualTo(15);
 
-        var headerRows = DataRows(ws).Count(r => r.Cell(1).GetString().StartsWith("Ngày", StringComparison.Ordinal));
-        headerRows.Should().Be(1, "a single day was exported");
+        // The daily row follows the unit's own file: ngày in cột D, tổng xe as a NUMBER in cột E,
+        // người trực in cột F — not one merged sentence across A:O.
+        var dayRows = DataRows(ws)
+            .Where(r => r.Cell(4).GetString().StartsWith("Ngày", StringComparison.Ordinal))
+            .ToList();
+        dayRows.Should().HaveCount(1, "a single day was exported");
+        dayRows[0].Cell(1).GetString().Should().BeEmpty("cột A stays the STT column");
+        dayRows[0].Cell(5).DataType.Should().Be(XLDataType.Number, "tổng xe must stay summable");
+        dayRows[0].Cell(5).GetValue<int>().Should().Be(4, "four vehicles were entered that day");
 
         var parentRows = DataRows(ws).Count(r => !string.IsNullOrEmpty(r.Cell(DeclarationNumberColumn).GetString()));
         parentRows.Should().Be(3, "three declarations were created");
 
-        var plates = DataRows(ws).Select(r => r.Cell(PlateColumn).GetString()).Where(s => s.Length > 0).ToList();
+        // Skip the daily row: the unit's layout reuses cột E for tổng xe, so scanning that column
+        // blindly would count the day's total as if it were a plate.
+        var plates = DataRows(ws)
+            .Where(r => !r.Cell(4).GetString().StartsWith("Ngày", StringComparison.Ordinal))
+            .Select(r => r.Cell(PlateColumn).GetString())
+            .Where(s => s.Length > 0)
+            .ToList();
         plates.Should().BeEquivalentTo(ExpectedPlates);
     }
 
@@ -65,6 +89,36 @@ public sealed class ExcelExportEndpointTests
         var row = DataRows(ws).Single(r => r.Cell(PlateColumn).GetString() == "31A30010");
         row.Cell(PlateColumn).Style.Font.FontColor.Color.ToArgb()
             .Should().Be(XLColor.Red.Color.ToArgb(), "an un-exited vehicle is shown in red text");
+    }
+
+    [Fact]
+    [Trait("Feature", "F-13")]
+    public async Task Should_write_times_as_real_date_values_not_text()
+    {
+        // Cột I / cột K are date values in the unit's own file (Excel serial + display format).
+        // As text the column sorts alphabetically and cannot be subtracted, which is how an
+        // operator would work out how long a vehicle sat in the yard.
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+
+        var decl = await CreateDeclarationAsync(client, "31A30030");
+        var detail = await client.GetFromJsonAsync<DeclarationDetailResponse>(
+            $"/api/declarations/{decl.Id}",
+            TestJson.Options);
+        var exit = await client.PostAsync($"/api/vehicles/{detail!.Vehicles[0].Id}/exit", null);
+        exit.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var date = decl.BusinessDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+        var ws = await ExportWorksheetAsync(client, date, date);
+        var row = DataRows(ws).Single(r => r.Cell(PlateColumn).GetString() == "31A30030");
+
+        row.Cell(EntryTimeColumn).DataType.Should().Be(XLDataType.DateTime);
+        row.Cell(ExitTimeColumn).DataType.Should().Be(XLDataType.DateTime);
+        row.Cell(EntryTimeColumn).Style.DateFormat.Format.Should().Be("d/M/yyyy H:mm");
+        row.Cell(ExitTimeColumn).GetDateTime()
+            .Should().BeOnOrAfter(row.Cell(EntryTimeColumn).GetDateTime());
     }
 
     [Fact]
