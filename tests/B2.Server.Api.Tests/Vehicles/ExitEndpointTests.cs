@@ -23,7 +23,7 @@ public sealed class ExitEndpointTests
         var create = await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                no,
+                [no],
                 SeedIds.ProcessorId,
                 "C1",
                 "G1",
@@ -227,7 +227,7 @@ public sealed class ExitEndpointTests
         var create = await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                TestDeclarationNumbers.Next(),
+                [TestDeclarationNumbers.Next()],
                 SeedIds.ProcessorId,
                 "C1",
                 "G1",

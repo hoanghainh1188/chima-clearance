@@ -28,7 +28,7 @@ public sealed class CancelDeclarationEndpointTests
         var create = await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                TestDeclarationNumbers.Next(),
+                [TestDeclarationNumbers.Next()],
                 SeedIds.ProcessorId,
                 "Công ty ABC",
                 "Hàng hóa",

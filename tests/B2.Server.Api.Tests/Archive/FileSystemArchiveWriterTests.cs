@@ -95,6 +95,7 @@ public sealed class FileSystemArchiveWriterTests
             .Select(i => new SoB2DeclarationBlock(
                 date,
                 FormattableString.Invariant($"31A{i:0000}"),
+                new[] { FormattableString.Invariant($"31A{i:0000}") },
                 "Processor",
                 "Company",
                 "Goods",

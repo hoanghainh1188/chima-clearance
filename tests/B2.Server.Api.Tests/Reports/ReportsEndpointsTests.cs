@@ -33,7 +33,7 @@ public sealed class ReportsEndpointsTests
         var create = await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                no,
+                [no],
                 SeedIds.ProcessorId,
                 "C1",
                 "G1",
@@ -61,7 +61,7 @@ public sealed class ReportsEndpointsTests
         var create = await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                no,
+                [no],
                 SeedIds.ProcessorId,
                 "C1",
                 "G1",
@@ -109,7 +109,7 @@ public sealed class ReportsEndpointsTests
         var create = await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                no,
+                [no],
                 SeedIds.ProcessorId,
                 "C1",
                 "G1",

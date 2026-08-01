@@ -26,7 +26,7 @@ public sealed class AuditEndpointTests
         var create = await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                TestDeclarationNumbers.Next(),
+                [TestDeclarationNumbers.Next()],
                 SeedIds.ProcessorId,
                 "C1",
                 "G1",

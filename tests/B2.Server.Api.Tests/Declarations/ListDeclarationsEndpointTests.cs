@@ -27,7 +27,7 @@ public sealed class ListDeclarationsEndpointTests
         var createToday = await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                todayNo,
+                [todayNo],
                 SeedIds.ProcessorId,
                 "C1",
                 "G1",
@@ -41,7 +41,7 @@ public sealed class ListDeclarationsEndpointTests
         var createY = await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                yesterdayNo,
+                [yesterdayNo],
                 SeedIds.ProcessorId,
                 "C2",
                 "G2",
@@ -78,7 +78,7 @@ public sealed class ListDeclarationsEndpointTests
         var r1 = await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                firstNo,
+                [firstNo],
                 SeedIds.ProcessorId,
                 "C1",
                 "G1",
@@ -92,7 +92,7 @@ public sealed class ListDeclarationsEndpointTests
         var r2 = await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                secondNo,
+                [secondNo],
                 SeedIds.ProcessorId,
                 "C2",
                 "G2",
@@ -145,7 +145,7 @@ public sealed class ListDeclarationsEndpointTests
         var created = await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                no,
+                [no],
                 SeedIds.ProcessorId,
                 "C1",
                 "G1",
@@ -184,7 +184,7 @@ public sealed class ListDeclarationsEndpointTests
         var created = await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                no,
+                [no],
                 SeedIds.ProcessorId,
                 "C1",
                 "G1",
@@ -222,7 +222,7 @@ public sealed class ListDeclarationsEndpointTests
         var write = await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                no,
+                [no],
                 SeedIds.ProcessorId,
                 "Polling Co",
                 "Polling Goods",
@@ -257,7 +257,7 @@ public sealed class ListDeclarationsEndpointTests
             var r = await client.PostAsJsonAsync(
                 "/api/declarations",
                 new DeclarationCreateRequest(
-                    no,
+                    [no],
                     SeedIds.ProcessorId,
                     "C1",
                     "G1",

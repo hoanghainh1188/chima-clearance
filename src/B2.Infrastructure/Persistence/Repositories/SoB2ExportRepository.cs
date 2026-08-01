@@ -47,6 +47,13 @@ public sealed class SoB2ExportRepository : ISoB2ExportRepository
         }
 
         var declarationIds = declarations.Select(d => d.Id).ToList();
+        var numbersByDeclaration = (await _db.DeclarationNumbers.AsNoTracking()
+                .Where(n => declarationIds.Contains(n.DeclarationId))
+                .OrderBy(n => n.Ordinal)
+                .Select(n => new { n.DeclarationId, n.Number })
+                .ToListAsync(cancellationToken))
+            .GroupBy(n => n.DeclarationId)
+            .ToDictionary(g => g.Key, g => (IReadOnlyList<string>)g.Select(n => n.Number).ToList());
         var vehicles = await _db.Vehicles.AsNoTracking()
             .Where(v => declarationIds.Contains(v.DeclarationId))
             .Select(v => new VehicleRow(
@@ -74,6 +81,7 @@ public sealed class SoB2ExportRepository : ISoB2ExportRepository
             .Select(d => new SoB2DeclarationBlock(
                 d.BusinessDate,
                 d.DeclarationNumber,
+                numbersByDeclaration.GetValueOrDefault(d.Id, new[] { d.DeclarationNumber }),
                 d.ProcessorName,
                 d.CompanyName,
                 d.GoodsName,

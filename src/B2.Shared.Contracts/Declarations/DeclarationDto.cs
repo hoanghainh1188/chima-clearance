@@ -4,6 +4,7 @@ namespace B2.Shared.Contracts.Declarations;
 
 public sealed record DeclarationDto(
     Guid Id,
+    /// <summary>The primary number (ordinal 0 of <see cref="DeclarationNumbers"/>).</summary>
     string DeclarationNumber,
     ProcessorDto? Processor,
     string CompanyName,
@@ -17,4 +18,6 @@ public sealed record DeclarationDto(
     DateTimeOffset? KvgsConfirmedAt,
     Guid? CancelledByUserId,
     DateTimeOffset? CancelledAt,
-    string? CancellationReason);
+    string? CancellationReason,
+    /// <summary>Every number on cột C of this row, ordered; always contains at least one.</summary>
+    IReadOnlyList<string> DeclarationNumbers);

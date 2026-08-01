@@ -24,7 +24,7 @@ public sealed class CreateDeclarationEndpointTests
         var res = await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                "123456789012",
+                ["123456789012"],
                 SeedIds.ProcessorId,
                 "Cty TNHH ABC",
                 "Hang hoa",
@@ -55,7 +55,7 @@ public sealed class CreateDeclarationEndpointTests
         var admin = await client.LoginAsAdminAsync();
         client.SetBearer(admin.AccessToken);
         var req = new DeclarationCreateRequest(
-            "999999999999",
+            ["999999999999"],
             SeedIds.ProcessorId,
             "C1",
             "G1",
@@ -79,7 +79,7 @@ public sealed class CreateDeclarationEndpointTests
         var res = await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                "12345",
+                ["12345"],
                 SeedIds.ProcessorId,
                 "C1",
                 "G1",
@@ -99,7 +99,7 @@ public sealed class CreateDeclarationEndpointTests
         client.SetBearer(admin.AccessToken);
         var key = "idem-" + Guid.NewGuid().ToString("N");
         var req = new DeclarationCreateRequest(
-            "111111111111",
+            ["111111111111"],
             SeedIds.ProcessorId,
             "C1",
             "G1",

@@ -29,6 +29,40 @@ normalises the field in place on submit, so the officer sees the canonical value
 10 new tests (7 normalisation cases, validity parity with `Parse`, container cases) plus 3
 endpoint tests covering create, suffix search and a still-invalid plate.
 
+### Added
+
+#### Cột C holds several declaration numbers per row, editable after entry — `INV-1`
+
+Cột C: *"có nhiều dãy số thì mỗi dãy số sẽ tách thành từng dòng riêng biệt trong cùng 1 ô"* — one
+parent row may carry several tờ khai. The model allowed exactly one, so a batch covered by two
+declarations could not be recorded as the sheet requires. Confirmed with the unit (2026-08-01),
+including that the cell stays **editable** after the row exists: a batch can gain another tờ khai
+while its vehicles are already inside.
+
+- New `DeclarationNumbers` table (1..20 per row, ordered). Ordinal 0 stays cached on
+  `Declaration.DeclarationNumber`, so ledger rows, suffix-search results and reports keep working
+  on a single value instead of being rewritten.
+- INV-1 uniqueness moves to the child table — unique index filtered on `IsCancelled`, which
+  mirrors the parent so a cancelled row still frees **every** one of its numbers for re-entry
+  (FR-022).
+- `POST /api/declarations/{id}/numbers` and `DELETE …/numbers/{number}` (GateOperator — cột C is
+  the entry gate's column). A row must keep at least one number, and the list is frozen once the
+  declaration is cancelled or KVGS-confirmed. Every edit writes an `Update` audit row carrying the
+  before/after list.
+- Excel export writes the numbers on separate lines **inside the one cell** with WrapText, as the
+  legacy file did with Alt+Enter.
+- Migration `0003` creates the table and **backfills every existing declaration** as ordinal 0,
+  mirroring the cancelled flag; without that step the ledger would have lost cột C entirely.
+
+While wiring this up, EF misclassified the new child rows as `Modified` (UPDATE against a PK that
+does not exist → "expected to affect 1 row(s), but actually affected 0"). The context already
+carried a guard for exactly that on `Vehicle`; it is now generalised so both children of the
+declaration graph go through it.
+
+`DeclarationCreateRequest.DeclarationNumber` became `DeclarationNumbers` (a list). The desktop
+entry form still submits one number — the multi-number entry field and the drawer editor ship
+separately.
+
 ### Fixed — business rules re-checked against the customer's own documents
 
 A review of `docs/Business rules - Hướng dẫn điền sổ B2.md` and `docs/Định nghĩa yêu cầu.md`

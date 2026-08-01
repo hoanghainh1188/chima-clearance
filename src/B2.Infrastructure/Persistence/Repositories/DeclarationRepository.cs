@@ -27,15 +27,18 @@ public sealed class DeclarationRepository : IDeclarationRepository
     /// declaration has it cancelled and then records the real one under the same number.
     /// </summary>
     public Task<bool> DeclarationNumberExistsAsync(string declarationNumber, CancellationToken cancellationToken) =>
-        _db.Declarations.AnyAsync(
-            d => d.DeclarationNumber == declarationNumber && d.Status != DeclarationStatus.Cancelled,
+        _db.DeclarationNumbers.AnyAsync(
+            n => n.Number == declarationNumber && !n.IsCancelled,
             cancellationToken);
 
     public async Task AddAsync(Declaration declaration, CancellationToken cancellationToken) =>
         await _db.Declarations.AddAsync(declaration, cancellationToken);
 
     public Task<Declaration?> GetByIdWithVehiclesAsync(Guid id, CancellationToken cancellationToken) =>
-        _db.Declarations.Include(d => d.Vehicles).FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
+        _db.Declarations
+            .Include(d => d.Vehicles)
+            .Include(d => d.Numbers)
+            .FirstOrDefaultAsync(d => d.Id == id, cancellationToken);
 
     public Task<Declaration?> GetByDeclarationNumberWithVehiclesAsync(
         string declarationNumber,
@@ -100,6 +103,7 @@ public sealed class DeclarationRepository : IDeclarationRepository
         {
             var declaration = await _db.Declarations
                 .Include(d => d.Vehicles)
+                .Include(d => d.Numbers)
                 .FirstOrDefaultAsync(d => d.Id == declarationId, cancellationToken);
 
             if (declaration is null)
@@ -402,6 +406,12 @@ public sealed class DeclarationRepository : IDeclarationRepository
             .OrderBy(v => v.EntryTime)
             .ToList();
 
+        var numbers = await _db.DeclarationNumbers.AsNoTracking()
+            .Where(n => n.DeclarationId == id)
+            .OrderBy(n => n.Ordinal)
+            .Select(n => n.Number)
+            .ToListAsync(cancellationToken);
+
         var d = row.dec;
         var dto = new DeclarationDto(
             d.Id,
@@ -418,7 +428,8 @@ public sealed class DeclarationRepository : IDeclarationRepository
             d.KvgsConfirmedAt,
             d.CancelledByUserId,
             d.CancelledAt,
-            d.CancellationReason);
+            d.CancellationReason,
+            numbers);
 
         return new DeclarationDetailResponse(dto, vehicles);
     }

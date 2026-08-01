@@ -15,7 +15,7 @@ public sealed class DeclarationCancelTests
     {
         var decl = Declaration.CreateNew(
             Guid.NewGuid(),
-            DeclarationNumber.Parse("123456789012"),
+            [DeclarationNumber.Parse("123456789012")],
             Guid.NewGuid(),
             "Co",
             "Hang",

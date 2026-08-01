@@ -9,6 +9,7 @@ using B2.Application.Declarations.Cancel;
 using B2.Application.Declarations.ConfirmKvgs;
 using B2.Application.Declarations.Exit;
 using B2.Application.Declarations.Note;
+using B2.Application.Declarations.Numbers;
 using B2.Application.Declarations.List;
 using B2.Application.DailyHeaders;
 using B2.Application.Export;
@@ -37,6 +38,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<UnExitVehicleCommandHandler>();
         services.AddScoped<ConfirmKvgsCommandHandler>();
         services.AddScoped<UpdateVehicleNoteCommandHandler>();
+        services.AddScoped<DeclarationNumberCommandHandler>();
         services.AddScoped<CancelDeclarationCommandHandler>();
         services.AddScoped<ListDeclarationsQueryHandler>();
         services.AddScoped<GetDeclarationDetailQueryHandler>();

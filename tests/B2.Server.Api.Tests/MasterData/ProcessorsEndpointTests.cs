@@ -33,7 +33,7 @@ public sealed class ProcessorsEndpointTests
         client.SetBearer(adminLogin.AccessToken);
         var unknownProcessor = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd");
         var req = new DeclarationCreateRequest(
-            "123456789012",
+            ["123456789012"],
             unknownProcessor,
             "Cong Ty A",
             "Hang Hoa B",

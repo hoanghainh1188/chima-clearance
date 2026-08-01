@@ -111,7 +111,16 @@ public sealed class ClosedXmlSoB2Exporter : ISoB2Exporter
             {
                 ws.Cell(row, 1).Value = stt;
                 ws.Cell(row, 2).Value = declaration.ProcessorName;
-                ws.Cell(row, 3).Value = declaration.DeclarationNumber;
+                // Cột C: several numbers live in ONE cell on separate lines, exactly as the
+                // legacy file did with Alt+Enter. WrapText makes the breaks visible in Excel 2010.
+                var numbers = declaration.DeclarationNumbers is { Count: > 0 }
+                    ? declaration.DeclarationNumbers
+                    : new[] { declaration.DeclarationNumber };
+                ws.Cell(row, 3).Value = string.Join(Environment.NewLine, numbers);
+                if (numbers.Count > 1)
+                {
+                    ws.Cell(row, 3).Style.Alignment.WrapText = true;
+                }
                 ws.Cell(row, 4).Value = declaration.CompanyName;
                 ws.Cell(row, 7).Value = declaration.GoodsName;
                 ws.Cell(row, 8).Value = declaration.YardName;

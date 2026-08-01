@@ -139,7 +139,7 @@ public sealed class RestoreEndpointTests
         var write = await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                TestDeclarationNumbers.Next(),
+                [TestDeclarationNumbers.Next()],
                 SeedIds.ProcessorId,
                 "C1",
                 "G1",
