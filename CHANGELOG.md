@@ -13,6 +13,51 @@ low-priority polish from S3: ledger child-vehicle expand/collapse, right-click
 context menu, 300/400 ms animations on SignalR push, sidebar collapse toggle,
 focus-ring style sweep, ⚙️ quick-settings menu, top-right toast position.
 
+### Fixed — business rules re-checked against the customer's own documents
+
+A review of `docs/Business rules - Hướng dẫn điền sổ B2.md` and `docs/Định nghĩa yêu cầu.md`
+against the implementation found three places where the code enforced something the customer
+never asked for. All three are now aligned; `spec.md` carries a clarification entry with the
+evidence for each.
+
+#### The exit-gate officer can confirm KVGS — `FR-027` / `INV-6`
+
+Business rules § B.2 has **one** cán bộ at cổng ra tick "Xe đã ra" (cột J), then "Xác nhận qua
+KVGS" (cột L), then write their own name into "Người xác nhận" (cột N); § 3 lists the five
+columns that same officer may edit. The role matrix split that job in two — `/exit` was
+Admin+Operator, `/kvgs-confirm` was Admin+Supervisor — so **no non-Admin role could work the
+exit lane**. At peak flow that forces two accounts on one PC, or everyone signs in as Admin and
+the role model stops meaning anything.
+
+The restriction had no customer provenance: INV-6 cited "Business rule cột L", which says
+nothing about roles, and FR-027 came from the [UI] clarification *"should the API mirror the
+sidebar exactly"* — derived from an internally-authored wireframe. New `GateStaff` policy
+(Admin + Operator + Supervisor) on `/kvgs-confirm`; Supervisor keeps it; Entry/Exit unchanged.
+`Declaration.ConfirmKvgs` drops its role parameter and INV-6 keeps only the `AllExited`
+precondition. The wireframe § 4 sidebar matrix and the Desktop sidebar show KVGS to every role.
+
+#### "Ghi chú" (cột O) is editable at the exit gate — `F-08`
+
+Business rules § 3 lists it among the exit gate's five columns; it was write-once at entry. And
+`VehicleDetailDto` did not carry `Note` at all, so a note typed at entry was invisible
+everywhere in the app and survived only in the Excel export.
+
+`Vehicle.UpdateNote` + `PATCH /api/vehicles/{id}/note` (GateStaff, 500-char ceiling, blank
+clears, cancelled declaration still immutable). FR-003 stays append-only — each edit writes an
+`Update` AuditLog row with before/after text. The ledger drawer gains a Ghi chú field and a
+`Lưu ghi chú` button per vehicle row (5 vi.resx strings, semantic hints, wireframe deviation
+recorded in § 6).
+
+#### A cancelled declaration's number can be entered again — `INV-1` / `FR-022`
+
+Cancelling exists to withdraw an erroneous entry, but the uniqueness check counted cancelled
+rows and `IX_Declarations_DeclarationNumber` was an unfiltered unique index. The correction path
+dead-ended: officer mistypes the company → Admin cancels → officer re-enters the same real
+declaration number → **409 forever, at the database level**. INV-1 is now scoped to
+non-cancelled declarations (filtered unique index, migration `0002`); a duplicate of a *live*
+declaration is still rejected. Business rule cột C only ever asked for a duplicate to be
+flagged ("cảnh báo bằng cách tô đỏ dãy số").
+
 ### Fixed
 
 #### The exit-gate PC could not reach the server — `fix/desktop-lan-endpoint`
@@ -96,51 +141,6 @@ Tests: +1 domain (KVGS un-exit), +3 archive-verify (with a read-only-safe teardo
 +1 KVGS un-exit endpoint.
 
 ## [1.1.0] — 2026-07-19 — self-contained offline deployment
-
-### Fixed — business rules re-checked against the customer's own documents
-
-A review of `docs/Business rules - Hướng dẫn điền sổ B2.md` and `docs/Định nghĩa yêu cầu.md`
-against the implementation found three places where the code enforced something the customer
-never asked for. All three are now aligned; `spec.md` carries a clarification entry with the
-evidence for each.
-
-#### The exit-gate officer can confirm KVGS — `FR-027` / `INV-6`
-
-Business rules § B.2 has **one** cán bộ at cổng ra tick "Xe đã ra" (cột J), then "Xác nhận qua
-KVGS" (cột L), then write their own name into "Người xác nhận" (cột N); § 3 lists the five
-columns that same officer may edit. The role matrix split that job in two — `/exit` was
-Admin+Operator, `/kvgs-confirm` was Admin+Supervisor — so **no non-Admin role could work the
-exit lane**. At peak flow that forces two accounts on one PC, or everyone signs in as Admin and
-the role model stops meaning anything.
-
-The restriction had no customer provenance: INV-6 cited "Business rule cột L", which says
-nothing about roles, and FR-027 came from the [UI] clarification *"should the API mirror the
-sidebar exactly"* — derived from an internally-authored wireframe. New `GateStaff` policy
-(Admin + Operator + Supervisor) on `/kvgs-confirm`; Supervisor keeps it; Entry/Exit unchanged.
-`Declaration.ConfirmKvgs` drops its role parameter and INV-6 keeps only the `AllExited`
-precondition. The wireframe § 4 sidebar matrix and the Desktop sidebar show KVGS to every role.
-
-#### "Ghi chú" (cột O) is editable at the exit gate — `F-08`
-
-Business rules § 3 lists it among the exit gate's five columns; it was write-once at entry. And
-`VehicleDetailDto` did not carry `Note` at all, so a note typed at entry was invisible
-everywhere in the app and survived only in the Excel export.
-
-`Vehicle.UpdateNote` + `PATCH /api/vehicles/{id}/note` (GateStaff, 500-char ceiling, blank
-clears, cancelled declaration still immutable). FR-003 stays append-only — each edit writes an
-`Update` AuditLog row with before/after text. The ledger drawer gains a Ghi chú field and a
-`Lưu ghi chú` button per vehicle row (5 vi.resx strings, semantic hints, wireframe deviation
-recorded in § 6).
-
-#### A cancelled declaration's number can be entered again — `INV-1` / `FR-022`
-
-Cancelling exists to withdraw an erroneous entry, but the uniqueness check counted cancelled
-rows and `IX_Declarations_DeclarationNumber` was an unfiltered unique index. The correction path
-dead-ended: officer mistypes the company → Admin cancels → officer re-enters the same real
-declaration number → **409 forever, at the database level**. INV-1 is now scoped to
-non-cancelled declarations (filtered unique index, migration `0002`); a duplicate of a *live*
-declaration is still rejected. Business rule cột C only ever asked for a duplicate to be
-flagged ("cảnh báo bằng cách tô đỏ dãy số").
 
 ### Changed
 
