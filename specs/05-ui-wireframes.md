@@ -112,7 +112,7 @@ flowchart LR
 | Sổ B2 (Ledger) | ✅ | ✅ | ✅ |
 | Nhập xe vào | ✅ | ✅ | — |
 | Xác nhận xe ra | ✅ | ✅ | — |
-| Xác nhận KVGS | ✅ | — | ✅ |
+| Xác nhận KVGS | ✅ | ✅ | ✅ |
 | Báo cáo | ✅ | — | ✅ |
 | Xuất Excel | ✅ | — | ✅ |
 | **Quản trị** (group) | ✅ | — | — |

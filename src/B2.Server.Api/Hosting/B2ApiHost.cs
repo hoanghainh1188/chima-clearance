@@ -103,6 +103,7 @@ public static class B2ApiHost
         {
             o.AddPolicy(B2Policies.AdminOnly, p => p.RequireRole("Admin"));
             o.AddPolicy(B2Policies.GateOperator, p => p.RequireRole("Admin", "Operator"));
+            o.AddPolicy(B2Policies.GateStaff, p => p.RequireRole("Admin", "Operator", "Supervisor"));
             o.AddPolicy(B2Policies.SupervisorOrAbove, p => p.RequireRole("Admin", "Supervisor"));
             o.AddPolicy(B2Policies.MasterRead, p => p.RequireRole("Admin", "Operator", "Supervisor"));
             o.AddPolicy(B2Policies.AnyAuthenticated, p => p.RequireAuthenticatedUser());

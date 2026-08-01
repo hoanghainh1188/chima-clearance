@@ -34,7 +34,7 @@ public sealed class DeclarationKvgsTests
         decl.Status.Should().Be(DeclarationStatus.AllExited);
 
         var supId = Guid.NewGuid();
-        decl.ConfirmKvgs(Role.Supervisor, supId, now.AddMinutes(2));
+        decl.ConfirmKvgs(supId, now.AddMinutes(2));
 
         decl.Status.Should().Be(DeclarationStatus.KVGSConfirmed);
         decl.KvgsConfirmedByUserId.Should().Be(supId);
@@ -64,7 +64,7 @@ public sealed class DeclarationKvgsTests
             null);
         v.MarkExit(Guid.NewGuid(), now.AddMinutes(1));
         decl.RecomputeStatus();
-        decl.ConfirmKvgs(Role.Supervisor, Guid.NewGuid(), now.AddMinutes(2));
+        decl.ConfirmKvgs(Guid.NewGuid(), now.AddMinutes(2));
 
         var act = () => v.UnExit();
 
@@ -87,13 +87,13 @@ public sealed class DeclarationKvgsTests
             DateOnly.Parse("2026-05-04", CultureInfo.InvariantCulture));
         decl.AddVehicle(Guid.NewGuid(), PlateNumber.Parse("29A12345"), now, Guid.NewGuid(), null, null);
 
-        var act = () => decl.ConfirmKvgs(Role.Admin, Guid.NewGuid(), now);
+        var act = () => decl.ConfirmKvgs(Guid.NewGuid(), now);
         act.Should().Throw<DomainException>()
             .Which.Code.Should().Be("DECLARATION_NOT_READY_FOR_KVGS");
     }
 
     [Fact]
-    public void ConfirmKvgs_when_operator_throws_forbidden()
+    public void ConfirmKvgs_by_the_exit_gate_operator_succeeds()
     {
         var now = DateTimeOffset.Parse("2026-05-04T10:00:00Z", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
         var decl = Declaration.CreateNew(
@@ -110,7 +110,12 @@ public sealed class DeclarationKvgsTests
         v.MarkExit(Guid.NewGuid(), now.AddMinutes(1));
         decl.RecomputeStatus();
 
-        var act = () => decl.ConfirmKvgs(Role.Operator, Guid.NewGuid(), now.AddMinutes(2));
-        act.Should().Throw<DomainException>().Which.Code.Should().Be("FORBIDDEN");
+        // Business rules § B.2: the exit-gate officer ticks cột J then cột L. INV-6 no longer
+        // restricts the role — only the AllExited precondition stands.
+        var operatorId = Guid.NewGuid();
+        decl.ConfirmKvgs(operatorId, now.AddMinutes(2));
+
+        decl.Status.Should().Be(DeclarationStatus.KVGSConfirmed);
+        decl.KvgsConfirmedByUserId.Should().Be(operatorId);
     }
 }

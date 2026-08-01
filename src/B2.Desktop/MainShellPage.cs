@@ -308,12 +308,15 @@ public sealed class MainShellPage : ContentPage, IToastPresenter
                 _services.GetRequiredService<ExitPage>());
         }
 
+        // KVGS is an exit-gate column (business rules § B.2): the officer who ticks "xe ra"
+        // ticks it too, so it is visible to every role, not just Supervisor.
+        AddSidebarItem(
+            stack,
+            AppResources.Sidebar_Item_Kvgs,
+            _services.GetRequiredService<KvgsPage>());
+
         if (_role is UserRoleDto.Admin or UserRoleDto.Supervisor)
         {
-            AddSidebarItem(
-                stack,
-                AppResources.Sidebar_Item_Kvgs,
-                _services.GetRequiredService<KvgsPage>());
             AddSidebarItem(
                 stack,
                 AppResources.Sidebar_Item_Reports,

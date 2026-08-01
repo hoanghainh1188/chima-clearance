@@ -254,7 +254,7 @@ erDiagram
 | INV-3 | `EntryTime` is set on creation by the server clock and is immutable thereafter | Business rule cột I |
 | INV-4 | `ExitTime` is set when `ExitMarked` flips false→true and is immutable thereafter | Business rule cột K |
 | INV-5 | A declaration becomes `AllExited` automatically when every child vehicle has `ExitMarked=true` | Business rule (dòng cha xanh) |
-| INV-6 | Only `Supervisor` or `Admin` can transition `AllExited → KVGSConfirmed` | Business rule cột L |
+| INV-6 | `AllExited → KVGSConfirmed` requires the declaration to be `AllExited`; any gate role may confirm (business rule cột L has the exit-gate cán bộ tick it) | Business rule cột L, § B.2 |
 | INV-7 | `Processor.FullName` and `Yard.Code` referenced by a Declaration must exist and be active at write time | Business rule cột B, H |
 | INV-8 | "Người nhập sổ" and "Người xác nhận" fields are write-once; never editable | Business rule cột M, N |
 

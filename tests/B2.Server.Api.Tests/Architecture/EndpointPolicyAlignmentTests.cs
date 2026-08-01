@@ -62,7 +62,7 @@ public sealed class EndpointPolicyAlignmentTests
         ["GET /api/declarations/{id:guid}"] = B2Policies.AnyAuthenticated,
         ["POST /api/declarations"] = B2Policies.GateOperator,
         ["POST /api/declarations/{id:guid}/vehicles"] = B2Policies.GateOperator,
-        ["POST /api/declarations/{id:guid}/kvgs-confirm"] = B2Policies.SupervisorOrAbove,
+        ["POST /api/declarations/{id:guid}/kvgs-confirm"] = B2Policies.GateStaff,
         ["POST /api/declarations/{id:guid}/cancel"] = B2Policies.AdminOnly,
 
         // Vehicles
