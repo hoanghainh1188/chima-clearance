@@ -339,8 +339,11 @@ public partial class EntryViewModel : ObservableObject, IDisposable
             NullIfWhiteSpace(TrailerOrContainerNumber),
             NullIfWhiteSpace(VehicleNote));
 
+        // Cột C accepts several numbers per row; the entry form still collects one. Typing more
+        // than one is wired up separately — until then a new row starts with a single number and
+        // the rest are added from the ledger drawer.
         var request = new DeclarationCreateRequest(
-            decl,
+            [decl],
             SelectedProcessor.Id,
             CompanyName.Trim(),
             GoodsName.Trim(),

@@ -161,9 +161,7 @@ namespace B2.Infrastructure.Migrations
 
                     b.HasIndex("BusinessDate");
 
-                    b.HasIndex("DeclarationNumber")
-                        .IsUnique()
-                        .HasFilter("\"Status\" <> 'Cancelled'");
+                    b.HasIndex("DeclarationNumber");
 
                     b.HasIndex("ProcessorId");
 
@@ -172,6 +170,37 @@ namespace B2.Infrastructure.Migrations
                     b.HasIndex("YardId");
 
                     b.ToTable("Declarations", (string)null);
+                });
+
+            modelBuilder.Entity("B2.Domain.Declarations.DeclarationNumberLine", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("TEXT");
+
+                    b.Property<Guid>("DeclarationId")
+                        .HasColumnType("TEXT");
+
+                    b.Property<bool>("IsCancelled")
+                        .HasColumnType("INTEGER");
+
+                    b.Property<string>("Number")
+                        .IsRequired()
+                        .HasMaxLength(12)
+                        .HasColumnType("TEXT");
+
+                    b.Property<int>("Ordinal")
+                        .HasColumnType("INTEGER");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("DeclarationId");
+
+                    b.HasIndex("Number")
+                        .IsUnique()
+                        .HasFilter("\"IsCancelled\" = 0");
+
+                    b.ToTable("DeclarationNumbers", (string)null);
                 });
 
             modelBuilder.Entity("B2.Domain.Declarations.Vehicle", b =>
@@ -416,6 +445,15 @@ namespace B2.Infrastructure.Migrations
                     b.ToTable("RefreshTokens", (string)null);
                 });
 
+            modelBuilder.Entity("B2.Domain.Declarations.DeclarationNumberLine", b =>
+                {
+                    b.HasOne("B2.Domain.Declarations.Declaration", null)
+                        .WithMany("Numbers")
+                        .HasForeignKey("DeclarationId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("B2.Domain.Declarations.Vehicle", b =>
                 {
                     b.HasOne("B2.Domain.Declarations.Declaration", "Declaration")
@@ -429,6 +467,8 @@ namespace B2.Infrastructure.Migrations
 
             modelBuilder.Entity("B2.Domain.Declarations.Declaration", b =>
                 {
+                    b.Navigation("Numbers");
+
                     b.Navigation("Vehicles");
                 });
 #pragma warning restore 612, 618

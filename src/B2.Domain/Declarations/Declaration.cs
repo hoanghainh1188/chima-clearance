@@ -28,9 +28,16 @@ public sealed class Declaration
     public byte[] RowVersion { get; set; } = Array.Empty<byte>();
     public List<Vehicle> Vehicles { get; } = new();
 
+    /// <summary>
+    /// Every number written into cột C of this parent row, ordered. Ordinal 0 is the primary and
+    /// is cached on <see cref="DeclarationNumber"/> so existing lookups, ledger rows and reports
+    /// keep working on a single value; INV-1 uniqueness is enforced across this list.
+    /// </summary>
+    public List<DeclarationNumberLine> Numbers { get; } = new();
+
     public static Declaration CreateNew(
         Guid id,
-        DeclarationNumber declarationNumber,
+        IReadOnlyList<DeclarationNumber> declarationNumbers,
         Guid processorId,
         string companyName,
         string goodsName,
@@ -39,10 +46,27 @@ public sealed class Declaration
         DateTimeOffset enteredAt,
         DateOnly businessDate)
     {
-        return new Declaration
+        if (declarationNumbers is null || declarationNumbers.Count == 0)
+        {
+            throw new DomainException(
+                "DECLARATION_NUMBER_REQUIRED",
+                "A declaration needs at least one declaration number.",
+                400);
+        }
+
+        var distinct = declarationNumbers.Select(n => n.Value).Distinct(StringComparer.Ordinal).ToList();
+        if (distinct.Count != declarationNumbers.Count)
+        {
+            throw new DomainException(
+                "DECLARATION_NUMBER_DUPLICATE",
+                "The same declaration number cannot be listed twice on one row.",
+                409);
+        }
+
+        var declaration = new Declaration
         {
             Id = id,
-            DeclarationNumber = declarationNumber.Value,
+            DeclarationNumber = distinct[0],
             ProcessorId = processorId,
             CompanyName = companyName,
             GoodsName = goodsName,
@@ -53,6 +77,85 @@ public sealed class Declaration
             BusinessDate = businessDate,
             RowVersion = new byte[8],
         };
+
+        for (var i = 0; i < distinct.Count; i++)
+        {
+            declaration.Numbers.Add(new DeclarationNumberLine(Guid.NewGuid(), id, distinct[i], i));
+        }
+
+        return declaration;
+    }
+
+    /// <summary>
+    /// Adds another number to cột C of this row. The cell is editable at the entry gate — a batch
+    /// can gain a second tờ khai after the vehicles are already inside — so this is not
+    /// creation-only. Uniqueness against other declarations is the repository's job (DB index);
+    /// this guards the aggregate's own rules.
+    /// </summary>
+    public DeclarationNumberLine AddNumber(DeclarationNumber number)
+    {
+        EnsureNumbersEditable();
+
+        if (Numbers.Exists(n => string.Equals(n.Number, number.Value, StringComparison.Ordinal)))
+        {
+            throw new DomainException(
+                "DECLARATION_NUMBER_DUPLICATE",
+                "That declaration number is already on this row.",
+                409);
+        }
+
+        var line = new DeclarationNumberLine(Guid.NewGuid(), Id, number.Value, Numbers.Count);
+        Numbers.Add(line);
+        return line;
+    }
+
+    /// <summary>Removes a number from cột C. The row must keep at least one.</summary>
+    public void RemoveNumber(string number)
+    {
+        EnsureNumbersEditable();
+
+        var line = Numbers.Find(n => string.Equals(n.Number, number, StringComparison.Ordinal))
+            ?? throw new DomainException(
+                "DECLARATION_NUMBER_NOT_FOUND",
+                "That declaration number is not on this row.",
+                404);
+
+        if (Numbers.Count == 1)
+        {
+            throw new DomainException(
+                "DECLARATION_NUMBER_REQUIRED",
+                "A declaration must keep at least one declaration number.",
+                409);
+        }
+
+        Numbers.Remove(line);
+        Numbers.Sort((a, b) => a.Ordinal.CompareTo(b.Ordinal));
+        for (var i = 0; i < Numbers.Count; i++)
+        {
+            Numbers[i].SetOrdinal(i);
+        }
+
+        // Keep the cached primary in step with ordinal 0.
+        DeclarationNumber = Numbers[0].Number;
+    }
+
+    private void EnsureNumbersEditable()
+    {
+        if (Status == DeclarationStatus.Cancelled)
+        {
+            throw new DomainException(
+                "DECLARATION_CANCELLED",
+                "Cannot edit the declaration numbers of a cancelled declaration.",
+                409);
+        }
+
+        if (Status == DeclarationStatus.KVGSConfirmed)
+        {
+            throw new DomainException(
+                "DECLARATION_LOCKED",
+                "Cannot edit the declaration numbers after KVGS confirmation.",
+                409);
+        }
     }
 
     public Vehicle AddVehicle(
@@ -137,6 +240,12 @@ public sealed class Declaration
         }
 
         Status = DeclarationStatus.Cancelled;
+        foreach (var number in Numbers)
+        {
+            // Frees every number for re-entry (INV-1 is scoped to non-cancelled rows).
+            number.MarkCancelled();
+        }
+
         CancelledByUserId = actorUserId;
         CancelledAt = cancelledAtUtc;
         CancellationReason = reason.Trim();

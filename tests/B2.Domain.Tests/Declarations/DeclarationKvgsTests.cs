@@ -14,7 +14,7 @@ public sealed class DeclarationKvgsTests
         var now = DateTimeOffset.Parse("2026-05-04T10:00:00Z", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
         var decl = Declaration.CreateNew(
             Guid.NewGuid(),
-            DeclarationNumber.Parse("123456789012"),
+            [DeclarationNumber.Parse("123456789012")],
             Guid.NewGuid(),
             "Co",
             "Hang",
@@ -47,7 +47,7 @@ public sealed class DeclarationKvgsTests
         var now = DateTimeOffset.Parse("2026-05-04T10:00:00Z", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
         var decl = Declaration.CreateNew(
             Guid.NewGuid(),
-            DeclarationNumber.Parse("123456789012"),
+            [DeclarationNumber.Parse("123456789012")],
             Guid.NewGuid(),
             "Co",
             "Hang",
@@ -77,7 +77,7 @@ public sealed class DeclarationKvgsTests
         var now = DateTimeOffset.Parse("2026-05-04T10:00:00Z", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
         var decl = Declaration.CreateNew(
             Guid.NewGuid(),
-            DeclarationNumber.Parse("123456789012"),
+            [DeclarationNumber.Parse("123456789012")],
             Guid.NewGuid(),
             "Co",
             "Hang",
@@ -98,7 +98,7 @@ public sealed class DeclarationKvgsTests
         var now = DateTimeOffset.Parse("2026-05-04T10:00:00Z", CultureInfo.InvariantCulture, DateTimeStyles.AssumeUniversal);
         var decl = Declaration.CreateNew(
             Guid.NewGuid(),
-            DeclarationNumber.Parse("123456789012"),
+            [DeclarationNumber.Parse("123456789012")],
             Guid.NewGuid(),
             "Co",
             "Hang",

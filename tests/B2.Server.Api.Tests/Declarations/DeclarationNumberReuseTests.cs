@@ -15,7 +15,7 @@ namespace B2.Server.Api.Tests.Declarations;
 public sealed class DeclarationNumberReuseTests
 {
     private static DeclarationCreateRequest Request(string number, string plate, string company) =>
-        new(number, SeedIds.ProcessorId, company, "Hàng hóa", SeedIds.YardId, new VehicleAddRequest(plate, null, null));
+        new([number], SeedIds.ProcessorId, company, "Hàng hóa", SeedIds.YardId, new VehicleAddRequest(plate, null, null));
 
     [Fact]
     [Trait("Requirement", "INV-1")]

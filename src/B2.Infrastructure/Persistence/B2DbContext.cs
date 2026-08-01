@@ -20,25 +20,38 @@ public sealed class B2DbContext : DbContext, IUnitOfWork
         bool acceptAllChangesOnSuccess,
         CancellationToken cancellationToken = default)
     {
-        await FixMisclassifiedNewVehiclesAsync(cancellationToken).ConfigureAwait(false);
+        await FixMisclassifiedNewRowsAsync(cancellationToken).ConfigureAwait(false);
         return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken).ConfigureAwait(false);
     }
 
     /// <summary>
-    /// EF Core sometimes marks brand-new <see cref="Vehicle"/> rows as <see cref="EntityState.Modified"/>
-    /// on the declaration graph (UPDATE with non-existent PK → concurrency failure). Force INSERT instead.
+    /// EF Core sometimes marks a brand-new child of a tracked declaration as
+    /// <see cref="EntityState.Modified"/> (UPDATE against a PK that does not exist yet → "expected
+    /// to affect 1 row(s), but actually affected 0"). Both children the aggregate can gain after
+    /// load — vehicles and cột C numbers — go through the same guard.
     /// </summary>
-    private async Task FixMisclassifiedNewVehiclesAsync(CancellationToken cancellationToken)
+    private async Task FixMisclassifiedNewRowsAsync(CancellationToken cancellationToken)
     {
-        foreach (var entry in ChangeTracker.Entries<Vehicle>())
+        await PromoteMissingRowsToInsertAsync(Vehicles, cancellationToken).ConfigureAwait(false);
+        await PromoteMissingRowsToInsertAsync(DeclarationNumbers, cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task PromoteMissingRowsToInsertAsync<TEntity>(
+        DbSet<TEntity> set,
+        CancellationToken cancellationToken)
+        where TEntity : class
+    {
+        foreach (var entry in ChangeTracker.Entries<TEntity>())
         {
             if (entry.State != EntityState.Modified)
             {
                 continue;
             }
 
-            var id = entry.Entity.Id;
-            var exists = await Vehicles.AsNoTracking().AnyAsync(v => v.Id == id, cancellationToken).ConfigureAwait(false);
+            var id = (Guid)entry.Property("Id").CurrentValue!;
+            var exists = await set.AsNoTracking()
+                .AnyAsync(e => EF.Property<Guid>(e, "Id") == id, cancellationToken)
+                .ConfigureAwait(false);
             if (!exists)
             {
                 entry.State = EntityState.Added;
@@ -50,6 +63,8 @@ public sealed class B2DbContext : DbContext, IUnitOfWork
     public DbSet<Processor> Processors => Set<Processor>();
     public DbSet<Yard> Yards => Set<Yard>();
     public DbSet<Declaration> Declarations => Set<Declaration>();
+
+    public DbSet<DeclarationNumberLine> DeclarationNumbers => Set<DeclarationNumberLine>();
     public DbSet<Vehicle> Vehicles => Set<Vehicle>();
     public DbSet<DailyHeader> DailyHeaders => Set<DailyHeader>();
     public DbSet<AuditLog> AuditLogs => Set<AuditLog>();
@@ -90,12 +105,10 @@ public sealed class B2DbContext : DbContext, IUnitOfWork
         {
             e.ToTable("Declarations");
             e.HasKey(x => x.Id);
-            // INV-1: unique among declarations that still count. A cancelled declaration (FR-022)
-            // is an erroneous entry being withdrawn, so its number must be re-enterable — an
-            // unfiltered unique index made the correction impossible and the number unusable.
-            e.HasIndex(x => x.DeclarationNumber)
-                .IsUnique()
-                .HasFilter("\"Status\" <> 'Cancelled'");
+            // Cached primary number (ordinal 0 of DeclarationNumbers) — indexed for lookup only.
+            // INV-1 uniqueness lives on the DeclarationNumbers table, which holds every number
+            // written into cột C of this row.
+            e.HasIndex(x => x.DeclarationNumber);
             e.HasIndex(x => x.BusinessDate);
             e.HasIndex(x => x.Status);
             e.HasIndex(x => x.ProcessorId);
@@ -111,6 +124,26 @@ public sealed class B2DbContext : DbContext, IUnitOfWork
                 .WithOne(v => v.Declaration)
                 .HasForeignKey(v => v.DeclarationId)
                 .OnDelete(DeleteBehavior.Restrict);
+        });
+
+        modelBuilder.Entity<DeclarationNumberLine>(e =>
+        {
+            e.ToTable("DeclarationNumbers");
+            e.HasKey(x => x.Id);
+            e.Property(x => x.Number).HasMaxLength(12).IsRequired();
+            e.HasIndex(x => x.DeclarationId);
+
+            // INV-1: a number is unique among declarations that still count. IsCancelled mirrors
+            // the parent (Declaration.Cancel) because SQLite cannot filter an index on a joined
+            // table, and a cancelled number must be re-enterable (FR-022).
+            e.HasIndex(x => x.Number)
+                .IsUnique()
+                .HasFilter("\"IsCancelled\" = 0");
+
+            e.HasOne<Declaration>()
+                .WithMany(d => d.Numbers)
+                .HasForeignKey(x => x.DeclarationId)
+                .OnDelete(DeleteBehavior.Cascade);
         });
 
         modelBuilder.Entity<Vehicle>(e =>

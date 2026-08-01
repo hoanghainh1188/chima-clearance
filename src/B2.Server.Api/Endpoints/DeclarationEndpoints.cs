@@ -3,6 +3,7 @@ using B2.Application.Declarations;
 using B2.Application.Declarations.Cancel;
 using B2.Application.Declarations.ConfirmKvgs;
 using B2.Application.Declarations.List;
+using B2.Application.Declarations.Numbers;
 using B2.Server.Api.Auth;
 using B2.Shared.Contracts.Declarations;
 using FluentValidation;
@@ -73,6 +74,42 @@ public static class DeclarationEndpoints
                 await handler.HandleAsync(id, request, uid, ct);
                 return Results.NoContent();
             });
+
+        // Cột C is the entry gate's column (business rules § B.1) and is editable after the row
+        // exists: a batch can gain another tờ khai while its vehicles are already inside.
+        gate.MapPost(
+                "/{id:guid}/numbers",
+                async (
+                    Guid id,
+                    HttpContext http,
+                    AddDeclarationNumberRequest request,
+                    DeclarationNumberCommandHandler handler,
+                    CancellationToken ct) =>
+                {
+                    var uid = http.User.GetB2UserId() ?? throw new InvalidOperationException("Missing user id.");
+                    var numbers = await handler.AddAsync(
+                        new AddDeclarationNumberCommand(id, request.Number),
+                        uid,
+                        ct);
+                    return Results.Ok(numbers);
+                });
+
+        gate.MapDelete(
+                "/{id:guid}/numbers/{number}",
+                async (
+                    Guid id,
+                    string number,
+                    HttpContext http,
+                    DeclarationNumberCommandHandler handler,
+                    CancellationToken ct) =>
+                {
+                    var uid = http.User.GetB2UserId() ?? throw new InvalidOperationException("Missing user id.");
+                    var numbers = await handler.RemoveAsync(
+                        new RemoveDeclarationNumberCommand(id, number),
+                        uid,
+                        ct);
+                    return Results.Ok(numbers);
+                });
 
         app.MapPost(
                 "/api/declarations/{id:guid}/kvgs-confirm",

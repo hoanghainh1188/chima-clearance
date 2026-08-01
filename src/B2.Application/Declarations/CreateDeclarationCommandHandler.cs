@@ -53,10 +53,19 @@ public sealed class CreateDeclarationCommandHandler
             throw new DomainException("MASTER_YARD_NOT_FOUND", "Yard is missing or inactive.", 400);
         }
 
-        var declNo = DeclarationNumber.Parse(request.DeclarationNumber);
-        if (await _declarations.DeclarationNumberExistsAsync(declNo.Value, cancellationToken))
+        var declNos = (request.DeclarationNumbers ?? [])
+            .Select(DeclarationNumber.Parse)
+            .ToList();
+
+        foreach (var candidate in declNos)
         {
-            throw new DomainException("DECLARATION_NUMBER_DUPLICATE", "Declaration number already exists.", 409);
+            if (await _declarations.DeclarationNumberExistsAsync(candidate.Value, cancellationToken))
+            {
+                throw new DomainException(
+                    "DECLARATION_NUMBER_DUPLICATE",
+                    $"Declaration number {candidate.Value} already exists.",
+                    409);
+            }
         }
 
         var now = _clock.UtcNow;
@@ -68,7 +77,7 @@ public sealed class CreateDeclarationCommandHandler
         var declId = Guid.NewGuid();
         var declaration = Declaration.CreateNew(
             declId,
-            declNo,
+            declNos,
             request.ProcessorId,
             request.CompanyName.Trim(),
             request.GoodsName.Trim(),
@@ -82,7 +91,13 @@ public sealed class CreateDeclarationCommandHandler
         await _declarations.AddAsync(declaration, cancellationToken);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
 
-        var after = JsonSerializer.Serialize(new { declaration.DeclarationNumber, declaration.Status });
+        var after = JsonSerializer.Serialize(
+            new
+            {
+                declaration.DeclarationNumber,
+                DeclarationNumbers = declaration.Numbers.Select(n => n.Number).ToList(),
+                declaration.Status,
+            });
         _audit.Set(new AuditEnvelope(enteredByUserId, AuditAction.Create, nameof(Declaration), declaration.Id, null, after, null));
         await _realtime.PublishDeclarationLedgerChangedAsync(declaration.Id, cancellationToken);
 
@@ -101,6 +116,7 @@ public sealed class CreateDeclarationCommandHandler
             declaration.KvgsConfirmedAt,
             declaration.CancelledByUserId,
             declaration.CancelledAt,
-            declaration.CancellationReason);
+            declaration.CancellationReason,
+            declaration.Numbers.OrderBy(n => n.Ordinal).Select(n => n.Number).ToList());
     }
 }

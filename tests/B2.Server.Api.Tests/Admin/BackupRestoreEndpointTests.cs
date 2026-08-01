@@ -28,7 +28,7 @@ public sealed class BackupRestoreEndpointTests
             var create = await client.PostAsJsonAsync(
                 "/api/declarations",
                 new DeclarationCreateRequest(
-                    TestDeclarationNumbers.Next(),
+                    [TestDeclarationNumbers.Next()],
                     SeedIds.ProcessorId,
                     "Co",
                     "Hang",

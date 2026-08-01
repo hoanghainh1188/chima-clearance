@@ -24,7 +24,7 @@ public sealed class SearchEndpointTests
         await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                decl1,
+                [decl1],
                 SeedIds.ProcessorId,
                 "C1",
                 "G1",
@@ -34,7 +34,7 @@ public sealed class SearchEndpointTests
         await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                decl2,
+                [decl2],
                 SeedIds.ProcessorId,
                 "C2",
                 "G2",
@@ -76,7 +76,7 @@ public sealed class SearchEndpointTests
         await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                decl,
+                [decl],
                 SeedIds.ProcessorId,
                 "C1",
                 "G1",
@@ -105,7 +105,7 @@ public sealed class SearchEndpointTests
         await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                TestDeclarationNumbers.Next(),
+                [TestDeclarationNumbers.Next()],
                 SeedIds.ProcessorId,
                 "C1",
                 "G1",
@@ -115,7 +115,7 @@ public sealed class SearchEndpointTests
         await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                TestDeclarationNumbers.Next(),
+                [TestDeclarationNumbers.Next()],
                 SeedIds.ProcessorId,
                 "C2",
                 "G2",
@@ -144,7 +144,7 @@ public sealed class SearchEndpointTests
         await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                d1,
+                [d1],
                 SeedIds.ProcessorId,
                 "C1",
                 "G1",
@@ -155,7 +155,7 @@ public sealed class SearchEndpointTests
         await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                d2,
+                [d2],
                 SeedIds.ProcessorId,
                 "C2",
                 "G2",
@@ -189,7 +189,7 @@ public sealed class SearchEndpointTests
         await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                decl,
+                [decl],
                 SeedIds.ProcessorId,
                 "C1",
                 "G1",

@@ -18,7 +18,7 @@ public sealed class AddVehicleEndpointTests
         var res = await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                no,
+                [no],
                 SeedIds.ProcessorId,
                 "C1",
                 "G1",

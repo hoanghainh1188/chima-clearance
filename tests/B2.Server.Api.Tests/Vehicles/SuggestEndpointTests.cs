@@ -30,7 +30,7 @@ public sealed class SuggestEndpointTests
             var decl = TestDeclarationNumbers.Next();
             await client.PostAsJsonAsync(
                 "/api/declarations",
-                new DeclarationCreateRequest(decl, SeedIds.ProcessorId, "Company A", "Goods A",
+                new DeclarationCreateRequest([decl], SeedIds.ProcessorId, "Company A", "Goods A",
                     SeedIds.YardId, new VehicleAddRequest("12H05769", "12RM05769", null)),
                 TestJson.Options);
         }
@@ -74,7 +74,7 @@ public sealed class SuggestEndpointTests
             var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
             var decl = Domain.Declarations.Declaration.CreateNew(
                 Guid.NewGuid(),
-                Domain.Declarations.DeclarationNumber.Parse("999999999999"),
+                [Domain.Declarations.DeclarationNumber.Parse("999999999999")],
                 SeedIds.ProcessorId, "OldCo", "OldGoods", SeedIds.YardId,
                 SeedIds.AdminUserId, TooOld, DateOnly.FromDateTime(TooOld.UtcDateTime));
             decl.AddVehicle(Guid.NewGuid(), Domain.Declarations.PlateNumber.Parse("44A99999"),
@@ -108,7 +108,7 @@ public sealed class SuggestEndpointTests
 
             var old = DateTimeOffset.UtcNow.AddDays(-10);
             var declA = Domain.Declarations.Declaration.CreateNew(
-                Guid.NewGuid(), Domain.Declarations.DeclarationNumber.Parse("111111111111"),
+                Guid.NewGuid(), [Domain.Declarations.DeclarationNumber.Parse("111111111111")],
                 SeedIds.ProcessorId, "Co", "G", SeedIds.YardId, SeedIds.AdminUserId, old,
                 DateOnly.FromDateTime(old.UtcDateTime));
             declA.AddVehicle(Guid.NewGuid(), Domain.Declarations.PlateNumber.Parse("55B12345"),
@@ -117,7 +117,7 @@ public sealed class SuggestEndpointTests
 
             var newer = DateTimeOffset.UtcNow.AddDays(-2);
             var declB = Domain.Declarations.Declaration.CreateNew(
-                Guid.NewGuid(), Domain.Declarations.DeclarationNumber.Parse("222222222222"),
+                Guid.NewGuid(), [Domain.Declarations.DeclarationNumber.Parse("222222222222")],
                 SeedIds.ProcessorId, "Co", "G", SeedIds.YardId, SeedIds.AdminUserId, newer,
                 DateOnly.FromDateTime(newer.UtcDateTime));
             declB.AddVehicle(Guid.NewGuid(), Domain.Declarations.PlateNumber.Parse("55B12345"),
@@ -146,7 +146,7 @@ public sealed class SuggestEndpointTests
         await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                TestDeclarationNumbers.Next(), SeedIds.ProcessorId,
+                [TestDeclarationNumbers.Next()], SeedIds.ProcessorId,
                 "Công ty ABC", "Hàng hoá X", SeedIds.YardId,
                 new VehicleAddRequest("77C55555", null, null)),
             TestJson.Options);
@@ -170,7 +170,7 @@ public sealed class SuggestEndpointTests
         await client.PostAsJsonAsync(
             "/api/declarations",
             new DeclarationCreateRequest(
-                TestDeclarationNumbers.Next(), SeedIds.ProcessorId,
+                [TestDeclarationNumbers.Next()], SeedIds.ProcessorId,
                 "Công ty XYZ", "Hàng hoá đặc biệt", SeedIds.YardId,
                 new VehicleAddRequest("88D66666", null, null)),
             TestJson.Options);

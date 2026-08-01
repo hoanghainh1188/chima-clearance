@@ -47,6 +47,18 @@
   keeps it. Entry/Exit stay Operator+Admin. INV-6 keeps only its `AllExited` precondition, and
   the wireframe § 4 sidebar matrix shows KVGS for all three roles.
 
+- Q: Cột C says "có nhiều dãy số thì mỗi dãy số sẽ tách thành từng dòng riêng biệt trong cùng 1
+  ô" — can one parent row carry several declaration numbers, and is the cell editable after the
+  row exists? → A (unit, 2026-08-01): **yes to both.** A declaration now owns an ordered list of
+  numbers (`DeclarationNumbers` table, 1..20 per row). Ordinal 0 stays cached on
+  `Declaration.DeclarationNumber` so ledger rows, search results and reports keep showing a single
+  value. INV-1 uniqueness moves to the child table (unique index filtered on `IsCancelled`, which
+  mirrors the parent so FR-022 re-entry still works). `POST /api/declarations/{id}/numbers` and
+  `DELETE .../numbers/{number}` (GateOperator — cột C is the entry gate's column) edit the list
+  afterwards; a row must keep at least one number, and the list is frozen once the declaration is
+  cancelled or KVGS-confirmed. The Excel export writes the numbers on separate lines inside the
+  one cell, as the legacy file did with Alt+Enter.
+
 - Q: Cột E says a plate is auto-upper-cased (`12h05769` → `12H05769`) and the column may be
   pasted from the unit's internal system, where plates carry a dash. Reject `29C-12345`, or
   normalise it? → A (unit, 2026-08-01): **normalise**. `PlateNumber.Normalize` upper-cases and
