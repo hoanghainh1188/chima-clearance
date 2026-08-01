@@ -1,6 +1,9 @@
 namespace B2.Domain.Declarations;
 
-/// <summary>Optional trailer / container number (upper-cased, max 20).</summary>
+/// <summary>
+/// Optional trailer / container number (cột F): upper-cased and separator-stripped like the
+/// plate, since both columns are pasted from the same internal system. Max 20 characters.
+/// </summary>
 public readonly record struct ContainerNumber
 {
     public const int MaxLength = 20;
@@ -16,7 +19,7 @@ public readonly record struct ContainerNumber
             return null;
         }
 
-        var s = raw.Trim().ToUpperInvariant();
+        var s = PlateNumber.Normalize(raw);
         if (s.Length > MaxLength)
         {
             throw new DomainException("CONTAINER_NUMBER_TOO_LONG", $"Container number must be at most {MaxLength} characters.", 400);
