@@ -262,8 +262,9 @@ Any AI agent or human producing a release candidate **must** validate it on a re
 | .NET runtime | NOT pre-installed (the installer must bring it) |
 | Office | 2010 (only relevant if testing Excel handoff) |
 
-Smoke checklist (5 minutes):
-1. Run installer, accept defaults → service is created and starts.
+Smoke checklist (5 minutes) — **entry-gate machine**:
+1. Unpack `B2Clearance-<version>-offline.zip`, run `.\install.ps1` as Administrator, accept
+   defaults → service is created and starts.
 2. Open Desktop on the same VM, log in as default Admin → change password forced.
 3. Add 1 Processor + 1 Yard.
 4. Create 1 declaration with 2 vehicles.
@@ -273,6 +274,21 @@ Smoke checklist (5 minutes):
 8. Export Excel → file opens in Excel 2010 (or LibreOffice as proxy) without errors.
 9. "Backup now" → file appears in the backup folder.
 10. Stop service → desktop shows clear "Mất kết nối" with retry.
+
+**Exit-gate machine (second PC on the LAN) — required, not optional.** The gate runs two lanes
+(`Business rules - Hướng dẫn điền sổ B2.md` § B): the entry-gate PC hosts the service and the
+exit-gate PC is a LAN client. A single-machine smoke test exercises none of that path, and the
+client endpoint / server binding it depends on were both broken until 2026-08-01. Run:
+
+11. `.\install.ps1 -ClientOnly -ServerUrl <entry-gate-ip>` → no service registered, no recovery
+    code, `Desktop\b2-client.json` written with that address.
+12. Log in **as Operator** (not Admin) → 🟢 Online.
+13. Find a vehicle entered on the other PC by its 3- and 4-digit suffix.
+14. Mark both exits from here → the entry-gate screen updates within ≤ 1 s (SignalR).
+15. Confirm KVGS **with that same Operator account** (FR-027) and edit a vehicle's Ghi chú.
+16. Unplug the network → red banner + writes refused; plug back in → recovers without a restart.
+
+The filled-in sign-off sheet is [`docs/uat-001-b2-clearance.md`](../docs/uat-001-b2-clearance.md).
 
 ---
 

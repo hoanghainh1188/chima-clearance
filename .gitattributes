@@ -1,4 +1,4 @@
-﻿# Match .editorconfig (end_of_line = lf). Prevents CRLF working trees on Windows
+# Match .editorconfig (end_of_line = lf). Prevents CRLF working trees on Windows
 # when core.autocrlf is true, which breaks `dotnet format --verify-no-changes`.
 * text=auto
 

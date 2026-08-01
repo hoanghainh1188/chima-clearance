@@ -45,7 +45,9 @@ deviations require ADR per Constitution II):
 - Logging: **Serilog** (rolling file sink + in-memory sink for the in-app viewer).
 - HTTP client: **Refit** + **Polly v8** (retry, exponential backoff).
 - Continuous backup: **Litestream** daemon (child of `B2.Server.Service`).
-- Installer: **Velopack** (preferred) or **Inno Setup**.
+- Installer: ~~**Velopack** (preferred) or **Inno Setup**~~ → **superseded by ADR-0007 / PR #103**:
+  a plain CLI (`B2Clearance.exe install|uninstall`) driven by `deploy/install.ps1` (xcopy), with
+  self-contained publish so the gate PCs need no runtime install and no update feed.
 - Testing: **xUnit** + **FluentAssertions** + **NSubstitute** +
   `Microsoft.AspNetCore.Mvc.Testing` (`WebApplicationFactory<Program>`) +
   in-memory `Microsoft.Data.Sqlite` (shared cache).
@@ -165,7 +167,7 @@ chima-clearance/
 │   │   ├── Platforms/Windows/        #   Keyboard accelerators (Alt+1..Alt+8 nav,
 │   │   │                             #   Ctrl+Enter on Entry Form, F1 cheat sheet).
 │   │   └── MauiProgram.cs            #   DI registration.
-│   └── B2.Installer/                 # Velopack config (preferred) or Inno Setup.
+│   └── B2.Installer/                 # Offline installer CLI (ADR-0007; Velopack dropped).
 │                                     #   Bundles: dotnet-runtime, self-signed cert,
 │                                     #   Litestream binary, Sổ B2 template, recovery
 │                                     #   code generator (FR-026).
