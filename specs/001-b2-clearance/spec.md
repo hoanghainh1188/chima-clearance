@@ -1046,6 +1046,7 @@ depends on.
   | KVGS: `POST /api/declarations/{id}/kvgs-confirm` | ✅ | ✅ | ✅ |
   | Reports: `GET /api/reports/*` | ✅ | ❌ 403 | ✅ |
   | Export: `POST /api/exports/so-b2`, `POST /api/exports/reports/*` | ✅ | ❌ 403 | ✅ |
+  | Ghi chú (cột O): `PATCH /api/vehicles/{id}/note` | ✅ | ✅ | ✅ |
   | Ledger reads: `GET /api/declarations`, `GET /api/vehicles/*` | ✅ | ✅ | ✅ |
   | Vehicle suffix search: `GET /api/vehicles/search` | ✅ | ✅ | ✅ |
   | DailyHeader read + `PATCH /api/daily-headers/{date}/officer` | ✅ | ✅ | ✅ |

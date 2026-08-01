@@ -102,4 +102,22 @@ public sealed class Vehicle
         ExitTime = null;
         ExitConfirmedByUserId = null;
     }
+
+    /// <summary>
+    /// Business rules § 3 — "Ghi chú" (cột O) is one of the five columns the exit-gate officer
+    /// may fill, so the note is editable after entry (an empty value clears it). Every edit is
+    /// audited by the caller; a cancelled declaration stays immutable like every other write.
+    /// </summary>
+    public void UpdateNote(string? note)
+    {
+        if (Declaration is { Status: DeclarationStatus.Cancelled })
+        {
+            throw new DomainException(
+                "DECLARATION_CANCELLED",
+                "Cannot edit the note of a vehicle on a cancelled declaration.",
+                409);
+        }
+
+        Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
+    }
 }

@@ -6,4 +6,5 @@ public sealed record VehicleDetailDto(
     string? TrailerOrContainerNumber,
     DateTimeOffset EntryTime,
     bool ExitMarked,
-    DateTimeOffset? ExitTime);
+    DateTimeOffset? ExitTime,
+    string? Note);

@@ -70,6 +70,7 @@ public sealed class EndpointPolicyAlignmentTests
         ["GET /api/vehicles/search"] = B2Policies.AnyAuthenticated,
         ["POST /api/vehicles/{id:guid}/exit"] = B2Policies.GateOperator,
         ["POST /api/vehicles/{id:guid}/un-exit"] = B2Policies.AdminOnly,
+        ["PATCH /api/vehicles/{id:guid}/note"] = B2Policies.GateStaff,
 
         // Daily headers
         ["GET /api/daily-headers"] = B2Policies.AnyAuthenticated,

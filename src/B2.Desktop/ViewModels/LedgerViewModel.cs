@@ -164,7 +164,27 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
     public bool HasDrawerData =>
         !IsDrawerLoading && string.IsNullOrEmpty(DrawerErrorMessage) && SelectedDeclarationDetail is not null;
 
-    partial void OnSelectedDeclarationDetailChanged(DeclarationDetailResponse? value) =>
+    /// <summary>
+    /// Vehicle rows for the drawer. Wraps each <see cref="VehicleDetailDto"/> so "Ghi chú"
+    /// (cột O) can be edited at the exit gate — business rules § 3.
+    /// </summary>
+    public ObservableCollection<DrawerVehicleViewModel> DrawerVehicles { get; } = new();
+
+    partial void OnSelectedDeclarationDetailChanged(DeclarationDetailResponse? value)
+    {
+        DrawerVehicles.Clear();
+        if (value is not null)
+        {
+            foreach (var vehicle in value.Vehicles)
+            {
+                DrawerVehicles.Add(new DrawerVehicleViewModel(vehicle, _api, _toastService));
+            }
+        }
+
+        OnSelectedDeclarationDetailChangedCore(value);
+    }
+
+    private void OnSelectedDeclarationDetailChangedCore(DeclarationDetailResponse? value) =>
         OnPropertyChanged(nameof(HasDrawerData));
 
     partial void OnIsDrawerLoadingChanged(bool value) => OnPropertyChanged(nameof(HasDrawerData));

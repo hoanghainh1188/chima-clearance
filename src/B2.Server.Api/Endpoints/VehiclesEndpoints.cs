@@ -1,4 +1,5 @@
 using B2.Application.Declarations.Exit;
+using B2.Application.Declarations.Note;
 using B2.Application.Vehicles;
 using B2.Application.Vehicles.Suggest;
 using B2.Application.Vehicles.Validators;
@@ -81,5 +82,25 @@ public static class VehiclesEndpoints
                     return Results.NoContent();
                 })
             .RequireAuthorization(B2Policies.AdminOnly);
+
+        // Business rules § 3: "Ghi chú" (cột O) is one of the five columns the exit-gate officer
+        // may fill, so the note stays editable after entry. Every edit writes an audit row.
+        app.MapPatch(
+                "/api/vehicles/{id:guid}/note",
+                async (
+                    Guid id,
+                    HttpContext http,
+                    UpdateVehicleNoteRequest request,
+                    UpdateVehicleNoteCommandHandler handler,
+                    IValidator<UpdateVehicleNoteCommand> validator,
+                    CancellationToken ct) =>
+                {
+                    var uid = http.User.GetB2UserId() ?? throw new InvalidOperationException("Missing user id.");
+                    var cmd = new UpdateVehicleNoteCommand(id, request.Note);
+                    await validator.ValidateAndThrowAsync(cmd, ct);
+                    await handler.HandleAsync(cmd, uid, ct);
+                    return Results.NoContent();
+                })
+            .RequireAuthorization(B2Policies.GateStaff);
     }
 }

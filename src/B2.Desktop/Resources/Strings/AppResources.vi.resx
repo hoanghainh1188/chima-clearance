@@ -246,6 +246,21 @@
   <data name="Ledger_Drawer_VehicleExited" xml:space="preserve">
     <value>Đã ra</value>
   </data>
+  <data name="Ledger_Drawer_NoteLabel" xml:space="preserve">
+    <value>Ghi chú</value>
+  </data>
+  <data name="Ledger_Drawer_NotePlaceholder" xml:space="preserve">
+    <value>Ghi chú thêm nếu cần (không bắt buộc)</value>
+  </data>
+  <data name="Ledger_Drawer_SaveNote" xml:space="preserve">
+    <value>Lưu ghi chú</value>
+  </data>
+  <data name="Ledger_Drawer_NoteSaved" xml:space="preserve">
+    <value>Đã lưu ghi chú.</value>
+  </data>
+  <data name="Ledger_Drawer_NoteSaveError" xml:space="preserve">
+    <value>Không lưu được ghi chú. Vui lòng thử lại.</value>
+  </data>
   <data name="Ledger_Drawer_LoadError" xml:space="preserve">
     <value>Không tải được chi tiết tờ khai.</value>
   </data>

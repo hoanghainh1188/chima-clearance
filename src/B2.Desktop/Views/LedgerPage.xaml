@@ -373,10 +373,10 @@
                    FontSize="{StaticResource FontSizeL}"
                    TextColor="{StaticResource ColorPrimary}"
                    Margin="0,8,0,0" />
-            <VerticalStackLayout BindableLayout.ItemsSource="{Binding SelectedDeclarationDetail.Vehicles}"
+            <VerticalStackLayout BindableLayout.ItemsSource="{Binding DrawerVehicles}"
                                  Spacing="0">
               <BindableLayout.ItemTemplate>
-                <DataTemplate x:DataType="decl:VehicleDetailDto">
+                <DataTemplate x:DataType="vm:DrawerVehicleViewModel">
                   <Border Padding="{StaticResource SpacingS}"
                           Stroke="{StaticResource ColorBorder}"
                           StrokeThickness="0,0,0,1">
@@ -402,6 +402,23 @@
                              FontAttributes="Bold"
                              IsVisible="{Binding ExitMarked}"
                              Text="{x:Static s:AppResources.Ledger_Drawer_VehicleExited}" />
+
+                      <!-- Ghi chú (cột O): business rules § 3 lets the exit-gate officer fill
+                           this, so it is editable here rather than only at entry. -->
+                      <Label Text="{x:Static s:AppResources.Ledger_Drawer_NoteLabel}"
+                             FontSize="{StaticResource FontSizeS}"
+                             TextColor="{StaticResource ColorOnSurfaceMuted}"
+                             Margin="0,6,0,0" />
+                      <Entry Text="{Binding Note}"
+                             Placeholder="{x:Static s:AppResources.Ledger_Drawer_NotePlaceholder}"
+                             IsEnabled="{Binding IsSaving, Converter={StaticResource InvertedBoolConverter}}"
+                             SemanticProperties.Hint="{x:Static s:AppResources.Ledger_Drawer_NoteLabel}" />
+                      <Button Text="{x:Static s:AppResources.Ledger_Drawer_SaveNote}"
+                              Command="{Binding SaveNoteCommand}"
+                              IsEnabled="{Binding CanSaveNote}"
+                              HorizontalOptions="Start"
+                              FontSize="{StaticResource FontSizeS}"
+                              SemanticProperties.Hint="{x:Static s:AppResources.Ledger_Drawer_SaveNote}" />
                     </VerticalStackLayout>
                   </Border>
                 </DataTemplate>
