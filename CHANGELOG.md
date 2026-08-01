@@ -60,6 +60,29 @@ flagged ("cảnh báo bằng cách tô đỏ dãy số").
 
 ### Fixed
 
+#### UAT script could not be run as written — `docs/uat-refresh`
+
+`T-S6-12` is the last task gating Phase-1 GA, and its sign-off sheet had two defects that would
+have surfaced on-site with the hardware already set up:
+
+- **Step 1 told the tester to run `B2ClearanceSetup.exe`** — the Velopack installer removed in
+  #103. The file does not exist in the shipped package.
+- **No step touched the exit-gate PC at all.** The gate runs two lanes; a single-machine smoke
+  test exercises none of the LAN client path — precisely the half that was broken until #114.
+
+The sheet now has Part A (entry gate, the original 10 steps), **Part B** (exit gate: client-only
+install, Operator login over LAN, cross-machine search, exit + KVGS + Ghi chú from that account,
+network-loss recovery), **Part C** (the three business-rule corrections from this release), an
+upgrade-over-existing-install check, and a note that S1–S5 apply to the entry gate only.
+`04-implementation-plan.md § 8` gains the matching exit-gate steps so the plan and the sheet
+agree; `plan.md` marks the Velopack installer line superseded by ADR-0007.
+
+#### `.gitattributes` line 1 was ignored — `docs/uat-refresh`
+
+The file began with a UTF-8 BOM, so git did not read line 1 as a comment: it tried to parse it
+as attributes, printed `end_of_line is not a valid attribute name` on **every** git invocation,
+and — the part that mattered — silently dropped the `* text=auto` rule on that line. BOM removed.
+
 #### The exit-gate PC could not reach the server — `fix/desktop-lan-endpoint`
 
 The business runs **two** PCs (`Business rules — Hướng dẫn điền sổ B2` § B, `Định nghĩa yêu
