@@ -88,6 +88,13 @@ public interface IB2Api
         [Header("Idempotency-Key")] string idempotencyKey,
         CancellationToken cancellationToken = default);
 
+    /// <summary>Ghi chú (cột O) — editable at the exit gate per business rules § 3.</summary>
+    [Patch("/api/vehicles/{id}/note")]
+    Task UpdateVehicleNoteAsync(
+        Guid id,
+        [Body] UpdateVehicleNoteRequest request,
+        CancellationToken cancellationToken = default);
+
     [Get("/api/admin/health")]
     Task<AdminHealthResponse> GetHealthAsync(CancellationToken cancellationToken = default);
 

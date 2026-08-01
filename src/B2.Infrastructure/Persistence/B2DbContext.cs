@@ -90,7 +90,12 @@ public sealed class B2DbContext : DbContext, IUnitOfWork
         {
             e.ToTable("Declarations");
             e.HasKey(x => x.Id);
-            e.HasIndex(x => x.DeclarationNumber).IsUnique();
+            // INV-1: unique among declarations that still count. A cancelled declaration (FR-022)
+            // is an erroneous entry being withdrawn, so its number must be re-enterable — an
+            // unfiltered unique index made the correction impossible and the number unusable.
+            e.HasIndex(x => x.DeclarationNumber)
+                .IsUnique()
+                .HasFilter("\"Status\" <> 'Cancelled'");
             e.HasIndex(x => x.BusinessDate);
             e.HasIndex(x => x.Status);
             e.HasIndex(x => x.ProcessorId);

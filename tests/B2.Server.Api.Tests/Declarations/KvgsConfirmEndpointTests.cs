@@ -91,15 +91,18 @@ public sealed class KvgsConfirmEndpointTests
 
     [Fact]
     [Trait("Feature", "F-09")]
-    public async Task Should_operator_cannot_confirm_kvgs_returns_403()
+    public async Task Should_exit_gate_operator_confirm_kvgs()
     {
+        // Business rules § B.2: one cán bộ at the exit gate ticks "xe ra" (cột J) and then
+        // "xác nhận qua KVGS" (cột L). Splitting those across Operator and Supervisor left no
+        // single non-Admin role able to work the lane.
         await using var factory = new B2ApiFactory();
         var (declId, _) = await CreateAllExitedWithClientAsync(factory);
         var client = factory.CreateClient();
         var op = await client.LoginAsNewOperatorAsync();
         client.SetBearer(op.AccessToken);
         var res = await client.PostAsync($"/api/declarations/{declId}/kvgs-confirm", null);
-        res.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+        res.StatusCode.Should().Be(HttpStatusCode.NoContent);
     }
 
     [Fact]

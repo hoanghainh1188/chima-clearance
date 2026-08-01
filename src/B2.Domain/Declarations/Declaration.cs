@@ -89,14 +89,15 @@ public sealed class Declaration
         Status = allExited ? DeclarationStatus.AllExited : DeclarationStatus.Open;
     }
 
-    /// <summary>INV-6: only Supervisor or Admin may transition AllExited → KVGSConfirmed.</summary>
-    public void ConfirmKvgs(Role actorRole, Guid actorUserId, DateTimeOffset confirmedAtUtc)
+    /// <summary>
+    /// INV-6: <see cref="DeclarationStatus.AllExited"/> → <see cref="DeclarationStatus.KVGSConfirmed"/>,
+    /// performed by the exit-gate officer. No role restriction: business rules § B.2 has the same
+    /// cán bộ tick cột J (xe ra) and then cột L (KVGS) and write their own name into cột N. The
+    /// earlier Supervisor-only rule cited "Business rule cột L", which says no such thing, and it
+    /// left no single non-Admin role able to work the exit gate.
+    /// </summary>
+    public void ConfirmKvgs(Guid actorUserId, DateTimeOffset confirmedAtUtc)
     {
-        if (actorRole is not Role.Admin and not Role.Supervisor)
-        {
-            throw new DomainException("FORBIDDEN", "Only Supervisor or Admin can confirm KVGS.", 403);
-        }
-
         if (Status != DeclarationStatus.AllExited)
         {
             throw new DomainException(

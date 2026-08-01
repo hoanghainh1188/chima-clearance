@@ -33,6 +33,32 @@
 - [UI] Q: `specs/05-ui-wireframes.md § 6.7` (Export Excel) shows three checkboxes — daily-header rows / status colours / note column — but `spec.md` FR-015 says all three MUST be preserved in every export. Toggleable or always-on? → A: Always-on at runtime. The three options render as **read-only "Đã bật" badges** at the same screen position as the wireframe checkboxes (smallest wireframe deviation; copy unchanged). The legacy archive contract (FR-015, F-13 layout test) is preserved; UI still surfaces what the export will contain.
 - [UI] Q: `specs/05-ui-wireframes.md § 5` defines a tri-state connectivity badge (🟢 Online / 🟡 Đang thử lại / 🔴 Mất kết nối), but `spec.md` FR-011 only addresses 🔴. Are writes permitted during 🟡 polling fallback? → A: Writes are **permitted** during 🟡 because the HTTP channel to the server is still up — only the SignalR push has degraded to polling. The yellow banner stays visible to make the degradation explicit; other clients converge within the polling interval (target ≤ 3 s). FR-011's "refuse writes" rule is **scoped to 🔴 only** and reworded accordingly; new FR-028 codifies the tri-state contract; F-10 gains one acceptance scenario for write-during-🟡 + ≤ 3 s convergence.
 
+### Session 2026-08-01 — business-rule review against the customer's own documents
+
+- Q: FR-027 denies Operator on KVGS and denies Supervisor on Entry/Exit, so no single non-Admin
+  role can work the exit gate. `Business rules — Hướng dẫn điền sổ B2` § B.2 has one cán bộ at
+  cổng ra tick "Xe đã ra" (cột J), then "Xác nhận qua KVGS" (cột L), then write their own name
+  into "Người xác nhận" (cột N), and § 3 lists exactly five columns that same officer may edit.
+  Which is authoritative? → A: **The business document.** The Supervisor-only rule traces to
+  INV-6, whose stated source is "Business rule cột L" — a citation that document does not
+  support; and FR-027 itself came from the [UI] clarification "should the API mirror the sidebar
+  exactly", i.e. it was derived from an internally-authored wireframe, not from the customer.
+  KVGS confirmation is now open to every authenticated role (new `GateStaff` policy); Supervisor
+  keeps it. Entry/Exit stay Operator+Admin. INV-6 keeps only its `AllExited` precondition, and
+  the wireframe § 4 sidebar matrix shows KVGS for all three roles.
+
+- Q: Business rules § 3 lists "Ghi chú" (cột O) among the columns the exit gate may fill, but
+  `Vehicle.Note` is write-once at entry with no update path. → A: Add an audited note update
+  available to gate staff, so the exit-gate officer can record what they see (xe hỏng, hàng có
+  vấn đề). Audit stays append-only: each edit writes an `Update` AuditLog row.
+
+- Q: `IX_Declarations_DeclarationNumber` is unique across **all** declarations, so a number on a
+  declaration cancelled under FR-022 can never be entered again — the correction path for a
+  mistyped entry dead-ends and a real customs number becomes unusable. → A: Scope INV-1 to
+  non-cancelled declarations (filtered unique index). Business rule cột C only ever asked for a
+  duplicate to be flagged ("cảnh báo bằng cách tô đỏ dãy số"); blocking a duplicate of a **live**
+  declaration is kept as the stricter reading, but it no longer traps corrections.
+
 ---
 
 ## User Scenarios & Testing *(mandatory)*
@@ -1017,9 +1043,10 @@ depends on.
   | --- | :-: | :-: | :-: |
   | Auth: `POST /api/auth/login`, `POST /api/auth/change-password` | ✅ | ✅ | ✅ |
   | Entry / Exit: `POST /api/declarations`, `POST /api/declarations/{id}/vehicles`, `POST /api/vehicles/{id}/exit` | ✅ | ✅ | ❌ 403 |
-  | KVGS: `POST /api/declarations/{id}/kvgs-confirm` | ✅ | ❌ 403 | ✅ |
+  | KVGS: `POST /api/declarations/{id}/kvgs-confirm` | ✅ | ✅ | ✅ |
   | Reports: `GET /api/reports/*` | ✅ | ❌ 403 | ✅ |
   | Export: `POST /api/exports/so-b2`, `POST /api/exports/reports/*` | ✅ | ❌ 403 | ✅ |
+  | Ghi chú (cột O): `PATCH /api/vehicles/{id}/note` | ✅ | ✅ | ✅ |
   | Ledger reads: `GET /api/declarations`, `GET /api/vehicles/*` | ✅ | ✅ | ✅ |
   | Vehicle suffix search: `GET /api/vehicles/search` | ✅ | ✅ | ✅ |
   | DailyHeader read + `PATCH /api/daily-headers/{date}/officer` | ✅ | ✅ | ✅ |

@@ -304,7 +304,7 @@ Scenario: Admin un-exit override
 
 ## F-09 — KVGS Confirmation
 
-**Actors**: Supervisor or Admin.
+**Actors**: the exit-gate officer — any authenticated role (Operator, Supervisor or Admin).
 **References**: Business rule cột L; INV-6.
 
 ### Acceptance Criteria

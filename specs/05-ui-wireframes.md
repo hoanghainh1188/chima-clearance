@@ -112,7 +112,7 @@ flowchart LR
 | Sổ B2 (Ledger) | ✅ | ✅ | ✅ |
 | Nhập xe vào | ✅ | ✅ | — |
 | Xác nhận xe ra | ✅ | ✅ | — |
-| Xác nhận KVGS | ✅ | — | ✅ |
+| Xác nhận KVGS | ✅ | ✅ | ✅ |
 | Báo cáo | ✅ | — | ✅ |
 | Xuất Excel | ✅ | — | ✅ |
 | **Quản trị** (group) | ✅ | — | — |
@@ -266,6 +266,10 @@ flowchart LR
 - Right-click parent → context menu: Mở chi tiết / Xác nhận KVGS / Sao chép số tờ khai.
 - Right-click child → Đánh dấu xe ra / Sao chép biển số / Mở chi tiết.
 - Double-click any row → opens detail drawer (right side, 40% width).
+- **Deviation (2026-08-01)**: each vehicle row inside the drawer carries a **Ghi chú**
+  field plus a `Lưu ghi chú` button. Business rules § 3 lists cột O among the five
+  columns the exit-gate officer may fill, and the note previously had no UI at all —
+  it was write-once at entry and not even returned by the detail API.
 
 **Real-time updates** (SignalR push):
 - Color/state changes animate over 300 ms (avoid jarring jumps).

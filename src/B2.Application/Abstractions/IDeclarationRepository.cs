@@ -1,5 +1,6 @@
 using B2.Application.Declarations.Exit;
 using B2.Application.Declarations.List;
+using B2.Application.Declarations.Note;
 using B2.Domain.Declarations;
 using B2.Domain.Users;
 using B2.Shared.Contracts.Declarations;
@@ -23,6 +24,11 @@ public interface IDeclarationRepository
         CancellationToken cancellationToken);
 
     Task<UnExitVehicleResult> UnExitVehicleAsync(Guid vehicleId, CancellationToken cancellationToken);
+
+    Task<UpdateVehicleNoteResult> UpdateVehicleNoteAsync(
+        Guid vehicleId,
+        string? note,
+        CancellationToken cancellationToken);
 
     Task<Declaration> CancelDeclarationAsync(
         Guid declarationId,

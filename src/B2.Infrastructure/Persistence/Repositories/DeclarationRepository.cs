@@ -2,6 +2,7 @@ using System.Data;
 using B2.Application.Abstractions;
 using B2.Application.Declarations.Exit;
 using B2.Application.Declarations.List;
+using B2.Application.Declarations.Note;
 using B2.Domain;
 using B2.Domain.Declarations;
 using B2.Domain.Users;
@@ -20,8 +21,15 @@ public sealed class DeclarationRepository : IDeclarationRepository
         _db = db;
     }
 
+    /// <summary>
+    /// INV-1 uniqueness, scoped to declarations that still count. Cancelled ones are withdrawn
+    /// entries (FR-022) and their number must be re-enterable: the officer who mistyped a
+    /// declaration has it cancelled and then records the real one under the same number.
+    /// </summary>
     public Task<bool> DeclarationNumberExistsAsync(string declarationNumber, CancellationToken cancellationToken) =>
-        _db.Declarations.AnyAsync(d => d.DeclarationNumber == declarationNumber, cancellationToken);
+        _db.Declarations.AnyAsync(
+            d => d.DeclarationNumber == declarationNumber && d.Status != DeclarationStatus.Cancelled,
+            cancellationToken);
 
     public async Task AddAsync(Declaration declaration, CancellationToken cancellationToken) =>
         await _db.Declarations.AddAsync(declaration, cancellationToken);
@@ -110,6 +118,31 @@ public sealed class DeclarationRepository : IDeclarationRepository
             await tx.RollbackAsync(cancellationToken);
             throw;
         }
+    }
+
+    /// <summary>
+    /// Business rules § 3 — the exit-gate officer may fill "Ghi chú" (cột O). The declaration is
+    /// loaded with the vehicle so <see cref="Vehicle.UpdateNote"/> can see a cancelled parent.
+    /// </summary>
+    public async Task<UpdateVehicleNoteResult> UpdateVehicleNoteAsync(
+        Guid vehicleId,
+        string? note,
+        CancellationToken cancellationToken)
+    {
+        var vehicle = await _db.Vehicles
+            .Include(v => v.Declaration)
+            .FirstOrDefaultAsync(v => v.Id == vehicleId, cancellationToken);
+
+        if (vehicle?.Declaration is null)
+        {
+            return new UpdateVehicleNoteNotFound();
+        }
+
+        var before = vehicle.Note;
+        vehicle.UpdateNote(note);
+        await _db.SaveChangesAsync(cancellationToken);
+
+        return new UpdateVehicleNoteApplied(vehicle.Id, vehicle.DeclarationId, before, vehicle.Note);
     }
 
     public async Task<UnExitVehicleResult> UnExitVehicleAsync(Guid vehicleId, CancellationToken cancellationToken)
@@ -363,7 +396,8 @@ public sealed class DeclarationRepository : IDeclarationRepository
                     v.TrailerOrContainerNumber,
                     v.EntryTime,
                     v.ExitMarked,
-                    v.ExitTime))
+                    v.ExitTime,
+                    v.Note))
                 .ToListAsync(cancellationToken))
             .OrderBy(v => v.EntryTime)
             .ToList();

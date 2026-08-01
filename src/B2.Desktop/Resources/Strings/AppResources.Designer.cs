@@ -117,6 +117,16 @@ public static class AppResources
     public static string Ledger_Drawer_EntryTimeLabel => ResourceManager.GetString(nameof(Ledger_Drawer_EntryTimeLabel), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_Drawer_GoodsLabel => ResourceManager.GetString(nameof(Ledger_Drawer_GoodsLabel), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_Drawer_LoadError => ResourceManager.GetString(nameof(Ledger_Drawer_LoadError), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+
+    public static string Ledger_Drawer_NoteLabel => ResourceManager.GetString(nameof(Ledger_Drawer_NoteLabel), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+
+    public static string Ledger_Drawer_NotePlaceholder => ResourceManager.GetString(nameof(Ledger_Drawer_NotePlaceholder), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+
+    public static string Ledger_Drawer_SaveNote => ResourceManager.GetString(nameof(Ledger_Drawer_SaveNote), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+
+    public static string Ledger_Drawer_NoteSaved => ResourceManager.GetString(nameof(Ledger_Drawer_NoteSaved), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+
+    public static string Ledger_Drawer_NoteSaveError => ResourceManager.GetString(nameof(Ledger_Drawer_NoteSaveError), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_Drawer_ProcessorLabel => ResourceManager.GetString(nameof(Ledger_Drawer_ProcessorLabel), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_Drawer_StatusLabel => ResourceManager.GetString(nameof(Ledger_Drawer_StatusLabel), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_Drawer_Title => ResourceManager.GetString(nameof(Ledger_Drawer_Title), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;

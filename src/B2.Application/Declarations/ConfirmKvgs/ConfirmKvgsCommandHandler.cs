@@ -30,13 +30,8 @@ public sealed class ConfirmKvgsCommandHandler
         _realtime = realtime;
     }
 
-    public async Task HandleAsync(ConfirmKvgsCommand command, string? actorRoleClaim, Guid actorUserId, CancellationToken cancellationToken)
+    public async Task HandleAsync(ConfirmKvgsCommand command, Guid actorUserId, CancellationToken cancellationToken)
     {
-        if (!Enum.TryParse<Role>(actorRoleClaim, ignoreCase: true, out var actorRole))
-        {
-            throw new DomainException("FORBIDDEN", "Missing or invalid role.", 403);
-        }
-
         var declaration = await _declarations.GetByIdWithVehiclesAsync(command.DeclarationId, cancellationToken);
         if (declaration is null)
         {
@@ -44,7 +39,7 @@ public sealed class ConfirmKvgsCommandHandler
         }
 
         var before = JsonSerializer.Serialize(new { declaration.Status });
-        declaration.ConfirmKvgs(actorRole, actorUserId, _clock.UtcNow);
+        declaration.ConfirmKvgs(actorUserId, _clock.UtcNow);
         var after = JsonSerializer.Serialize(
             new
             {

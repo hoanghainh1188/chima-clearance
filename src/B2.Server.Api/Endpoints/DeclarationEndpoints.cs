@@ -84,13 +84,12 @@ public static class DeclarationEndpoints
                     CancellationToken ct) =>
                 {
                     var uid = http.User.GetB2UserId() ?? throw new InvalidOperationException("Missing user id.");
-                    var role = http.User.FindFirst("role")?.Value;
                     var cmd = new ConfirmKvgsCommand(id);
                     await validator.ValidateAndThrowAsync(cmd, ct);
-                    await handler.HandleAsync(cmd, role, uid, ct);
+                    await handler.HandleAsync(cmd, uid, ct);
                     return Results.NoContent();
                 })
-            .RequireAuthorization(B2Policies.SupervisorOrAbove);
+            .RequireAuthorization(B2Policies.GateStaff);
 
         app.MapPost(
                 "/api/declarations/{id:guid}/cancel",
