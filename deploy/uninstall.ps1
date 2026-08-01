@@ -1,4 +1,4 @@
-#Requires -RunAsAdministrator
+﻿#Requires -RunAsAdministrator
 <#
 .SYNOPSIS
     Gỡ B2 Clearance. Dừng + xóa Windows Service và firewall rule; GIỮ dữ liệu.

@@ -21,6 +21,12 @@
 # Visual Studio resource files — .editorconfig keeps CRLF for these
 *.resx text eol=crlf
 
+# deploy/*.ps1 run under Windows PowerShell 5.1 on the gate PCs (no pwsh 7 there). 5.1 reads a
+# .ps1 without a BOM as ANSI, which turns the Vietnamese text into mojibake — including smart
+# quotes, which PowerShell accepts as string delimiters, so the script fails to PARSE.
+# Keep these files UTF-8 **with** BOM (opposite of the .cs rule in CLAUDE.md) and CRLF.
+*.ps1 text eol=crlf
+
 # Binary
 *.xlsx binary
 *.png binary
