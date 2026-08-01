@@ -25,4 +25,36 @@ public sealed class YardsEndpointTests
             new YardWriteRequest("Z1", "Yard Dup", null));
         second.StatusCode.Should().Be(HttpStatusCode.Conflict);
     }
+
+    [Fact]
+    [Trait("Feature", "F-04")]
+    public async Task Listing_without_includeInactive_returns_active_rows_not_500()
+    {
+        // The parameter was non-nullable with no default, so omitting it threw
+        // BadHttpRequestException and the global handler turned it into a 500 INTERNAL_ERROR.
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var adminLogin = await client.LoginAsAdminAsync();
+        client.SetBearer(adminLogin.AccessToken);
+
+        var response = await client.GetAsync("/api/master/yards");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var page = await response.Content.ReadFromJsonAsync<YardListResponse>();
+        page!.Items.Should().OnlyContain(y => y.IsActive);
+    }
+
+    [Fact]
+    [Trait("Feature", "F-04")]
+    public async Task Listing_processors_without_includeInactive_returns_200()
+    {
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var adminLogin = await client.LoginAsAdminAsync();
+        client.SetBearer(adminLogin.AccessToken);
+
+        var response = await client.GetAsync("/api/master/processors");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
 }

@@ -14,7 +14,7 @@ public static class MasterDataEndpoints
         processors.MapGet(
             "",
             async (
-                bool includeInactive,
+                bool? includeInactive,
                 int? page,
                 int? pageSize,
                 MasterDataCommandHandler handler,
@@ -22,7 +22,7 @@ public static class MasterDataEndpoints
             {
                 var p = page is >= 1 ? page.Value : 1;
                 var s = pageSize is >= 1 and <= 500 ? pageSize.Value : 200;
-                var (items, total) = await handler.ListProcessorsAsync(includeInactive, p, s, ct);
+                var (items, total) = await handler.ListProcessorsAsync(includeInactive ?? false, p, s, ct);
                 return Results.Ok(new ProcessorListResponse(p, s, total, items));
             })
             .RequireAuthorization(B2Policies.MasterRead);
@@ -75,7 +75,7 @@ public static class MasterDataEndpoints
         yards.MapGet(
             "",
             async (
-                bool includeInactive,
+                bool? includeInactive,
                 int? page,
                 int? pageSize,
                 MasterDataCommandHandler handler,
@@ -83,7 +83,7 @@ public static class MasterDataEndpoints
             {
                 var p = page is >= 1 ? page.Value : 1;
                 var s = pageSize is >= 1 and <= 500 ? pageSize.Value : 200;
-                var (items, total) = await handler.ListYardsAsync(includeInactive, p, s, ct);
+                var (items, total) = await handler.ListYardsAsync(includeInactive ?? false, p, s, ct);
                 return Results.Ok(new YardListResponse(p, s, total, items));
             })
             .RequireAuthorization(B2Policies.MasterRead);
