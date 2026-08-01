@@ -228,7 +228,7 @@ invalid raw strings at construction time (Constitution III).
 
 | ID | Invariant | Enforced in | Test in | Source |
 | --- | --- | --- | --- | --- |
-| **INV-1** | `Declaration.DeclarationNumber` is exactly 12 digits and unique across all declarations | `B2.Domain` (`DeclarationNumber` VO) + DB unique index | `B2.Domain.Tests`, `B2.Server.Api.Tests` (409 on duplicate) | Business rule cột C, F-05 |
+| **INV-1** | `Declaration.DeclarationNumber` is exactly 12 digits and unique among **non-cancelled** declarations | `B2.Domain` (`DeclarationNumber` VO) + DB unique index filtered on `Status <> 'Cancelled'` | `B2.Domain.Tests`, `B2.Server.Api.Tests` (409 on live duplicate; re-entry after cancel accepted) | Business rule cột C, F-05, FR-022 |
 | **INV-2** | `Vehicle.PlateNumber` and `Vehicle.TrailerOrContainerNumber` are stored upper-cased | `B2.Domain` (`PlateNumber`, `ContainerNumber` VO constructors) | `B2.Domain.Tests` | Business rule cột E, F; FR-006 |
 | **INV-3** | `Vehicle.EntryTime` and `Declaration.EnteredAt` are set on creation by the **server** clock and are immutable thereafter | `B2.Domain` (private setters; no public setter on these fields) + `IClock` injected from Application | `B2.Domain.Tests`, `B2.Server.Api.Tests` (F-05 "Server timestamp") | Business rule cột I; FR-004 |
 | **INV-4** | `Vehicle.ExitTime` is set when `ExitMarked` flips false→true and is immutable thereafter (Admin un-exit clears it back to null) | `B2.Domain` (`Vehicle.MarkExit(...)`, `Vehicle.UnExit(...)` aggregate methods) | `B2.Domain.Tests`, `B2.Server.Api.Tests` | Business rule cột K; F-08 |

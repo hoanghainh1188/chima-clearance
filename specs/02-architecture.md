@@ -249,7 +249,7 @@ erDiagram
 
 | ID | Invariant | Source |
 |----|-----------|--------|
-| INV-1 | `DeclarationNumber` is exactly 12 digits and unique across all declarations | Business rule cột C |
+| INV-1 | `DeclarationNumber` is exactly 12 digits and unique among non-cancelled declarations | Business rule cột C + FR-022 |
 | INV-2 | `PlateNumber` and `TrailerOrContainerNumber` are stored upper-cased | Business rule cột E, F |
 | INV-3 | `EntryTime` is set on creation by the server clock and is immutable thereafter | Business rule cột I |
 | INV-4 | `ExitTime` is set when `ExitMarked` flips false→true and is immutable thereafter | Business rule cột K |

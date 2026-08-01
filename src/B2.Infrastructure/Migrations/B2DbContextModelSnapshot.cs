@@ -147,7 +147,6 @@ namespace B2.Infrastructure.Migrations
                     b.Property<byte[]>("RowVersion")
                         .IsConcurrencyToken()
                         .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("BLOB");
 
                     b.Property<string>("Status")
@@ -163,7 +162,8 @@ namespace B2.Infrastructure.Migrations
                     b.HasIndex("BusinessDate");
 
                     b.HasIndex("DeclarationNumber")
-                        .IsUnique();
+                        .IsUnique()
+                        .HasFilter("\"Status\" <> 'Cancelled'");
 
                     b.HasIndex("ProcessorId");
 
@@ -214,9 +214,7 @@ namespace B2.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<byte[]>("RowVersion")
-                        .IsConcurrencyToken()
                         .IsRequired()
-                        .ValueGeneratedOnAddOrUpdate()
                         .HasColumnType("BLOB");
 
                     b.Property<string>("TrailerOrContainerNumber")

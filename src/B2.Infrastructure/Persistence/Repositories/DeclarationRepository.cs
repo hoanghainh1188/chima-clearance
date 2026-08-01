@@ -20,8 +20,15 @@ public sealed class DeclarationRepository : IDeclarationRepository
         _db = db;
     }
 
+    /// <summary>
+    /// INV-1 uniqueness, scoped to declarations that still count. Cancelled ones are withdrawn
+    /// entries (FR-022) and their number must be re-enterable: the officer who mistyped a
+    /// declaration has it cancelled and then records the real one under the same number.
+    /// </summary>
     public Task<bool> DeclarationNumberExistsAsync(string declarationNumber, CancellationToken cancellationToken) =>
-        _db.Declarations.AnyAsync(d => d.DeclarationNumber == declarationNumber, cancellationToken);
+        _db.Declarations.AnyAsync(
+            d => d.DeclarationNumber == declarationNumber && d.Status != DeclarationStatus.Cancelled,
+            cancellationToken);
 
     public async Task AddAsync(Declaration declaration, CancellationToken cancellationToken) =>
         await _db.Declarations.AddAsync(declaration, cancellationToken);
