@@ -2,17 +2,17 @@
   "solution": {
     "path": "B2.sln",
     "projects": [
-      "src/B2.Domain/B2.Domain.csproj",
-      "src/B2.Application/B2.Application.csproj",
-      "src/B2.Infrastructure/B2.Infrastructure.csproj",
-      "src/B2.Server.Api/B2.Server.Api.csproj",
-      "src/B2.Server.Service/B2.Server.Service.csproj",
-      "src/B2.Shared.Contracts/B2.Shared.Contracts.csproj",
-      "tests/B2.Domain.Tests/B2.Domain.Tests.csproj",
-      "tests/B2.Application.Tests/B2.Application.Tests.csproj",
-      "tests/B2.Server.Api.Tests/B2.Server.Api.Tests.csproj",
-      "tests/B2.Desktop.Tests/B2.Desktop.Tests.csproj",
-      "tests/B2.Performance.Tests/B2.Performance.Tests.csproj"
+      "src\\B2.Domain\\B2.Domain.csproj",
+      "src\\B2.Application\\B2.Application.csproj",
+      "src\\B2.Infrastructure\\B2.Infrastructure.csproj",
+      "src\\B2.Server.Api\\B2.Server.Api.csproj",
+      "src\\B2.Server.Service\\B2.Server.Service.csproj",
+      "src\\B2.Shared.Contracts\\B2.Shared.Contracts.csproj",
+      "tests\\B2.Domain.Tests\\B2.Domain.Tests.csproj",
+      "tests\\B2.Application.Tests\\B2.Application.Tests.csproj",
+      "tests\\B2.Server.Api.Tests\\B2.Server.Api.Tests.csproj",
+      "tests\\B2.Desktop.Tests\\B2.Desktop.Tests.csproj",
+      "tests\\B2.Performance.Tests\\B2.Performance.Tests.csproj"
     ]
   }
 }
