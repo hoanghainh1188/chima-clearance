@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using B2.Desktop.Services;
 using B2.Desktop.Services.Api;
+using B2.Desktop.Services.Logging;
 using B2.Desktop.Services.UserSettings;
 using B2.Desktop.ViewModels;
 using B2.Desktop.ViewModels.Admin;
@@ -88,9 +89,10 @@ public static class MauiProgram
         builder.Services.AddTransient<KvgsPage>();
         builder.Services.AddTransient<AppShell>();
 
-#if DEBUG
-        builder.Logging.AddDebug();
-#endif
+        // A shipped build had no logging provider at all (AddDebug was inside #if DEBUG — and
+        // did not even compile, since Microsoft.Extensions.Logging.Debug is not referenced), so
+        // ILogger calls went nowhere on a gate PC. The runbook points operators at this file.
+        builder.Logging.AddProvider(new FileLoggerProvider(FileLoggerProvider.DefaultDirectory));
 
         var app = builder.Build();
 
