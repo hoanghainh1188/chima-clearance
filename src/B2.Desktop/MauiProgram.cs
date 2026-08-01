@@ -2,6 +2,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using B2.Desktop.Services;
 using B2.Desktop.Services.Api;
+using B2.Desktop.Services.Logging;
 using B2.Desktop.Services.UserSettings;
 using B2.Desktop.ViewModels;
 using B2.Desktop.ViewModels.Admin;
@@ -22,9 +23,13 @@ public static class MauiProgram
             .UseMauiApp<App>()
             .UseMauiCommunityToolkit();
 
-        const string apiBase = "http://127.0.0.1:5000/";
-        var apiUri = new Uri(apiBase);
-        builder.Services.AddSingleton(new DesktopRuntimeOptions(apiUri));
+        // The exit-gate PC is a LAN client of the entry-gate PC, so the server address is
+        // deployment data (b2-client.json / B2_SERVER_URL), not a constant. See ApiEndpointResolver.
+        var endpoint = ApiEndpointResolver.Resolve(
+            AppContext.BaseDirectory,
+            Environment.GetEnvironmentVariable(ApiEndpointResolver.EnvironmentVariableName));
+        var apiUri = endpoint.BaseUri;
+        builder.Services.AddSingleton(new DesktopRuntimeOptions(apiUri, endpoint.Source));
         builder.Services.AddSingleton<ConnectivityService>();
         builder.Services.AddSingleton<IToastService, ToastService>();
         builder.Services.AddSingleton<IModalService, ModalService>();
@@ -50,7 +55,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<IAuthTokenStore, AuthTokenStore>();
         builder.Services.AddTransient<AuthTokenHandler>();
         builder.Services.AddRefitClient<IB2Api>(refitSettings)
-            .ConfigureHttpClient(c => c.BaseAddress = new Uri(apiBase))
+            .ConfigureHttpClient(c => c.BaseAddress = apiUri)
             .AddHttpMessageHandler<AuthTokenHandler>()
             .AddHttpMessageHandler<CorrelationCaptureHandler>();
 
@@ -84,10 +89,23 @@ public static class MauiProgram
         builder.Services.AddTransient<KvgsPage>();
         builder.Services.AddTransient<AppShell>();
 
-#if DEBUG
-        builder.Logging.AddDebug();
-#endif
+        // A shipped build had no logging provider at all (AddDebug was inside #if DEBUG — and
+        // did not even compile, since Microsoft.Extensions.Logging.Debug is not referenced), so
+        // ILogger calls went nowhere on a gate PC. The runbook points operators at this file.
+        builder.Logging.AddProvider(new FileLoggerProvider(FileLoggerProvider.DefaultDirectory));
 
-        return builder.Build();
+        var app = builder.Build();
+
+        var log = app.Services.GetRequiredService<ILoggerFactory>().CreateLogger(nameof(MauiProgram));
+        if (endpoint.Warning is not null)
+        {
+            log.LogWarning("Server address: {Warning}", endpoint.Warning);
+        }
+        else
+        {
+            log.LogInformation("Server address {Uri} (from {Source}).", apiUri, endpoint.Source);
+        }
+
+        return app;
     }
 }

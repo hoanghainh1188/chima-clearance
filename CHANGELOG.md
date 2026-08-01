@@ -6,11 +6,96 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 
-Sprints S0 through S4 are merged on `main`. The nine S4 review carry-overs
-(`T-S4-CO-01..09`) are now cleared (see below). Remaining low-priority polish
-from S3: ledger child-vehicle expand/collapse, right-click context menu,
-300/400 ms animations on SignalR push, sidebar collapse toggle, focus-ring
-style sweep, ⚙️ quick-settings menu, top-right toast position.
+`main` is at `v1.1.1`. Sprints S0–S5 are complete; Sprint S6 has one task left,
+`T-S6-12` (on-site UAT on real hardware), which gates Phase-1 GA:
+`docs/uat-001-b2-clearance.md` is still an unfilled template. Remaining
+low-priority polish from S3: ledger child-vehicle expand/collapse, right-click
+context menu, 300/400 ms animations on SignalR push, sidebar collapse toggle,
+focus-ring style sweep, ⚙️ quick-settings menu, top-right toast position.
+
+### Fixed
+
+#### The exit-gate PC could not reach the server — `fix/desktop-lan-endpoint`
+
+The business runs **two** PCs (`Business rules — Hướng dẫn điền sổ B2` § B, `Định nghĩa yêu
+cầu` § Business rules): the entry gate hosts the service, the exit gate is a LAN client that
+marks vehicles out. Neither half of that was actually deployable:
+
+- **Client** — `MauiProgram` hard-coded `const string apiBase = "http://127.0.0.1:5000/"` with
+  no runtime override anywhere in `B2.Desktop`, so an exit-gate PC could only ever talk to
+  itself. `docs/deployment-offline.md` already told operators to "trỏ endpoint desktop về địa
+  chỉ LAN của server — xem runbook.md", a procedure that did not exist and could not have
+  worked without a rebuild.
+- **Server** — the service is registered with no URL configuration and no `ASPNETCORE_URLS`,
+  so Kestrel bound loopback only. The installer's firewall rule on TCP 5000 had nothing to
+  let through.
+
+Now: `ApiEndpointResolver` reads `b2-client.json` (`{"serverUrl": "192.168.1.10"}`) from the
+executable's directory, with `B2_SERVER_URL` taking precedence and the loopback default last.
+Input is lenient — operators type an IP, not a URL — so a bare host gets `http://` and port
+5000, a missing trailing slash is added (Refit drops the last segment without one), and a
+UTF-8 BOM (Notepad's default) is tolerated. A configured-but-invalid value falls back to
+loopback **and logs a warning** rather than failing silently as "🔴 Mất kết nối".
+`appsettings.json` now binds `http://0.0.0.0:5000`.
+
+`deploy/install.ps1` gains `-ServerUrl` (writes the client config) and `-ClientOnly` (skips
+service registration, certificate and recovery code, and leaves the server binary out of the
+copy) so the exit gate installs with:
+
+```powershell
+.\install.ps1 -ClientOnly -ServerUrl 192.168.1.10
+```
+
+20 unit tests cover the resolution precedence and normalisation; `ApiEndpointResolver` is kept
+free of MAUI types so `B2.Desktop.Tests` can link it in and run on the ubuntu CI job.
+Verified on a real machine: with `{"serverUrl": "192.168.1.121"}` the desktop's TCP
+connections go to `192.168.1.121:5000` instead of loopback, against a server bound from
+`appsettings.json` alone.
+
+#### `deploy/*.ps1` could not be parsed by Windows PowerShell 5.1 — `fix/desktop-lan-endpoint`
+
+Found while syntax-checking the installer change; **pre-existing** — the `HEAD` version of
+`install.ps1` fails the same way (2 parse errors, `uninstall.ps1` 3).
+
+Both scripts were UTF-8 **without** BOM. Windows PowerShell 5.1 — the only PowerShell on the
+Win10 gate PCs — reads a BOM-less `.ps1` using the ANSI codepage, so the Vietnamese text
+decoded to mojibake that includes typographic quotes (`'`), which PowerShell accepts as string
+delimiters. The result is an unterminated string and a script that never runs: *the offline
+installer could not be executed on a target machine at all.*
+
+Both files are now UTF-8 with BOM (0 parse errors), and `.gitattributes` records the rule —
+deliberately the opposite of the no-BOM rule for `.cs` — so an editor does not silently undo it.
+The `.specify/**` helper scripts have the same encoding but run only on dev machines; left
+alone.
+
+## [1.1.1] — 2026-07-26 — archive data-loss + concurrency fixes
+
+### Fixed
+
+#### Four confirmed bugs — `fix/cursor-flagged-bugs` (#112)
+
+Surfaced by a Cursor bug-hunt agent, then independently confirmed and re-fixed (the
+agent's own patch regressed CI on a read-only-file teardown).
+
+- **FR-021 / INV-12 — archive data loss.** `FileSystemArchiveWriter.VerifyExcel`
+  ignored `minimumRows` (it asserted only `rows >= 1`), so a truncated archive passed
+  verification and `AnnualArchiveJob` went on to delete the live rows it was meant to
+  preserve. It now counts declaration rows (col C, per the exporter layout) and
+  requires `>= minimumRows`.
+- **FR-022 / INV-9 — un-exit race.** `UnExitVehicleAsync` ran outside a transaction and
+  could overwrite a concurrent cancel with a stale `Open` graph. Wrapped in a
+  Serializable read+mutate, mirroring `CancelDeclarationAsync`.
+- **FR-022 — un-exit after KVGS.** `Vehicle.UnExit()` rejected only `Cancelled`, so an
+  un-exit after KVGS confirmation left `ExitMarked=false` alongside
+  `Status=KVGSConfirmed`. Now rejected with `DECLARATION_LOCKED` (409).
+- **Deploy — offline upgrade over an existing install.** `InstallerActions.RegisterService`
+  always ran `sc create` → error 1073 on re-run. Now `sc query` → `sc config` when the
+  service already exists, else `sc create`.
+
+Tests: +1 domain (KVGS un-exit), +3 archive-verify (with a read-only-safe teardown),
++1 KVGS un-exit endpoint.
+
+## [1.1.0] — 2026-07-19 — self-contained offline deployment
 
 ### Fixed — business rules re-checked against the customer's own documents
 
@@ -76,7 +161,75 @@ no-runtime-install** deployment constraint:
   is retained. Offline OS prerequisites (VC++ x64 bundled; WebView2 standalone added on USB)
   documented in `docs/deployment-offline.md`.
 
+## [1.0.0] — 2026-06-07 — Phase-1 feature complete (Sprints S3–S6)
+
+The first tagged build. Sprint S6 closed every task but `T-S6-12` (on-site UAT).
+Sprints S3, S4 and S5 also ship for the first time here; their entries follow below.
+
+### Added
+
+#### Sprint S6 — F-17 smart suggestions (simple v1) — `feat/F-17-suggestions` (#59)
+
+Sticky plate→trailer pairs, `T-S6-01..04`, Phase-1 scope per `research.md § 7` — top-1
+only, 90-day window, no ML.
+
+- `SuggestPairQueryHandler` — top-1 per field (trailer / company / goods) over the last
+  90 days (`GROUP BY` + `ORDER BY COUNT DESC, MAX(EntryTime) DESC`);
+  `VehicleSuggestRepository` runs raw SQL against `IX_Vehicle_PlateEntry`.
+- `GET /api/vehicles/suggest?plate=…&field=…` (`AnyAuthenticated`), added to the FR-027
+  policy-alignment matrix.
+- `EntryViewModel` fetches on plate change and **auto-disables after two consecutive
+  > 100 ms overruns**; `EntryPage.xaml` shows the ghost-text zone (wireframe § 6.3),
+  Tab accepts.
+- 9 API integration tests + an NBomber placeholder (`SuggestScenarios.cs`).
+- `T-S6-07` (Cỡ chữ) marked done — it shipped in S3 via #11.
+
+#### Sprint S6 — a11y audit + FR-021 annual archive + ops runbook (#61)
+
+- **`T-S6-05/06`** — static XAML accessibility audit (`AxeRunner.cs`): contrast ratios,
+  semantic hints on non-text controls, the icon+label+color status triple, and
+  typography token values. 6 Gherkin tests; 8 views patched with missing
+  `SemanticProperties.Hint/Description`. Runs on ubuntu as `net8.0` — no MAUI workload.
+- **`T-S6-08/09`** — FR-021 annual archive: `AnnualArchiveJobHandler` (verify-then-delete),
+  `AnnualArchiveRepository` (EF `DateOnly` queries + explicit delete order),
+  `FileSystemArchiveWriter` (read-only output), `AnnualArchiveJob` on Quartz cron
+  `0 0 1 1 2 ?` (`Asia/Ho_Chi_Minh`). 6 tests: happy path, verify-fail rollback, empty
+  cutoff, `IOException`. *(The verify step had a data-loss hole — fixed in `v1.1.1`.)*
+- **`T-S6-10`** — `docs/runbook.md`, Vietnamese operator runbook, 7 sections: start/stop
+  the service, reset the Admin password via recovery code, manual backup, restore with
+  its data-loss warning, reading Health, 3 common errors, escalation contact.
+
+#### Sprint S6 — installer + UAT template — `T-S6-11` / `T-S6-12` (#63)
+
+`B2.Installer` on Velopack 0.0.915 — install callbacks for directories, an RSA-2048
+self-signed cert (`LocalMachine\Root` + PFX for Kestrel), Sổ B2 template, Litestream
+binary, service registration with failure policy, firewall rule (TCP 5000, private),
+recovery-code setup (24-char Crockford base32, DPAPI-sealed, printed once with a
+5-minute timeout for non-interactive installs), and service start; uninstall reverses
+them. UAC `requireAdministrator` manifest. Tag-triggered `release.yml` publishes the
+server self-contained single-file, Desktop and installer, then creates the GitHub
+Release. `docs/uat-001-b2-clearance.md` added as the `T-S6-12` sign-off template.
+
+*(Velopack was replaced by a plain xcopy installer CLI in `v1.1.0` — see above.)*
+
 ### Fixed
+
+#### Sprint S6 — UAT-blocking Desktop fixes (#64, #65)
+
+Found during local UAT ahead of the on-site run:
+
+- **#64** — F-01 forced password-change navigation after login; auth handler lifetime
+  (singleton `DelegatingHandler` → transient + `IAuthTokenStore`); the crashing
+  CommunityToolkit Snackbar replaced with a pure-MAUI in-app toast overlay;
+  `ModalService` popups marshalled to the UI thread; app icon + splash; Entry
+  placeholders + WinUI `Picker` title overlap; status-bar row height so the Cỡ chữ
+  picker is not clipped.
+- **#65** — ledger detail drawer rendered blank on WinUI (`Border`→`Grid` overlay +
+  `BindableLayout`); `GET /api/declarations/{id}` 500 (SQLite `DateTimeOffset ORDER BY`
+  → client-side sort); ledger scroll/pagination row swap, sticky column header, wider
+  search box; Vietnamese status label + icon in the drawer; Exit screen lists all
+  in-gate vehicles (cap 20) on an empty suffix; `IdempotencyKeyEvictionJob` in-memory
+  filter + `RemoveRange` (it had been failing every run).
 
 #### CI — per-step SDK PATH (flake guard v2) — `ci/harden-dotnet-root`
 
@@ -822,7 +975,10 @@ seeded admin bootstrap, and FR-017 force-rotate-password.
   applied during their respective sprints (M2 + M5 + M7 in S1; M3 + M4 + M6 in
   S3..S5). None block this release.
 
-[Unreleased]: https://example.invalid/chima-clearance/compare/v0.2.0...HEAD
+[Unreleased]: https://example.invalid/chima-clearance/compare/v1.1.1...HEAD
+[1.1.1]: https://example.invalid/chima-clearance/compare/v1.1.0...v1.1.1
+[1.1.0]: https://example.invalid/chima-clearance/compare/v1.0.0...v1.1.0
+[1.0.0]: https://example.invalid/chima-clearance/compare/v0.2.0...v1.0.0
 [0.2.0]: https://example.invalid/chima-clearance/compare/v0.1.0...v0.2.0
 [0.1.0]: https://example.invalid/chima-clearance/compare/v0.0.1...v0.1.0
 [0.0.1]: https://example.invalid/chima-clearance/releases/tag/v0.0.1

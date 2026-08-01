@@ -1066,10 +1066,15 @@ cheat sheet lists every keyboard shortcut; runbook delivered.
   bundling: dotnet runtime, self-signed cert, Litestream binary, Sổ B2
   template, recovery-code generator. Output: single `.exe`. **Dep**: T-S5-13,
   T-S5-05. **LOC**: ~250 (config + scripts).
-  *(Velopack 0.0.915; WithAfterInstallFastCallback + WithBeforeUninstallFastCallback;
-  RSA-2048 self-signed cert → LocalMachine\\Root; RecoveryCodeSetup inlined DPAPI seal +
-  console/Desktop print; release.yml tag-triggered vpk pack + GitHub Release upload;
-  B2.Installer removed from B2.NoMaui.slnf; UAC requireAdministrator manifest.)*
+  *(Shipped on Velopack 0.0.915 in #63; RSA-2048 self-signed cert → LocalMachine\\Root;
+  RecoveryCodeSetup inlined DPAPI seal + console/Desktop print; B2.Installer removed from
+  B2.NoMaui.slnf; UAC requireAdministrator manifest.)*
+  **Superseded by #103 (`v1.1.0`, ADR-0007)** — Velopack is gone. `B2.Installer` is now a
+  plain CLI (`B2Clearance.exe install|uninstall`) driven by `deploy/install.ps1` (xcopy);
+  server + Desktop publish self-contained so gate PCs need no runtime install, and
+  `release.yml` ships one `B2Clearance-<version>-offline.zip` instead of a Velopack setup
+  + update feed. All the install-time security logic above is retained. #112 then fixed
+  the upgrade path (`sc create` → `sc query`/`sc config` on re-run).
 - [ ] **T-S6-12** Run on-site UAT per `04-implementation-plan.md § 8` smoke checklist
   (all 10 steps) **on real hardware** (not VM). Capture findings; fix any CRITICAL/HIGH;
   re-run smoke. Sign-off into `docs/uat-001-b2-clearance.md`.
