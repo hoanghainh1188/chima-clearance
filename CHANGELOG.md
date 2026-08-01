@@ -31,6 +31,23 @@ endpoint tests covering create, suffix search and a still-invalid plate.
 
 ### Added
 
+#### Entering and editing several numbers on a row — `INV-1` (UI)
+
+The desktop half of the change above.
+
+- **Entry form**: *Số tờ khai* is now a multi-line `Editor` — one number per line, mirroring the
+  Alt+Enter cell in the legacy sheet. Commas and semicolons are accepted too, since a paste from
+  another system may use them. Validation covers the whole list: every entry 12 digits, no
+  duplicates on one row, at most 20.
+- **Ledger drawer**: lists every number with a `Bỏ` button and an add field, shown only while the
+  declaration is `Open` (the server enforces the same rule). Each edit toasts and refreshes in
+  place.
+- **Ledger row**: shows the primary number plus `(+N tờ khai)`, so a multi-declaration row is
+  visible without opening the drawer. `DeclarationSummaryDto` carries the count.
+
+10 vi.resx strings with their hand-maintained Designer accessors; two wireframe deviations
+recorded in § 6.
+
 #### Cột C holds several declaration numbers per row, editable after entry — `INV-1`
 
 Cột C: *"có nhiều dãy số thì mỗi dãy số sẽ tách thành từng dòng riêng biệt trong cùng 1 ô"* — one

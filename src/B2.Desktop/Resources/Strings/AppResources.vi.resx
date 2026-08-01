@@ -337,7 +337,7 @@
     <value>Tờ khai</value>
   </data>
   <data name="Entry_DeclarationNumberLabel" xml:space="preserve">
-    <value>Số tờ khai (12 chữ số)</value>
+    <value>Số tờ khai (12 chữ số — mỗi dòng một số)</value>
   </data>
   <data name="Entry_ProcessorLabel" xml:space="preserve">
     <value>Người làm thủ tục</value>
@@ -384,6 +384,36 @@
   <data name="Entry_Error_MasterRequired" xml:space="preserve">
     <value>Chọn người làm thủ tục và bãi.</value>
   </data>
+  <data name="Entry_Error_DeclarationDuplicate" xml:space="preserve">
+    <value>Có số tờ khai bị lặp lại trên cùng một dòng.</value>
+  </data>
+  <data name="Entry_Error_DeclarationTooMany" xml:space="preserve">
+    <value>Một dòng chỉ nhận tối đa 20 số tờ khai.</value>
+  </data>
+  <data name="Ledger_Drawer_NumbersLabel" xml:space="preserve">
+    <value>Số tờ khai</value>
+  </data>
+  <data name="Ledger_Drawer_AddNumber" xml:space="preserve">
+    <value>Thêm số tờ khai</value>
+  </data>
+  <data name="Ledger_Drawer_AddNumberPlaceholder" xml:space="preserve">
+    <value>Nhập 12 chữ số rồi bấm Thêm</value>
+  </data>
+  <data name="Ledger_Drawer_RemoveNumber" xml:space="preserve">
+    <value>Bỏ</value>
+  </data>
+  <data name="Ledger_Drawer_NumberAdded" xml:space="preserve">
+    <value>Đã thêm số tờ khai.</value>
+  </data>
+  <data name="Ledger_Drawer_NumberRemoved" xml:space="preserve">
+    <value>Đã bỏ số tờ khai.</value>
+  </data>
+  <data name="Ledger_Drawer_NumberError" xml:space="preserve">
+    <value>Không cập nhật được số tờ khai. Kiểm tra lại số và thử lần nữa.</value>
+  </data>
+  <data name="Ledger_MoreNumbers_Format" xml:space="preserve">
+    <value>(+{0} tờ khai)</value>
+  </data>
   <data name="Entry_Error_DeclarationInvalid" xml:space="preserve">
     <value>Số tờ khai phải gồm đúng 12 chữ số.</value>
   </data>
@@ -415,7 +445,7 @@
     <value>Tab — Chấp nhận gợi ý</value>
   </data>
   <data name="Entry_DeclarationNumberPlaceholder" xml:space="preserve">
-    <value>Ví dụ: 105200012345 (đúng 12 chữ số)</value>
+    <value>Ví dụ: 105200012345 — nhiều tờ khai thì xuống dòng, mỗi dòng một số</value>
   </data>
   <data name="Entry_CompanyPlaceholder" xml:space="preserve">
     <value>Ví dụ: Công ty TNHH ABC</value>

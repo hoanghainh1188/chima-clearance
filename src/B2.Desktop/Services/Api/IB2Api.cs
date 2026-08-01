@@ -88,6 +88,19 @@ public interface IB2Api
         [Header("Idempotency-Key")] string idempotencyKey,
         CancellationToken cancellationToken = default);
 
+    /// <summary>Cột C — a row may carry several numbers and the cell stays editable.</summary>
+    [Post("/api/declarations/{id}/numbers")]
+    Task<List<string>> AddDeclarationNumberAsync(
+        Guid id,
+        [Body] AddDeclarationNumberRequest request,
+        CancellationToken cancellationToken = default);
+
+    [Delete("/api/declarations/{id}/numbers/{number}")]
+    Task<List<string>> RemoveDeclarationNumberAsync(
+        Guid id,
+        string number,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Ghi chú (cột O) — editable at the exit gate per business rules § 3.</summary>
     [Patch("/api/vehicles/{id}/note")]
     Task UpdateVehicleNoteAsync(

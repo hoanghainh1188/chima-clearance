@@ -266,6 +266,12 @@ flowchart LR
 - Right-click parent → context menu: Mở chi tiết / Xác nhận KVGS / Sao chép số tờ khai.
 - Right-click child → Đánh dấu xe ra / Sao chép biển số / Mở chi tiết.
 - Double-click any row → opens detail drawer (right side, 40% width).
+- **Deviation (2026-08-01)**: the drawer lists **every số tờ khai** on the row with a `Bỏ` button
+  per number and an add field, shown only while the declaration is `Open`. Cột C may hold several
+  numbers and the cell stays editable — confirmed with the unit. The ledger row shows the primary
+  number plus `(+N tờ khai)` so the count is visible without opening the drawer.
+- **Deviation (2026-08-01)**: the Entry form's *Số tờ khai* field is an `Editor` (multi-line), one
+  number per line, mirroring the Alt+Enter cell in the legacy sheet.
 - **Deviation (2026-08-01)**: each vehicle row inside the drawer carries a **Ghi chú**
   field plus a `Lưu ghi chú` button. Business rules § 3 lists cột O among the five
   columns the exit-gate officer may fill, and the note previously had no UI at all —

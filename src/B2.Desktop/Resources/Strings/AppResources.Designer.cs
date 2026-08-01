@@ -118,6 +118,26 @@ public static class AppResources
     public static string Ledger_Drawer_GoodsLabel => ResourceManager.GetString(nameof(Ledger_Drawer_GoodsLabel), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_Drawer_LoadError => ResourceManager.GetString(nameof(Ledger_Drawer_LoadError), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
 
+    public static string Entry_Error_DeclarationDuplicate => ResourceManager.GetString(nameof(Entry_Error_DeclarationDuplicate), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+
+    public static string Entry_Error_DeclarationTooMany => ResourceManager.GetString(nameof(Entry_Error_DeclarationTooMany), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+
+    public static string Ledger_Drawer_NumbersLabel => ResourceManager.GetString(nameof(Ledger_Drawer_NumbersLabel), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+
+    public static string Ledger_Drawer_AddNumber => ResourceManager.GetString(nameof(Ledger_Drawer_AddNumber), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+
+    public static string Ledger_Drawer_AddNumberPlaceholder => ResourceManager.GetString(nameof(Ledger_Drawer_AddNumberPlaceholder), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+
+    public static string Ledger_Drawer_RemoveNumber => ResourceManager.GetString(nameof(Ledger_Drawer_RemoveNumber), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+
+    public static string Ledger_Drawer_NumberAdded => ResourceManager.GetString(nameof(Ledger_Drawer_NumberAdded), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+
+    public static string Ledger_Drawer_NumberRemoved => ResourceManager.GetString(nameof(Ledger_Drawer_NumberRemoved), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+
+    public static string Ledger_Drawer_NumberError => ResourceManager.GetString(nameof(Ledger_Drawer_NumberError), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+
+    public static string Ledger_MoreNumbers_Format => ResourceManager.GetString(nameof(Ledger_MoreNumbers_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+
     public static string Ledger_Drawer_NoteLabel => ResourceManager.GetString(nameof(Ledger_Drawer_NoteLabel), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
 
     public static string Ledger_Drawer_NotePlaceholder => ResourceManager.GetString(nameof(Ledger_Drawer_NotePlaceholder), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;

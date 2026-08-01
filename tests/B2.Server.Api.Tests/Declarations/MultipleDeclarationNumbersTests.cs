@@ -48,6 +48,25 @@ public sealed class MultipleDeclarationNumbersTests
 
     [Fact]
     [Trait("Requirement", "INV-1")]
+    public async Task The_ledger_list_reports_how_many_numbers_a_row_carries()
+    {
+        // The ledger row shows the primary plus "(+N)", so the count has to reach the client.
+        await using var factory = new B2ApiFactory();
+        var client = await AdminClientAsync(factory);
+        var a = TestDeclarationNumbers.Next();
+        var b = TestDeclarationNumbers.Next();
+        var create = await client.PostAsJsonAsync("/api/declarations", Request(a, b), TestJson.Options);
+        var dto = (await create.Content.ReadFromJsonAsync<DeclarationDto>(TestJson.Options))!;
+
+        var page = await client.GetFromJsonAsync<PagedDeclarationsResponse>(
+            "/api/declarations?page=1&pageSize=50", TestJson.Options);
+
+        page!.Items.Should().Contain(i => i.Id == dto.Id && i.DeclarationNumberCount == 2);
+        page.Items.Should().Contain(i => i.DeclarationNumberCount >= 1, "a row always carries at least one");
+    }
+
+    [Fact]
+    [Trait("Requirement", "INV-1")]
     public async Task A_number_can_be_added_after_the_row_exists()
     {
         await using var factory = new B2ApiFactory();

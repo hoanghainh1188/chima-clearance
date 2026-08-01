@@ -170,9 +170,118 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
     /// </summary>
     public ObservableCollection<DrawerVehicleViewModel> DrawerVehicles { get; } = new();
 
+    /// <summary>Cột C of the open row. Editable: the cell may gain another tờ khai later.</summary>
+    public ObservableCollection<string> DrawerNumbers { get; } = new();
+
+    [ObservableProperty]
+    private string _newDeclarationNumber = string.Empty;
+
+    [ObservableProperty]
+    private bool _isNumberBusy;
+
+    /// <summary>Numbers may only be edited while the row is still Open (server enforces it too).</summary>
+    public bool CanEditNumbers =>
+        !IsNumberBusy
+        && SelectedDeclarationDetail is not null
+        && string.Equals(SelectedDeclarationDetail.Declaration.Status, "Open", StringComparison.Ordinal);
+
+    public bool CanRemoveNumber => CanEditNumbers && DrawerNumbers.Count > 1;
+
+    [RelayCommand]
+    private async Task AddDeclarationNumberAsync()
+    {
+        var declarationId = SelectedDeclarationDetail?.Declaration.Id;
+        var number = NewDeclarationNumber.Trim();
+        if (declarationId is null || number.Length == 0 || !CanEditNumbers)
+        {
+            return;
+        }
+
+        IsNumberBusy = true;
+        try
+        {
+            var numbers = await _api
+                .AddDeclarationNumberAsync(declarationId.Value, new AddDeclarationNumberRequest(number))
+                .ConfigureAwait(true);
+            ReplaceDrawerNumbers(numbers);
+            NewDeclarationNumber = string.Empty;
+            await _toastService.ShowAsync(AppResources.Ledger_Drawer_NumberAdded, ToastSeverity.Success)
+                .ConfigureAwait(true);
+        }
+        catch (ApiException)
+        {
+            await _toastService.ShowAsync(AppResources.Ledger_Drawer_NumberError, ToastSeverity.Error)
+                .ConfigureAwait(true);
+        }
+        catch (HttpRequestException)
+        {
+            await _toastService.ShowAsync(AppResources.Ledger_Drawer_NumberError, ToastSeverity.Error)
+                .ConfigureAwait(true);
+        }
+        finally
+        {
+            IsNumberBusy = false;
+        }
+    }
+
+    [RelayCommand]
+    private async Task RemoveDeclarationNumberAsync(string? number)
+    {
+        var declarationId = SelectedDeclarationDetail?.Declaration.Id;
+        if (declarationId is null || string.IsNullOrWhiteSpace(number) || !CanRemoveNumber)
+        {
+            return;
+        }
+
+        IsNumberBusy = true;
+        try
+        {
+            var numbers = await _api
+                .RemoveDeclarationNumberAsync(declarationId.Value, number.Trim())
+                .ConfigureAwait(true);
+            ReplaceDrawerNumbers(numbers);
+            await _toastService.ShowAsync(AppResources.Ledger_Drawer_NumberRemoved, ToastSeverity.Success)
+                .ConfigureAwait(true);
+        }
+        catch (ApiException)
+        {
+            await _toastService.ShowAsync(AppResources.Ledger_Drawer_NumberError, ToastSeverity.Error)
+                .ConfigureAwait(true);
+        }
+        catch (HttpRequestException)
+        {
+            await _toastService.ShowAsync(AppResources.Ledger_Drawer_NumberError, ToastSeverity.Error)
+                .ConfigureAwait(true);
+        }
+        finally
+        {
+            IsNumberBusy = false;
+        }
+    }
+
+    private void ReplaceDrawerNumbers(IEnumerable<string>? numbers)
+    {
+        DrawerNumbers.Clear();
+        foreach (var number in numbers ?? [])
+        {
+            DrawerNumbers.Add(number);
+        }
+
+        OnPropertyChanged(nameof(CanRemoveNumber));
+    }
+
+    partial void OnIsNumberBusyChanged(bool value)
+    {
+        OnPropertyChanged(nameof(CanEditNumbers));
+        OnPropertyChanged(nameof(CanRemoveNumber));
+    }
+
     partial void OnSelectedDeclarationDetailChanged(DeclarationDetailResponse? value)
     {
         DrawerVehicles.Clear();
+        ReplaceDrawerNumbers(value?.Declaration.DeclarationNumbers);
+        NewDeclarationNumber = string.Empty;
+        OnPropertyChanged(nameof(CanEditNumbers));
         if (value is not null)
         {
             foreach (var vehicle in value.Vehicles)
