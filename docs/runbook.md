@@ -170,11 +170,28 @@ ghi tờ khai mới.
 1. Ping máy chủ: `ping <ip-máy-chủ>` trên máy client bị lỗi.
 2. Kiểm tra dịch vụ B2 còn chạy không (xem mục 1).
 3. Kiểm tra tường lửa Windows: cổng 5000 (hoặc cổng đã cấu hình) phải mở.
+4. **Trên máy cổng ra**: mở `C:\Program Files\B2Clearance\Desktop\b2-client.json` và đối chiếu
+   `serverUrl` với IP hiện tại của máy cổng vào (`ipconfig` trên máy đó). IP đổi sau khi khởi
+   động lại router là nguyên nhân phổ biến nhất.
 
 **Khắc phục**:
 - Nếu dịch vụ bị dừng: khởi động lại (xem mục 1).
+- Nếu sai địa chỉ máy chủ: sửa `serverUrl` trong `b2-client.json` rồi mở lại app — không cần
+  cài lại. Đề nghị IT đặt IP tĩnh cho máy cổng vào để khỏi lặp lại.
 - Nếu vấn đề mạng: liên hệ IT.
 - Nếu sau 5 phút vẫn không kết nối được: leo thang theo mục 7.
+
+**Đổi địa chỉ máy chủ cho máy cổng ra**
+
+```json
+{
+  "serverUrl": "192.168.1.10"
+}
+```
+
+Đặt file tên `b2-client.json` cạnh `B2.Desktop.exe`. Chấp nhận IP trần (mặc định cổng 5000),
+`192.168.1.10:5000`, hoặc `http://192.168.1.10:5000/`. Không có file này thì app tự nối tới
+server trên **chính máy đó** — đúng cho máy cổng vào, sai cho máy cổng ra.
 
 ---
 

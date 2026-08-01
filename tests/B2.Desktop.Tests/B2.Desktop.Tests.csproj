@@ -21,4 +21,16 @@
     <Using Include="Xunit" />
   </ItemGroup>
 
+  <!--
+    B2.Desktop targets net8.0-windows10.0.19041.0 and needs the MAUI workload, so this net8.0
+    test project cannot ProjectReference it (that is also why the a11y suite analyses XAML as
+    files). ApiEndpointResolver is deliberately free of MAUI types so it can be linked in and
+    unit-tested here, on the ubuntu CI job.
+  -->
+  <ItemGroup>
+    <Compile Include="../../src/B2.Desktop/Services/ApiEndpointResolver.cs" Link="Linked/ApiEndpointResolver.cs" />
+    <Compile Include="../../src/B2.Desktop/Services/ApiEndpoint.cs" Link="Linked/ApiEndpoint.cs" />
+    <Compile Include="../../src/B2.Desktop/Services/ApiEndpointSource.cs" Link="Linked/ApiEndpointSource.cs" />
+  </ItemGroup>
+
 </Project>

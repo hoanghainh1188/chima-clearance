@@ -6,12 +6,67 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 
-Nothing pending — `main` is at `v1.1.1`. Sprints S0–S5 are complete; Sprint S6 has
-one task left, `T-S6-12` (on-site UAT on real hardware), which gates Phase-1 GA:
+`main` is at `v1.1.1`. Sprints S0–S5 are complete; Sprint S6 has one task left,
+`T-S6-12` (on-site UAT on real hardware), which gates Phase-1 GA:
 `docs/uat-001-b2-clearance.md` is still an unfilled template. Remaining
 low-priority polish from S3: ledger child-vehicle expand/collapse, right-click
 context menu, 300/400 ms animations on SignalR push, sidebar collapse toggle,
 focus-ring style sweep, ⚙️ quick-settings menu, top-right toast position.
+
+### Fixed
+
+#### The exit-gate PC could not reach the server — `fix/desktop-lan-endpoint`
+
+The business runs **two** PCs (`Business rules — Hướng dẫn điền sổ B2` § B, `Định nghĩa yêu
+cầu` § Business rules): the entry gate hosts the service, the exit gate is a LAN client that
+marks vehicles out. Neither half of that was actually deployable:
+
+- **Client** — `MauiProgram` hard-coded `const string apiBase = "http://127.0.0.1:5000/"` with
+  no runtime override anywhere in `B2.Desktop`, so an exit-gate PC could only ever talk to
+  itself. `docs/deployment-offline.md` already told operators to "trỏ endpoint desktop về địa
+  chỉ LAN của server — xem runbook.md", a procedure that did not exist and could not have
+  worked without a rebuild.
+- **Server** — the service is registered with no URL configuration and no `ASPNETCORE_URLS`,
+  so Kestrel bound loopback only. The installer's firewall rule on TCP 5000 had nothing to
+  let through.
+
+Now: `ApiEndpointResolver` reads `b2-client.json` (`{"serverUrl": "192.168.1.10"}`) from the
+executable's directory, with `B2_SERVER_URL` taking precedence and the loopback default last.
+Input is lenient — operators type an IP, not a URL — so a bare host gets `http://` and port
+5000, a missing trailing slash is added (Refit drops the last segment without one), and a
+UTF-8 BOM (Notepad's default) is tolerated. A configured-but-invalid value falls back to
+loopback **and logs a warning** rather than failing silently as "🔴 Mất kết nối".
+`appsettings.json` now binds `http://0.0.0.0:5000`.
+
+`deploy/install.ps1` gains `-ServerUrl` (writes the client config) and `-ClientOnly` (skips
+service registration, certificate and recovery code, and leaves the server binary out of the
+copy) so the exit gate installs with:
+
+```powershell
+.\install.ps1 -ClientOnly -ServerUrl 192.168.1.10
+```
+
+20 unit tests cover the resolution precedence and normalisation; `ApiEndpointResolver` is kept
+free of MAUI types so `B2.Desktop.Tests` can link it in and run on the ubuntu CI job.
+Verified on a real machine: with `{"serverUrl": "192.168.1.121"}` the desktop's TCP
+connections go to `192.168.1.121:5000` instead of loopback, against a server bound from
+`appsettings.json` alone.
+
+#### `deploy/*.ps1` could not be parsed by Windows PowerShell 5.1 — `fix/desktop-lan-endpoint`
+
+Found while syntax-checking the installer change; **pre-existing** — the `HEAD` version of
+`install.ps1` fails the same way (2 parse errors, `uninstall.ps1` 3).
+
+Both scripts were UTF-8 **without** BOM. Windows PowerShell 5.1 — the only PowerShell on the
+Win10 gate PCs — reads a BOM-less `.ps1` using the ANSI codepage, so the Vietnamese text
+decoded to mojibake that includes typographic quotes (`'`), which PowerShell accepts as string
+delimiters. The result is an unterminated string and a script that never runs: *the offline
+installer could not be executed on a target machine at all.*
+
+Both files are now UTF-8 with BOM (0 parse errors), and `.gitattributes` records the rule —
+deliberately the opposite of the no-BOM rule for `.cs` — so an editor does not silently undo it.
+The `.specify/**` helper scripts have the same encoding but run only on dev machines; left
+alone.
 
 ## [1.1.1] — 2026-07-26 — archive data-loss + concurrency fixes
 

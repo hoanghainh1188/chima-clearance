@@ -74,9 +74,27 @@ thị MÃ PHỤC HỒI**) → tạo shortcut desktop → khởi động dịch v
 - [ ] Không có hộp thoại "cần cài .NET / Windows App Runtime / WebView2".
 - [ ] `C:\ProgramData\B2\db\b2.db` xuất hiện; Litestream ghi replica trong `backup\`.
 
-Endpoint mặc định của desktop là `http://127.0.0.1:5000/` (server chạy **cùng máy**). Nếu đặt
-server và client trên các PC khác nhau trong LAN, trỏ endpoint desktop về địa chỉ LAN của
-server — xem [`docs/runbook.md`](runbook.md).
+## Máy cổng ra (client trên LAN)
+
+Nghiệp vụ có **2 máy**: máy **cổng vào** chạy service (vừa server vừa client) và máy **cổng ra**
+chỉ là client, nối qua LAN. Cài máy cổng ra bằng:
+
+```powershell
+.\install.ps1 -ClientOnly -ServerUrl 192.168.1.10     # IP của máy cổng vào
+```
+
+- `-ServerUrl` ghi `Desktop\b2-client.json` → `{"serverUrl": "192.168.1.10"}`. Nhận IP trần
+  (tự hiểu `http://…:5000/`), `ip:port`, hoặc URL đầy đủ. Không có file này thì desktop dùng
+  `http://127.0.0.1:5000/` (máy cổng vào).
+- `-ClientOnly` bỏ qua đăng ký service, chứng chỉ và mã phục hồi — máy cổng ra **không** có
+  database riêng. Bắt buộc đi kèm `-ServerUrl`.
+- Đổi địa chỉ sau khi cài: sửa trực tiếp `C:\Program Files\B2Clearance\Desktop\b2-client.json`
+  rồi mở lại app. Không cần cài lại. (Lưu bằng Notepad kèm BOM vẫn đọc được.)
+- Biến môi trường `B2_SERVER_URL` ghi đè file — tiện khi cần thử nhanh một địa chỉ khác.
+
+Server lắng nghe `http://0.0.0.0:5000` (khai báo trong `appsettings.json`) nên máy khác trong
+LAN gọi được; installer đã mở sẵn firewall TCP 5000 ở profile Private. Nếu app báo
+🔴 **Mất kết nối**: `ping <ip-máy-cổng-vào>`, rồi kiểm tra service đang chạy và firewall.
 
 ## Cập nhật phiên bản (vẫn offline)
 
