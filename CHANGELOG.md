@@ -13,6 +13,22 @@ low-priority polish from S3: ledger child-vehicle expand/collapse, right-click
 context menu, 300/400 ms animations on SignalR push, sidebar collapse toggle,
 focus-ring style sweep, ⚙️ quick-settings menu, top-right toast position.
 
+#### Plates and trailer numbers pasted with a dash are normalised, not rejected — `INV-2`
+
+Cột E specifies auto-upper-casing (`12h05769` → `12H05769`) and both cột E and cột F may be
+pasted from the unit's internal system, where a plate carries a dash. `29C-12345` was rejected
+with a validation error — at the lane, that means retyping every pasted plate.
+
+Confirmed with the unit (2026-08-01): normalise. `PlateNumber.Normalize` upper-cases and strips
+separators (space, NBSP, `-`, en-dash, `.`, `_`, `/`) before the format check. The two request
+validators now call `PlateNumber.IsValid` instead of each keeping its own rival regex, so the API
+and the domain cannot drift apart. Cột F gets the same treatment — same paste source, and F-17
+pair statistics would otherwise split across `51R-09876` and `51R09876`. The Desktop entry form
+normalises the field in place on submit, so the officer sees the canonical value.
+
+10 new tests (7 normalisation cases, validity parity with `Parse`, container cases) plus 3
+endpoint tests covering create, suffix search and a still-invalid plate.
+
 ### Fixed — business rules re-checked against the customer's own documents
 
 A review of `docs/Business rules - Hướng dẫn điền sổ B2.md` and `docs/Định nghĩa yêu cầu.md`

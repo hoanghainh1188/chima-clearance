@@ -78,7 +78,7 @@ public sealed class SuggestEndpointTests
                 SeedIds.ProcessorId, "OldCo", "OldGoods", SeedIds.YardId,
                 SeedIds.AdminUserId, TooOld, DateOnly.FromDateTime(TooOld.UtcDateTime));
             decl.AddVehicle(Guid.NewGuid(), Domain.Declarations.PlateNumber.Parse("44A99999"),
-                TooOld, SeedIds.AdminUserId, Domain.Declarations.ContainerNumber.TryParse("OLD-TRAILER"), null);
+                TooOld, SeedIds.AdminUserId, Domain.Declarations.ContainerNumber.TryParse("OLDTRAILER"), null);
             db.Declarations.Add(decl);
             await db.SaveChangesAsync();
         }
@@ -99,8 +99,9 @@ public sealed class SuggestEndpointTests
         var admin = await client.LoginAsAdminAsync();
         client.SetBearer(admin.AccessToken);
 
-        // 1 occurrence of TRAILER-A and 1 occurrence of TRAILER-B seeded via API (both recent).
-        // TRAILER-A seeded with an older EntryTime directly so TRAILER-B wins on recency.
+        // 1 occurrence of TRAILERA and 1 occurrence of TRAILERB seeded via API (both recent).
+        // TRAILERA seeded with an older EntryTime directly so TRAILERB wins on recency.
+        // Fixtures carry no dash: cột F is separator-stripped, so a dash would not survive.
         using (var scope = factory.Services.CreateAsyncScope())
         {
             var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
@@ -111,7 +112,7 @@ public sealed class SuggestEndpointTests
                 SeedIds.ProcessorId, "Co", "G", SeedIds.YardId, SeedIds.AdminUserId, old,
                 DateOnly.FromDateTime(old.UtcDateTime));
             declA.AddVehicle(Guid.NewGuid(), Domain.Declarations.PlateNumber.Parse("55B12345"),
-                old, SeedIds.AdminUserId, Domain.Declarations.ContainerNumber.TryParse("TRAILER-A"), null);
+                old, SeedIds.AdminUserId, Domain.Declarations.ContainerNumber.TryParse("TRAILERA"), null);
             db.Declarations.Add(declA);
 
             var newer = DateTimeOffset.UtcNow.AddDays(-2);
@@ -120,7 +121,7 @@ public sealed class SuggestEndpointTests
                 SeedIds.ProcessorId, "Co", "G", SeedIds.YardId, SeedIds.AdminUserId, newer,
                 DateOnly.FromDateTime(newer.UtcDateTime));
             declB.AddVehicle(Guid.NewGuid(), Domain.Declarations.PlateNumber.Parse("55B12345"),
-                newer, SeedIds.AdminUserId, Domain.Declarations.ContainerNumber.TryParse("TRAILER-B"), null);
+                newer, SeedIds.AdminUserId, Domain.Declarations.ContainerNumber.TryParse("TRAILERB"), null);
             db.Declarations.Add(declB);
 
             await db.SaveChangesAsync();
@@ -130,7 +131,7 @@ public sealed class SuggestEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.OK);
         var body = await response.Content.ReadFromJsonAsync<VehicleSuggestResponse>(TestJson.Options);
-        body!.Value.Should().Be("TRAILER-B");
+        body!.Value.Should().Be("TRAILERB");
     }
 
     [Fact]

@@ -133,9 +133,9 @@ CREATE INDEX        IX_Declaration_Yard         ON Declaration(YardId);
 | --- | --- | --- | --- |
 | `Id` | `Guid` PK | — | spec key entity |
 | `DeclarationId` | `Guid` FK → `Declaration.Id` | required; cascade-delete forbidden (Declarations are never hard-deleted) | F-05 / F-06 |
-| `PlateNumber` | `string(15)` | required, uppercased, regex `^[0-9]{2}[A-Z]{1,2}[0-9]{4,5}$` | INV-2, FR-006 |
+| `PlateNumber` | `string(15)` | required, uppercased + separators stripped, then regex `^[0-9]{2}[A-Z]{1,2}[0-9]{4,5}$` | INV-2, FR-006 |
 | `PlateLast4` | `string(4)` GENERATED `ALWAYS AS (substr(PlateNumber, -4))` STORED | covered by `IX_Vehicle_PlateLast4` | F-07 perf |
-| `TrailerOrContainerNumber` | `string(20)?` | nullable, uppercased | INV-2, FR-006 |
+| `TrailerOrContainerNumber` | `string(20)?` | nullable, uppercased + separators stripped | INV-2, FR-006 |
 | `EntryTime` | `DateTimeOffset` | UTC, server clock, immutable | INV-3 |
 | `ExitMarked` | `bool` | default `false` | F-08 |
 | `ExitTime` | `DateTimeOffset?` | UTC, server clock; non-null iff `ExitMarked = true`; immutable once set unless Admin un-exit | INV-4 |
@@ -229,7 +229,7 @@ invalid raw strings at construction time (Constitution III).
 | ID | Invariant | Enforced in | Test in | Source |
 | --- | --- | --- | --- | --- |
 | **INV-1** | `Declaration.DeclarationNumber` is exactly 12 digits and unique among **non-cancelled** declarations | `B2.Domain` (`DeclarationNumber` VO) + DB unique index filtered on `Status <> 'Cancelled'` | `B2.Domain.Tests`, `B2.Server.Api.Tests` (409 on live duplicate; re-entry after cancel accepted) | Business rule cột C, F-05, FR-022 |
-| **INV-2** | `Vehicle.PlateNumber` and `Vehicle.TrailerOrContainerNumber` are stored upper-cased | `B2.Domain` (`PlateNumber`, `ContainerNumber` VO constructors) | `B2.Domain.Tests` | Business rule cột E, F; FR-006 |
+| **INV-2** | `Vehicle.PlateNumber` and `Vehicle.TrailerOrContainerNumber` are stored upper-cased and separator-stripped | `B2.Domain` (`PlateNumber.Normalize`, used by both VOs) | `B2.Domain.Tests`, `B2.Server.Api.Tests` | Business rule cột E, F; FR-006 |
 | **INV-3** | `Vehicle.EntryTime` and `Declaration.EnteredAt` are set on creation by the **server** clock and are immutable thereafter | `B2.Domain` (private setters; no public setter on these fields) + `IClock` injected from Application | `B2.Domain.Tests`, `B2.Server.Api.Tests` (F-05 "Server timestamp") | Business rule cột I; FR-004 |
 | **INV-4** | `Vehicle.ExitTime` is set when `ExitMarked` flips false→true and is immutable thereafter (Admin un-exit clears it back to null) | `B2.Domain` (`Vehicle.MarkExit(...)`, `Vehicle.UnExit(...)` aggregate methods) | `B2.Domain.Tests`, `B2.Server.Api.Tests` | Business rule cột K; F-08 |
 | **INV-5** | A declaration becomes `AllExited` automatically when every child Vehicle has `ExitMarked = true`; reverts to `Open` if Admin un-exits any child | `B2.Domain` (`Declaration.RecomputeStatus()` invoked by aggregate methods) | `B2.Domain.Tests` | Business rule (dòng cha xanh); F-08, F-09 |

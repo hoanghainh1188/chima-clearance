@@ -16,6 +16,34 @@ public partial class EntryViewModel : ObservableObject, IDisposable
 {
     private static readonly Regex DeclNumber = new("^[0-9]{12}$", RegexOptions.Compiled);
     private static readonly Regex Plate = new("^[0-9]{2}[A-Za-z]{1,2}[0-9]{4,5}$", RegexOptions.Compiled);
+
+    /// <summary>
+    /// Cột E/F: upper-case and strip separators so a plate pasted from the unit's internal system
+    /// ("29C-12345") is accepted, exactly like <c>PlateNumber.Normalize</c> server-side. The rule
+    /// is duplicated because B2.Desktop may only reference B2.Shared.Contracts (Constitution V).
+    /// </summary>
+    private static string NormalizePlate(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw))
+        {
+            return string.Empty;
+        }
+
+        var trimmed = raw.Trim().ToUpperInvariant();
+        var buffer = new char[trimmed.Length];
+        var written = 0;
+        foreach (var ch in trimmed)
+        {
+            if (Array.IndexOf(PlateSeparators, ch) < 0)
+            {
+                buffer[written++] = ch;
+            }
+        }
+
+        return new string(buffer, 0, written);
+    }
+
+    private static readonly char[] PlateSeparators = [' ', ' ', '-', '–', '.', '_', '/'];
     private static readonly CompositeFormat AddChildBannerFormat = CompositeFormat.Parse(AppResources.Entry_AddChildBanner_Format);
 
     private readonly IB2Api _api;
@@ -124,7 +152,7 @@ public partial class EntryViewModel : ObservableObject, IDisposable
     {
         ClearSuggestions();
 
-        if (_suggestionsDisabled || !Plate.IsMatch(plate.Trim()))
+        if (_suggestionsDisabled || !Plate.IsMatch(NormalizePlate(plate)))
         {
             return;
         }
@@ -254,12 +282,16 @@ public partial class EntryViewModel : ObservableObject, IDisposable
     private async Task SubmitAsync(bool saveAndContinue)
     {
         ErrorMessage = null;
-        var plate = PlateNumber.Trim().ToUpperInvariant();
+        var plate = NormalizePlate(PlateNumber);
         PlateNumber = plate;
+        if (!string.IsNullOrWhiteSpace(TrailerOrContainerNumber))
+        {
+            TrailerOrContainerNumber = NormalizePlate(TrailerOrContainerNumber);
+        }
 
         if (IsAddChildMode && ActiveDeclarationId is Guid existingId)
         {
-            if (!Plate.IsMatch(plate))
+            if (!Plate.IsMatch(NormalizePlate(plate)))
             {
                 ErrorMessage = AppResources.Entry_Error_PlateInvalid;
                 return;
@@ -363,7 +395,7 @@ public partial class EntryViewModel : ObservableObject, IDisposable
             return false;
         }
 
-        if (!Plate.IsMatch(plate))
+        if (!Plate.IsMatch(NormalizePlate(plate)))
         {
             error = AppResources.Entry_Error_PlateInvalid;
             return false;

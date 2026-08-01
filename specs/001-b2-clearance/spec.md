@@ -47,6 +47,16 @@
   keeps it. Entry/Exit stay Operator+Admin. INV-6 keeps only its `AllExited` precondition, and
   the wireframe § 4 sidebar matrix shows KVGS for all three roles.
 
+- Q: Cột E says a plate is auto-upper-cased (`12h05769` → `12H05769`) and the column may be
+  pasted from the unit's internal system, where plates carry a dash. Reject `29C-12345`, or
+  normalise it? → A (unit, 2026-08-01): **normalise**. `PlateNumber.Normalize` upper-cases and
+  strips separators (space, NBSP, `-`, en-dash, `.`, `_`, `/`) before the format check, and both
+  request validators call it so the API and the domain cannot disagree. The same rule is applied
+  to cột F (`TrailerOrContainerNumber`) — same paste source, and F-17 pair statistics would
+  otherwise split across `51R-09876` and `51R09876`. The Desktop entry form normalises the field
+  in place on submit (it keeps its own copy of the rule: Constitution V forbids B2.Desktop
+  referencing B2.Domain).
+
 - Q: Business rules § 3 lists "Ghi chú" (cột O) among the columns the exit gate may fill, but
   `Vehicle.Note` is write-once at entry with no update path. → A: Add an audited note update
   available to gate staff, so the exit-gate officer can record what they see (xe hỏng, hàng có
