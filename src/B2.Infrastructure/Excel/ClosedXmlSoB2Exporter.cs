@@ -19,6 +19,9 @@ public sealed class ClosedXmlSoB2Exporter : ISoB2Exporter
     private const int FirstDataRow = 2;
     private const int LastColumn = 15; // A..O
 
+    /// <summary>Display form from business rules cột I/K: "26/2/2026 13:16".</summary>
+    private const string TimestampFormat = "d/M/yyyy H:mm";
+
     private static readonly XLColor UnexitedRed = XLColor.Red;
     private static readonly XLColor AllExitedGreen = XLColor.FromArgb(0xC6, 0xEF, 0xCE);
     private static readonly XLColor DayHeaderFill = XLColor.FromArgb(0xD9, 0xE1, 0xF2);
@@ -73,25 +76,30 @@ public sealed class ClosedXmlSoB2Exporter : ISoB2Exporter
         }
     }
 
+    /// <summary>
+    /// The daily row, laid out exactly as the unit's own file does it: ngày in cột D, tổng số xe
+    /// in cột E <b>as a number</b>, người trực chính in cột F. Deliberately not merged — merging
+    /// A:O (the earlier shape) turned the total into part of a sentence, so it could no longer be
+    /// summed, filtered or sorted by column.
+    /// </summary>
     private static void WriteDayHeaderRow(IXLWorksheet ws, int row, SoB2DayBlock day)
     {
-        var banner = "Ngày " + day.Date.ToString("dd/MM/yyyy", CultureInfo.InvariantCulture);
-        if (!string.IsNullOrWhiteSpace(day.OnDutyOfficerName))
-        {
-            banner += "     Trực chính: " + day.OnDutyOfficerName;
-        }
-
-        if (day.TotalVehicles is { } total)
-        {
-            banner += "     Tổng xe trong ngày: " + total.ToString(CultureInfo.InvariantCulture);
-        }
-
         var range = ws.Range(row, 1, row, LastColumn);
-        range.Merge();
         range.Style.Fill.BackgroundColor = DayHeaderFill;
         range.Style.Font.Bold = true;
         ApplyThinBorder(range);
-        ws.Cell(row, 1).Value = banner;
+
+        ws.Cell(row, 4).Value = "Ngày " + day.Date.ToString("dd/M/yyyy", CultureInfo.InvariantCulture);
+
+        if (day.TotalVehicles is { } total)
+        {
+            ws.Cell(row, 5).Value = total;
+        }
+
+        if (!string.IsNullOrWhiteSpace(day.OnDutyOfficerName))
+        {
+            ws.Cell(row, 6).Value = day.OnDutyOfficerName;
+        }
     }
 
     private static int WriteDeclarationBlock(IXLWorksheet ws, int row, int stt, SoB2DeclarationBlock declaration)
@@ -131,9 +139,13 @@ public sealed class ClosedXmlSoB2Exporter : ISoB2Exporter
 
             ws.Cell(row, 5).Value = vehicle.PlateNumber;
             ws.Cell(row, 6).Value = vehicle.TrailerOrContainerNumber ?? string.Empty;
-            ws.Cell(row, 9).Value = FormatTimestamp(vehicle.EntryTime, hasValue: !string.IsNullOrEmpty(vehicle.PlateNumber));
+            WriteTimestamp(
+                ws,
+                row,
+                9,
+                string.IsNullOrEmpty(vehicle.PlateNumber) ? null : vehicle.EntryTime);
             ws.Cell(row, 10).Value = vehicle.ExitMarked ? "x" : string.Empty;
-            ws.Cell(row, 11).Value = vehicle.ExitTime is { } exit ? FormatTimestamp(exit, hasValue: true) : string.Empty;
+            WriteTimestamp(ws, row, 11, vehicle.ExitTime);
             ws.Cell(row, 15).Value = vehicle.Note ?? string.Empty;
 
             var rowRange = ws.Range(row, 1, row, LastColumn);
@@ -163,15 +175,23 @@ public sealed class ClosedXmlSoB2Exporter : ISoB2Exporter
         return row;
     }
 
-    private static string FormatTimestamp(DateTimeOffset utc, bool hasValue)
+    /// <summary>
+    /// Cột I / cột K hold a real date-time value, not text. The unit's file stores them as Excel
+    /// serial numbers with a display format, and that is what makes the column sortable and
+    /// subtractable; writing "01/08/2026 23:04" as a string sorts alphabetically instead.
+    /// Display form is the one named in the business rules: "26/2/2026 13:16".
+    /// </summary>
+    private static void WriteTimestamp(IXLWorksheet ws, int row, int column, DateTimeOffset? utc)
     {
-        if (!hasValue)
+        var cell = ws.Cell(row, column);
+        if (utc is not { } value)
         {
-            return string.Empty;
+            cell.Value = string.Empty;
+            return;
         }
 
-        var local = TimeZoneInfo.ConvertTime(utc, VietnamTime.TimeZone);
-        return local.ToString("dd/MM/yyyy HH:mm", CultureInfo.InvariantCulture);
+        cell.Value = TimeZoneInfo.ConvertTime(value, VietnamTime.TimeZone).DateTime;
+        cell.Style.DateFormat.Format = TimestampFormat;
     }
 
     private static void ApplyThinBorder(IXLRange range)
