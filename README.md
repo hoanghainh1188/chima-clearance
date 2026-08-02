@@ -110,9 +110,12 @@ Phase 1 ships in 6 × 2-week sprints (S0..S6) per
 | **S5** | Export, backup, audit (F-13, FR-022, F-16, F-18, F-15) | ✅ done — PRs #40–#55 (head `fcb0412`). #40 cleared S4 carry-overs `T-S4-CO-01..09`; **F-13** template-based Sổ B2 Excel export (`GET /api/reports/excel` + `ExportPage`, #41/#43); **FR-022** declaration cancellation (`POST /api/declarations/{id}/cancel`, INV-9/INV-10, ledger strike-through, #44); **F-16** Admin audit viewer (`GET /api/admin/audit` + `AuditPage`, #45); **F-18** Admin health dashboard + in-app log viewer (`GET /api/admin/logs` + `/health/detail` + tabbed `HealthPage`, #46); **F-15** encrypted backup/restore (AES-256-GCM dual-PBKDF2 wrap, `POST /api/admin/backup-now`, apply-on-startup restore `POST /api/admin/restore`, `BackupPage`, recovery-code generator + DPAPI-sealed secrets store, Litestream supervisor — 5 slices #48/#50/#52/#53/#55). CI flake killed for good in #42/#47. Two remainders roll to S6: `T-S5-06` NBomber export scenario (placeholder) + `T-S5-13` install-time recovery-code print UI (→ `T-S6-11`). |
 | **S6** | Hardening (F-17 simple v1 + a11y + FR-021 archive + runbook + installer + UAT) | 🔄 in progress — `T-S6-01..11` done, **`T-S6-12` (on-site UAT) is the only task left**. **F-17** sticky plate–trailer suggestions (#59); **a11y** audit + `AxeRunner` static analysis, FR-021 `AnnualArchiveJob`, Vietnamese `docs/runbook.md` (#61); installer + UAT template (#63); UAT-blocking Desktop fixes (#64, #65). Then two post-`v1.0.0` rounds: **#103** self-contained offline deployment — Velopack dropped for a plain `B2Clearance.exe install\|uninstall` CLI + `deploy/install.ps1`, after `ADR-0007` evaluated and **rejected** a Go backend port (stack stays .NET); **#112** FR-021 archive data-loss + FR-022 un-exit race + KVGS lock + installer upgrade path. `docs/uat-001-b2-clearance.md` is the sign-off sheet for the remaining task and is still an unfilled template. |
 
-Released builds: **`v1.0.0`** (2026-06-07, `e4da343`) → **`v1.1.0`** (2026-07-19,
-`4e133c9`) → **`v1.1.1`** (2026-07-26, `1e3dbd4`, current). Phase-1 GA is gated
-on `T-S6-12` sign-off, not on another feature.
+Released builds: **`v1.0.0`** (2026-06-07) → **`v1.1.0`** (2026-07-19) →
+**`v1.1.1`** (2026-07-26) → **`v1.2.0`** (2026-08-02, current). `v1.2.0` re-checks
+the implementation against the unit's own documents — several rules the code
+enforced had no basis in them, and the exit-gate PC had never been deployable
+(see `CHANGELOG.md`). **This is the build to run `T-S6-12` with**; Phase-1 GA is
+gated on that sign-off, not on another feature.
 
 ---
 
