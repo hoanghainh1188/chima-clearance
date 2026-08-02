@@ -6,47 +6,20 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 
-`main` is at `v1.1.1`. Sprints S0–S5 are complete; Sprint S6 has one task left,
-`T-S6-12` (on-site UAT on real hardware), which gates Phase-1 GA:
-`docs/uat-001-b2-clearance.md` is still an unfilled template. Remaining
-low-priority polish from S3: ledger child-vehicle expand/collapse, right-click
-context menu, 300/400 ms animations on SignalR push, sidebar collapse toggle,
-focus-ring style sweep, ⚙️ quick-settings menu, top-right toast position.
+Nothing pending.
 
-#### Plates and trailer numbers pasted with a dash are normalised, not rejected — `INV-2`
+## [1.2.0] — 2026-08-02 — business rules re-checked against the unit's own documents
 
-Cột E specifies auto-upper-casing (`12h05769` → `12H05769`) and both cột E and cột F may be
-pasted from the unit's internal system, where a plate carries a dash. `29C-12345` was rejected
-with a validation error — at the lane, that means retyping every pasted plate.
+A pass over `docs/Business rules - Hướng dẫn điền sổ B2.md` and `docs/Định nghĩa yêu cầu.md`
+against the implementation, plus the two answers the unit gave on 2026-08-01. Several rules the
+code enforced turned out to have no basis in the customer's documents, and one — the exit-gate
+PC — had never been deployable at all. Every question, its answer and the evidence behind it is
+recorded in `specs/001-b2-clearance/spec.md` Clarifications.
 
-Confirmed with the unit (2026-08-01): normalise. `PlateNumber.Normalize` upper-cases and strips
-separators (space, NBSP, `-`, en-dash, `.`, `_`, `/`) before the format check. The two request
-validators now call `PlateNumber.IsValid` instead of each keeping its own rival regex, so the API
-and the domain cannot drift apart. Cột F gets the same treatment — same paste source, and F-17
-pair statistics would otherwise split across `51R-09876` and `51R09876`. The Desktop entry form
-normalises the field in place on submit, so the officer sees the canonical value.
-
-10 new tests (7 normalisation cases, validity parity with `Parse`, container cases) plus 3
-endpoint tests covering create, suffix search and a still-invalid plate.
+Sprint S6 still has one task open: `T-S6-12`, the on-site UAT that gates Phase-1 GA. This is the
+build to run it with; `docs/uat-001-b2-clearance.md` is the sign-off sheet.
 
 ### Added
-
-#### Entering and editing several numbers on a row — `INV-1` (UI)
-
-The desktop half of the change above.
-
-- **Entry form**: *Số tờ khai* is now a multi-line `Editor` — one number per line, mirroring the
-  Alt+Enter cell in the legacy sheet. Commas and semicolons are accepted too, since a paste from
-  another system may use them. Validation covers the whole list: every entry 12 digits, no
-  duplicates on one row, at most 20.
-- **Ledger drawer**: lists every number with a `Bỏ` button and an add field, shown only while the
-  declaration is `Open` (the server enforces the same rule). Each edit toasts and refreshes in
-  place.
-- **Ledger row**: shows the primary number plus `(+N tờ khai)`, so a multi-declaration row is
-  visible without opening the drawer. `DeclarationSummaryDto` carries the count.
-
-10 vi.resx strings with their hand-maintained Designer accessors; two wireframe deviations
-recorded in § 6.
 
 #### Cột C holds several declaration numbers per row, editable after entry — `INV-1`
 
@@ -80,6 +53,71 @@ declaration graph go through it.
 entry form still submits one number — the multi-number entry field and the drawer editor ship
 separately.
 
+#### Entering and editing several numbers on a row — `INV-1` (UI)
+
+The desktop half of the change above.
+
+- **Entry form**: *Số tờ khai* is now a multi-line `Editor` — one number per line, mirroring the
+  Alt+Enter cell in the legacy sheet. Commas and semicolons are accepted too, since a paste from
+  another system may use them. Validation covers the whole list: every entry 12 digits, no
+  duplicates on one row, at most 20.
+- **Ledger drawer**: lists every number with a `Bỏ` button and an add field, shown only while the
+  declaration is `Open` (the server enforces the same rule). Each edit toasts and refreshes in
+  place.
+- **Ledger row**: shows the primary number plus `(+N tờ khai)`, so a multi-declaration row is
+  visible without opening the drawer. `DeclarationSummaryDto` carries the count.
+
+10 vi.resx strings with their hand-maintained Designer accessors; two wireframe deviations
+recorded in § 6.
+
+#### "Ghi chú" (cột O) is editable at the exit gate — `F-08`
+
+Business rules § 3 lists it among the exit gate's five columns; it was write-once at entry. And
+`VehicleDetailDto` did not carry `Note` at all, so a note typed at entry was invisible
+everywhere in the app and survived only in the Excel export.
+
+`Vehicle.UpdateNote` + `PATCH /api/vehicles/{id}/note` (GateStaff, 500-char ceiling, blank
+clears, cancelled declaration still immutable). FR-003 stays append-only — each edit writes an
+`Update` AuditLog row with before/after text. The ledger drawer gains a Ghi chú field and a
+`Lưu ghi chú` button per vehicle row (5 vi.resx strings, semantic hints, wireframe deviation
+recorded in § 6).
+
+### Changed
+
+#### Plates and trailer numbers pasted with a dash are normalised, not rejected — `INV-2`
+
+Cột E specifies auto-upper-casing (`12h05769` → `12H05769`) and both cột E and cột F may be
+pasted from the unit's internal system, where a plate carries a dash. `29C-12345` was rejected
+with a validation error — at the lane, that means retyping every pasted plate.
+
+Confirmed with the unit (2026-08-01): normalise. `PlateNumber.Normalize` upper-cases and strips
+separators (space, NBSP, `-`, en-dash, `.`, `_`, `/`) before the format check. The two request
+validators now call `PlateNumber.IsValid` instead of each keeping its own rival regex, so the API
+and the domain cannot drift apart. Cột F gets the same treatment — same paste source, and F-17
+pair statistics would otherwise split across `51R-09876` and `51R09876`. The Desktop entry form
+normalises the field in place on submit, so the officer sees the canonical value.
+
+10 new tests (7 normalisation cases, validity parity with `Parse`, container cases) plus 3
+endpoint tests covering create, suffix search and a still-invalid plate.
+
+#### The exit-gate officer can confirm KVGS — `FR-027` / `INV-6`
+
+Business rules § B.2 has **one** cán bộ at cổng ra tick "Xe đã ra" (cột J), then "Xác nhận qua
+KVGS" (cột L), then write their own name into "Người xác nhận" (cột N); § 3 lists the five
+columns that same officer may edit. The role matrix split that job in two — `/exit` was
+Admin+Operator, `/kvgs-confirm` was Admin+Supervisor — so **no non-Admin role could work the
+exit lane**. At peak flow that forces two accounts on one PC, or everyone signs in as Admin and
+the role model stops meaning anything.
+
+The restriction had no customer provenance: INV-6 cited "Business rule cột L", which says
+nothing about roles, and FR-027 came from the [UI] clarification *"should the API mirror the
+sidebar exactly"* — derived from an internally-authored wireframe. New `GateStaff` policy
+(Admin + Operator + Supervisor) on `/kvgs-confirm`; Supervisor keeps it; Entry/Exit unchanged.
+`Declaration.ConfirmKvgs` drops its role parameter and INV-6 keeps only the `AllExited`
+precondition. The wireframe § 4 sidebar matrix and the Desktop sidebar show KVGS to every role.
+
+### Fixed
+
 #### Excel export: daily row in the wrong cells, times written as text — `F-13`
 
 Exporting a real file and putting it side by side with the unit's own `Mẫu sổ B2.xlsx` turned up
@@ -102,41 +140,6 @@ format `d/M/yyyy H:mm` — the same shapes as the unit's file.
 The template itself was never the problem: the embedded copy is byte-identical to the unit's file
 (same MD5).
 
-### Fixed — business rules re-checked against the customer's own documents
-
-A review of `docs/Business rules - Hướng dẫn điền sổ B2.md` and `docs/Định nghĩa yêu cầu.md`
-against the implementation found three places where the code enforced something the customer
-never asked for. All three are now aligned; `spec.md` carries a clarification entry with the
-evidence for each.
-
-#### The exit-gate officer can confirm KVGS — `FR-027` / `INV-6`
-
-Business rules § B.2 has **one** cán bộ at cổng ra tick "Xe đã ra" (cột J), then "Xác nhận qua
-KVGS" (cột L), then write their own name into "Người xác nhận" (cột N); § 3 lists the five
-columns that same officer may edit. The role matrix split that job in two — `/exit` was
-Admin+Operator, `/kvgs-confirm` was Admin+Supervisor — so **no non-Admin role could work the
-exit lane**. At peak flow that forces two accounts on one PC, or everyone signs in as Admin and
-the role model stops meaning anything.
-
-The restriction had no customer provenance: INV-6 cited "Business rule cột L", which says
-nothing about roles, and FR-027 came from the [UI] clarification *"should the API mirror the
-sidebar exactly"* — derived from an internally-authored wireframe. New `GateStaff` policy
-(Admin + Operator + Supervisor) on `/kvgs-confirm`; Supervisor keeps it; Entry/Exit unchanged.
-`Declaration.ConfirmKvgs` drops its role parameter and INV-6 keeps only the `AllExited`
-precondition. The wireframe § 4 sidebar matrix and the Desktop sidebar show KVGS to every role.
-
-#### "Ghi chú" (cột O) is editable at the exit gate — `F-08`
-
-Business rules § 3 lists it among the exit gate's five columns; it was write-once at entry. And
-`VehicleDetailDto` did not carry `Note` at all, so a note typed at entry was invisible
-everywhere in the app and survived only in the Excel export.
-
-`Vehicle.UpdateNote` + `PATCH /api/vehicles/{id}/note` (GateStaff, 500-char ceiling, blank
-clears, cancelled declaration still immutable). FR-003 stays append-only — each edit writes an
-`Update` AuditLog row with before/after text. The ledger drawer gains a Ghi chú field and a
-`Lưu ghi chú` button per vehicle row (5 vi.resx strings, semantic hints, wireframe deviation
-recorded in § 6).
-
 #### A cancelled declaration's number can be entered again — `INV-1` / `FR-022`
 
 Cancelling exists to withdraw an erroneous entry, but the uniqueness check counted cancelled
@@ -146,31 +149,6 @@ declaration number → **409 forever, at the database level**. INV-1 is now scop
 non-cancelled declarations (filtered unique index, migration `0002`); a duplicate of a *live*
 declaration is still rejected. Business rule cột C only ever asked for a duplicate to be
 flagged ("cảnh báo bằng cách tô đỏ dãy số").
-
-### Fixed
-
-#### UAT script could not be run as written — `docs/uat-refresh`
-
-`T-S6-12` is the last task gating Phase-1 GA, and its sign-off sheet had two defects that would
-have surfaced on-site with the hardware already set up:
-
-- **Step 1 told the tester to run `B2ClearanceSetup.exe`** — the Velopack installer removed in
-  #103. The file does not exist in the shipped package.
-- **No step touched the exit-gate PC at all.** The gate runs two lanes; a single-machine smoke
-  test exercises none of the LAN client path — precisely the half that was broken until #114.
-
-The sheet now has Part A (entry gate, the original 10 steps), **Part B** (exit gate: client-only
-install, Operator login over LAN, cross-machine search, exit + KVGS + Ghi chú from that account,
-network-loss recovery), **Part C** (the three business-rule corrections from this release), an
-upgrade-over-existing-install check, and a note that S1–S5 apply to the entry gate only.
-`04-implementation-plan.md § 8` gains the matching exit-gate steps so the plan and the sheet
-agree; `plan.md` marks the Velopack installer line superseded by ADR-0007.
-
-#### `.gitattributes` line 1 was ignored — `docs/uat-refresh`
-
-The file began with a UTF-8 BOM, so git did not read line 1 as a comment: it tried to parse it
-as attributes, printed `end_of_line is not a valid attribute name` on **every** git invocation,
-and — the part that mattered — silently dropped the `* text=auto` rule on that line. BOM removed.
 
 #### The exit-gate PC could not reach the server — `fix/desktop-lan-endpoint`
 
@@ -224,6 +202,29 @@ Both files are now UTF-8 with BOM (0 parse errors), and `.gitattributes` records
 deliberately the opposite of the no-BOM rule for `.cs` — so an editor does not silently undo it.
 The `.specify/**` helper scripts have the same encoding but run only on dev machines; left
 alone.
+
+#### UAT script could not be run as written — `docs/uat-refresh`
+
+`T-S6-12` is the last task gating Phase-1 GA, and its sign-off sheet had two defects that would
+have surfaced on-site with the hardware already set up:
+
+- **Step 1 told the tester to run `B2ClearanceSetup.exe`** — the Velopack installer removed in
+  #103. The file does not exist in the shipped package.
+- **No step touched the exit-gate PC at all.** The gate runs two lanes; a single-machine smoke
+  test exercises none of the LAN client path — precisely the half that was broken until #114.
+
+The sheet now has Part A (entry gate, the original 10 steps), **Part B** (exit gate: client-only
+install, Operator login over LAN, cross-machine search, exit + KVGS + Ghi chú from that account,
+network-loss recovery), **Part C** (the three business-rule corrections from this release), an
+upgrade-over-existing-install check, and a note that S1–S5 apply to the entry gate only.
+`04-implementation-plan.md § 8` gains the matching exit-gate steps so the plan and the sheet
+agree; `plan.md` marks the Velopack installer line superseded by ADR-0007.
+
+#### `.gitattributes` line 1 was ignored — `docs/uat-refresh`
+
+The file began with a UTF-8 BOM, so git did not read line 1 as a comment: it tried to parse it
+as attributes, printed `end_of_line is not a valid attribute name` on **every** git invocation,
+and — the part that mattered — silently dropped the `* text=auto` rule on that line. BOM removed.
 
 ## [1.1.1] — 2026-07-26 — archive data-loss + concurrency fixes
 
@@ -1087,7 +1088,8 @@ seeded admin bootstrap, and FR-017 force-rotate-password.
   applied during their respective sprints (M2 + M5 + M7 in S1; M3 + M4 + M6 in
   S3..S5). None block this release.
 
-[Unreleased]: https://example.invalid/chima-clearance/compare/v1.1.1...HEAD
+[Unreleased]: https://example.invalid/chima-clearance/compare/v1.2.0...HEAD
+[1.2.0]: https://example.invalid/chima-clearance/compare/v1.1.1...v1.2.0
 [1.1.1]: https://example.invalid/chima-clearance/compare/v1.1.0...v1.1.1
 [1.1.0]: https://example.invalid/chima-clearance/compare/v1.0.0...v1.1.0
 [1.0.0]: https://example.invalid/chima-clearance/compare/v0.2.0...v1.0.0
