@@ -21,4 +21,5 @@ public sealed record DeclarationSummaryRow(
     Guid? KvgsConfirmedByUserId,
     DateTimeOffset? KvgsConfirmedAt,
     string PrimaryPlateNumber,
-    string? PrimaryTrailerOrContainer);
+    string? PrimaryTrailerOrContainer,
+    int DeclarationNumberCount);

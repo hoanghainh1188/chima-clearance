@@ -15,6 +15,21 @@ namespace B2.Desktop.ViewModels;
 public partial class EntryViewModel : ObservableObject, IDisposable
 {
     private static readonly Regex DeclNumber = new("^[0-9]{12}$", RegexOptions.Compiled);
+
+    /// <summary>Mirrors the server-side ceiling (DeclarationCreateRequestValidator).</summary>
+    private const int MaxDeclarationNumbers = 20;
+
+    /// <summary>
+    /// Cột C may hold several numbers in one cell, one per line — the Excel sheet used Alt+Enter.
+    /// Commas and semicolons are accepted too, since a paste from another system may use them.
+    /// </summary>
+    private static List<string> ParseDeclarationNumbers(string? raw) =>
+        (raw ?? string.Empty)
+            .Split(
+                ['\n', '\r', ',', ';'],
+                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .ToList();
+
     private static readonly Regex Plate = new("^[0-9]{2}[A-Za-z]{1,2}[0-9]{4,5}$", RegexOptions.Compiled);
 
     /// <summary>
@@ -333,17 +348,14 @@ public partial class EntryViewModel : ObservableObject, IDisposable
             return;
         }
 
-        var decl = DeclarationNumber.Trim();
+        var declNumbers = ParseDeclarationNumbers(DeclarationNumber);
         var firstVehicle = new VehicleAddRequest(
             plate,
             NullIfWhiteSpace(TrailerOrContainerNumber),
             NullIfWhiteSpace(VehicleNote));
 
-        // Cột C accepts several numbers per row; the entry form still collects one. Typing more
-        // than one is wired up separately — until then a new row starts with a single number and
-        // the rest are added from the ledger drawer.
         var request = new DeclarationCreateRequest(
-            [decl],
+            declNumbers,
             SelectedProcessor.Id,
             CompanyName.Trim(),
             GoodsName.Trim(),
@@ -358,7 +370,11 @@ public partial class EntryViewModel : ObservableObject, IDisposable
             {
                 IsAddChildMode = true;
                 ActiveDeclarationId = dto.Id;
-                AddChildBannerDeclarationLabel = string.Format(CultureInfo.CurrentCulture, AddChildBannerFormat, MaskDeclaration(decl));
+                // The banner names the row being added to; the primary number identifies it.
+                AddChildBannerDeclarationLabel = string.Format(
+                    CultureInfo.CurrentCulture,
+                    AddChildBannerFormat,
+                    MaskDeclaration(dto.DeclarationNumber));
                 ClearVehicleFields();
             }
             else
@@ -380,9 +396,22 @@ public partial class EntryViewModel : ObservableObject, IDisposable
 
     private bool ValidateDeclarationForm(string plate, [System.Diagnostics.CodeAnalysis.NotNullWhen(false)] out string? error)
     {
-        if (!DeclNumber.IsMatch(DeclarationNumber.Trim()))
+        var declNumbers = ParseDeclarationNumbers(DeclarationNumber);
+        if (declNumbers.Count == 0 || declNumbers.Exists(n => !DeclNumber.IsMatch(n)))
         {
             error = AppResources.Entry_Error_DeclarationInvalid;
+            return false;
+        }
+
+        if (declNumbers.Distinct(StringComparer.Ordinal).Count() != declNumbers.Count)
+        {
+            error = AppResources.Entry_Error_DeclarationDuplicate;
+            return false;
+        }
+
+        if (declNumbers.Count > MaxDeclarationNumbers)
+        {
+            error = AppResources.Entry_Error_DeclarationTooMany;
             return false;
         }
 

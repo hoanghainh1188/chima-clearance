@@ -58,7 +58,8 @@ public sealed class ListDeclarationsQueryHandler
                 r.KvgsConfirmedByUserId,
                 r.KvgsConfirmedAt,
                 r.PrimaryPlateNumber,
-                r.PrimaryTrailerOrContainer))
+                r.PrimaryTrailerOrContainer,
+                r.DeclarationNumberCount))
             .ToList();
 
         return new PagedDeclarationsResponse(dtos, total, page, pageSize);

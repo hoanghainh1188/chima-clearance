@@ -20,4 +20,6 @@ public sealed record DeclarationSummaryDto(
     Guid? KvgsConfirmedByUserId,
     DateTimeOffset? KvgsConfirmedAt,
     string PrimaryPlateNumber,
-    string? PrimaryTrailerOrContainer);
+    string? PrimaryTrailerOrContainer,
+    /// <summary>How many numbers sit on cột C of this row; 1 for the common case.</summary>
+    int DeclarationNumberCount);

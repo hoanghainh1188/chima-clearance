@@ -10,6 +10,7 @@ public sealed partial class LedgerRowViewModel : ObservableObject
 {
     private static readonly CompositeFormat YardCodeFormat = CompositeFormat.Parse(AppResources.Ledger_YardCode_Format);
     private static readonly CompositeFormat PlateTrailerFormat = CompositeFormat.Parse(AppResources.Ledger_PlateTrailer_Format);
+    private static readonly CompositeFormat MoreNumbersFormat = CompositeFormat.Parse(AppResources.Ledger_MoreNumbers_Format);
 
     /// <summary>
     /// Bound by KvgsPage's row template; used by <c>KvgsViewModel</c> to fade
@@ -81,7 +82,17 @@ public sealed partial class LedgerRowViewModel : ObservableObject
             _ => ("❔", dto.Status),
         };
 
+        // A row may carry several tờ khai (cột C); the ledger shows the primary plus a count so
+        // the officer can see there is more without opening the drawer.
         var masked = MaskDeclarationNumber(dto.DeclarationNumber);
+        if (dto.DeclarationNumberCount > 1)
+        {
+            masked = masked + " " + string.Format(
+                culture,
+                MoreNumbersFormat,
+                dto.DeclarationNumberCount - 1);
+        }
+
         var time = dto.EnteredAt.ToLocalTime().ToString("HH:mm", culture);
         return new LedgerRowViewModel(dto, rowOrdinal, icon, label, masked, time);
     }

@@ -36,11 +36,13 @@
           <VerticalStackLayout Spacing="{StaticResource SpacingS}"
                                IsEnabled="{Binding IsAddChildMode, Converter={StaticResource InvertedBoolConverter}}">
             <Label Text="{x:Static s:AppResources.Entry_DeclarationNumberLabel}" />
-            <Entry Text="{Binding DeclarationNumber}"
-                   MaxLength="12"
-                   Keyboard="Numeric"
-                   Placeholder="{x:Static s:AppResources.Entry_DeclarationNumberPlaceholder}"
-                   SemanticProperties.Hint="{x:Static s:AppResources.Entry_DeclarationNumberLabel}" />
+            <!-- Cột C: one cell, one number per line — the legacy sheet used Alt+Enter. An Editor
+                 (not an Entry) so a second tờ khai can be typed on the next line. -->
+            <Editor Text="{Binding DeclarationNumber}"
+                    AutoSize="TextChanges"
+                    MinimumHeightRequest="72"
+                    Placeholder="{x:Static s:AppResources.Entry_DeclarationNumberPlaceholder}"
+                    SemanticProperties.Hint="{x:Static s:AppResources.Entry_DeclarationNumberLabel}" />
             <Label Text="{x:Static s:AppResources.Entry_ProcessorLabel}" />
             <Picker ItemsSource="{Binding Processors}"
                     SelectedItem="{Binding SelectedProcessor}"

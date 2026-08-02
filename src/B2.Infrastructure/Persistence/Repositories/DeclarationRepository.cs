@@ -343,7 +343,8 @@ public sealed class DeclarationRepository : IDeclarationRepository
                     d.KvgsConfirmedByUserId,
                     d.KvgsConfirmedAt,
                     string.Empty,
-                    null))
+                    null,
+                    d.Numbers.Count))
             .ToListAsync(cancellationToken);
 
         var orderIndex = ids.Select((id, i) => (id, i)).ToDictionary(x => x.id, x => x.i);
