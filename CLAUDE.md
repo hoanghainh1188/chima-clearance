@@ -21,7 +21,8 @@ do not infer requirements from existing code alone:
 5. `specs/05-ui-wireframes.md` — wireframes § 6, design tokens § 2-3 (binding for any UI change)
 6. `.specify/memory/constitution.md` (v1.1.0) — **highest authority; non-negotiable**
 7. `docs/adr/ADR-0001..0006` — locked architectural decisions
-   (`ADR-0007` evaluates a Go-backend port — **Proposed, not adopted**; stack stays .NET)
+   (`ADR-0007` evaluated a Go-backend port — **rejected**, stack stays .NET;
+   `ADR-0008` dev-only PDF export tool for the operator docs)
 
 When Spec Kit artifacts (`specs/001-b2-clearance/{spec,plan,tasks}.md`) conflict
 with the hand-written `specs/0X-*.md`, follow the Spec Kit artifacts.
