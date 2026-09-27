@@ -6,7 +6,26 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 
-Nothing pending.
+### Security
+
+#### Per-install initial Admin password — `F-01`, ADR-0009
+
+- Every install seeded `admin` with the **same** password (`Change-Me-Now-1!`), reachable from
+  the LAN (`0.0.0.0:5000`) until the first login and written in the repository.
+  `B2Clearance.exe install` now generates a random password per install (4 groups of 4, no
+  ambiguous characters), DPAPI-seals it to `keys\admin-bootstrap.dpapi` and shows it **on screen
+  only**, next to the recovery code. The service applies it on start (after migrations) with
+  `MustChangePassword = true`, clears any lockout, audits the change and deletes the file.
+- Migration `0004_RetireSharedAdminSeedHash` replaces the shared seed hash with an unusable
+  placeholder wherever it is untouched.
+- A password a person chose is never replaced: `keys\admin-password.state` turns `rotated` the
+  moment `admin` changes its password and never goes back, even if another Admin later resets
+  the account (found in security review). Upgrades issue a new password only while the Admin
+  never chose one.
+- New `B2Clearance.exe reset-initial-admin` re-issues the password if it is lost before the first
+  login; refused once rotated. Installer console output is now UTF-8.
+- Docs: install guide (new initial-password step), runbook § 2, quickstart (dev staging),
+  FR-017, ADR-0004 bullet superseded, UAT steps 2/U3/U4.
 
 ## [1.2.2] — 2026-09-27 — data directory locked to SYSTEM + Administrators; single-PC install guide
 
