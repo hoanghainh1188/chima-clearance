@@ -46,6 +46,14 @@ permissions on `C:\ProgramData\B2`. Use v1.2.2 for new installs and the `T-S6-12
 
 ### Added
 
+#### `tools/docs-pdf/` — export the operator docs to PDF (ADR-0008)
+
+- `build_docs_pdf.py` renders `huong-dan-cai-dat.md`, `runbook.md` and `deployment-offline.md`
+  with markdown-it-py (pinned in `requirements.txt`) and prints A4 PDFs with the local Chrome,
+  Chromium or Edge. The install guide gets the seed admin password (read from `SeedAdminPassword`)
+  and a "TÀI LIỆU MẬT" banner; `--no-password` builds a shareable edition. The build fails if the
+  password step in § 4 changes. Output in `tools/docs-pdf/out/`, git-ignored.
+
 #### ADR-0008 — dev-only tool to export the operator docs to PDF
 
 - Records the decision to keep a Python (markdown-it-py) + headless Chromium script under

@@ -1,0 +1,43 @@
+/* Print stylesheet for the operator-docs PDFs (ADR-0008). Tokens first; A4, Vietnamese-capable
+   system fonts (Helvetica Neue on macOS, Arial/Segoe UI on Windows). */
+:root {
+  --ink: #1b1f24;
+  --muted: #57606a;
+  --rule: #d0d7de;
+  --accent: #0b5cad;
+  --code-bg: #f3f4f6;
+  --table-head: #eef2f6;
+  --note-bg: #fff6e0;
+  --note-rule: #d4a017;
+  --danger: #b42318;
+  --font-body: "Helvetica Neue", "Segoe UI", Arial, sans-serif;
+  --font-mono: Menlo, Consolas, monospace;
+}
+
+@page { size: A4; margin: 18mm 16mm; }
+
+body { font-family: var(--font-body); color: var(--ink); font-size: 10.5pt; line-height: 1.5; }
+
+h1 { font-size: 20pt; color: var(--accent); border-bottom: 2px solid var(--accent); padding-bottom: 4pt; margin-top: 0; }
+h2 { font-size: 14pt; margin-top: 18pt; border-bottom: 1px solid var(--rule); padding-bottom: 2pt; break-after: avoid; }
+h3 { font-size: 11.5pt; margin-top: 12pt; break-after: avoid; }
+
+table { border-collapse: collapse; width: 100%; margin: 6pt 0; font-size: 9.5pt; break-inside: avoid; }
+th, td { border: 1px solid var(--rule); padding: 4pt 6pt; text-align: left; vertical-align: top; }
+th { background: var(--table-head); }
+
+code { font-family: var(--font-mono); font-size: 9pt; background: var(--code-bg); padding: 0 2pt; border-radius: 2pt; }
+pre { background: var(--code-bg); padding: 6pt 8pt; border-radius: 3pt; white-space: pre-wrap; word-break: break-all; break-inside: avoid; }
+pre code { padding: 0; background: none; }
+
+blockquote { margin: 6pt 0; padding: 4pt 10pt; border-left: 3px solid var(--note-rule); background: var(--note-bg); }
+blockquote p { margin: 3pt 0; }
+
+a { color: var(--accent); text-decoration: none; }
+hr { border: 0; border-top: 1px solid var(--rule); margin: 12pt 0; }
+
+.confidential {
+  border: 2px solid var(--danger); color: var(--danger); font-weight: 700;
+  padding: 5pt 8pt; margin-bottom: 10pt; text-align: center; font-size: 10pt;
+}
+.footer-src { color: var(--muted); font-size: 8.5pt; margin-top: 18pt; }
