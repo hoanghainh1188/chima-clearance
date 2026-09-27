@@ -8,6 +8,15 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ### Added
 
+#### ADR-0008 — dev-only tool to export the operator docs to PDF
+
+- Records the decision to keep a Python (markdown-it-py) + headless Chromium script under
+  `tools/docs-pdf/` that renders `huong-dan-cai-dat.md`, `runbook.md` and `deployment-offline.md`
+  to PDF, injecting the initial admin password only into the confidential install-guide edition.
+  Developer-only: not in the solution, CI, release or zip; PDFs never committed. The tool lands in
+  a follow-up PR after this ADR is merged (Constitution II). CLAUDE.md/README also stop calling
+  ADR-0007 "Proposed" — it was accepted as "keep .NET".
+
 #### Docs — install rehearsal on a Windows VM for Mac developers
 
 - `docs/deployment-offline.md` gains "Diễn tập cài đặt trên máy ảo": which Windows VM to use on
