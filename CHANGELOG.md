@@ -6,6 +6,18 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 
+### Security
+
+#### Data directory readable by every local Windows user
+
+- `C:\ProgramData\B2` inherited `C:\ProgramData`'s ACL, so any local account could read `keys\`.
+  Every secret there is DPAPI-sealed with **LocalMachine** scope, which any local account may
+  unseal — the JWT signing key (forge an Admin token), the backup secrets (decrypt backups) and
+  `server.pfx` — and could read `db\b2.db` directly. `B2Clearance.exe install` now sets a
+  protected DACL on the data root: SYSTEM + Administrators, full control, inherited by all
+  children; re-running `install.ps1` fixes existing installs. Operators need an elevated
+  PowerShell (or a UAC prompt in Explorer) to read service logs; runbook and install guide say so.
+
 ### Added
 
 #### Docs — install rehearsal on a Windows VM for Mac developers

@@ -87,6 +87,10 @@ analyzers only fire on the Windows CI runner. When editing Desktop `.cs`:
 - **CHARSET** — new `.cs`/`.xaml.cs` files MUST be UTF-8 **without BOM**. Strip a
   stray BOM: `perl -i -pe 'BEGIN{$f=1} s/^\xef\xbb\xbf// if $f; $f=0' <file>`.
 
+`B2.Installer` (`net8.0-windows`, no MAUI) **does** build on macOS — run its analyzers
+locally before pushing:
+`dotnet build src/B2.Installer/B2.Installer.csproj -c Release -p:EnableWindowsTargeting=true /p:TreatWarningsAsErrors=true`
+
 ### CI workflow conventions (`.github/workflows/ci.yml`)
 
 Every dotnet step in the Windows job is pinned to `shell: bash` (defeats a

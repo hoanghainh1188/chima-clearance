@@ -185,7 +185,8 @@ Chạy lại `install.ps1` là an toàn: dữ liệu tại `C:\ProgramData\B2` �
 
 Xem [`runbook.md`](runbook.md) § 7. Gửi kèm ảnh chụp màn hình lỗi và file log mới nhất:
 
-- Dịch vụ (máy cổng vào): `C:\ProgramData\B2\logs\`
+- Dịch vụ (máy cổng vào): `C:\ProgramData\B2\logs\` — chỉ Administrator mở được; File
+  Explorer sẽ hỏi xác nhận quyền.
 - Ứng dụng (máy gặp lỗi): `%LOCALAPPDATA%\B2\logs\`
 
 **Không** gửi mật khẩu Admin hay mã phục hồi.
