@@ -29,6 +29,18 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
   and the release zip) and warns that it is shared by every install and reachable from the LAN
   until the forced change on first login is done.
 
+### Fixed
+
+#### Desktop — newly added processors and yards show up without a restart
+
+- **Khai nhập** loaded the processor ("người thao tác") and yard lists only the first time the
+  tab opened. The shell keeps one page per session, so anyone added under **Danh mục**
+  afterwards was missing from the dropdowns until the app was restarted. The lists are now
+  re-read every time the tab is shown; a half-filled form keeps its selection (by Id), and an
+  entry deactivated in the meantime is cleared so it must be re-picked.
+- The yard filter on **Sổ theo dõi** had the same one-shot load; it now refreshes on each visit
+  too, keeping the chosen yard or falling back to "Tất cả" if that yard was deactivated.
+
 ## [1.2.1] — 2026-09-27 — clean installs register the service; install guide ships in the zip
 
 Every offline zip from v1.1.0 to v1.2.0 aborts a **clean** install at service registration
