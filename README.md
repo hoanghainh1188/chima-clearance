@@ -47,6 +47,7 @@ chima-clearance/
 │   └── B2.Performance.Tests/       # NBomber scenarios; nightly on the spec VM.
 ├── docs/
 │   ├── adr/                        # ADR-0001..0006 (see § 9 of impl plan) + ADR-0007 (Go-port eval).
+│   ├── huong-dan-cai-dat.md        # Vietnamese step-by-step install guide (gate operators).
 │   ├── runbook.md                  # Vietnamese operator runbook (S6 deliverable).
 │   ├── prompts.md                  # Spec Kit prompts (per-skill directives).
 │   └── BOOTSTRAP.md                # Workflow bootstrap notes.

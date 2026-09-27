@@ -7,6 +7,10 @@
 > Nguyên tắc: máy đích **không cần cài .NET runtime**; các thành phần OS còn thiếu
 > (WebView2, VC++) được mang theo qua USB.
 
+> 👉 **Người cài đặt tại cửa khẩu**: làm theo [`huong-dan-cai-dat.md`](huong-dan-cai-dat.md)
+> (từng bước cho máy cổng vào + cổng ra, checklist, xử lý lỗi). Tài liệu này giải thích phần
+> kỹ thuật của gói cài.
+
 ## Vì sao self-contained là đủ (và điều gì vẫn thiếu)
 
 | Thành phần | Có cần cài trên máy đích? |
@@ -127,3 +131,7 @@ nếu đã tồn tại (idempotent).
   xác nhận ở lần chạy `release.yml` của tag kế tiếp. macOS/Linux không build được 2 project này.
 - ⏳ `install.ps1` / `uninstall.ps1` kiểm thử bằng tay (không có PowerShell trên máy build);
   chạy thực tế trên PC Windows đích ở UAT.
+- 🐛 Đã sửa: trên máy **sạch**, `B2Clearance.exe install` gọi `sc create` với `binpath="…"`,
+  `start=auto` (thiếu dấu cách sau `=` mà `sc.exe` bắt buộc) → `sc` từ chối, không đăng ký
+  được dịch vụ. `sc failure` (`reset=60`, `actions=…`) cùng lỗi và chạy cả khi nâng cấp.
+  Các bản zip **v1.1.0 → v1.2.0** đều mang lỗi này. Cần xác nhận lại trên PC Windows sạch.
