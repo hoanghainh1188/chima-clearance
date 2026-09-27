@@ -33,6 +33,14 @@
 - [UI] Q: `specs/05-ui-wireframes.md § 6.7` (Export Excel) shows three checkboxes — daily-header rows / status colours / note column — but `spec.md` FR-015 says all three MUST be preserved in every export. Toggleable or always-on? → A: Always-on at runtime. The three options render as **read-only "Đã bật" badges** at the same screen position as the wireframe checkboxes (smallest wireframe deviation; copy unchanged). The legacy archive contract (FR-015, F-13 layout test) is preserved; UI still surfaces what the export will contain.
 - [UI] Q: `specs/05-ui-wireframes.md § 5` defines a tri-state connectivity badge (🟢 Online / 🟡 Đang thử lại / 🔴 Mất kết nối), but `spec.md` FR-011 only addresses 🔴. Are writes permitted during 🟡 polling fallback? → A: Writes are **permitted** during 🟡 because the HTTP channel to the server is still up — only the SignalR push has degraded to polling. The yellow banner stays visible to make the degradation explicit; other clients converge within the polling interval (target ≤ 3 s). FR-011's "refuse writes" rule is **scoped to 🔴 only** and reworded accordingly; new FR-028 codifies the tri-state contract; F-10 gains one acceptance scenario for write-during-🟡 + ≤ 3 s convergence.
 
+### Session 2026-09-27 — initial Admin password
+
+- Q: Every install shipped the same seeded Admin password, reachable from the LAN until the
+  first login. Should an upgrade replace a still-default password, and where is it shown?
+  → A (owner): **Generate per install** (FR-017 amended, ADR-0009); upgrades **do** replace a
+  password the Admin never changed, never one they chose; shown **on screen only**, no file;
+  `B2Clearance.exe reset-initial-admin` re-issues it if lost before the first login.
+
 ### Session 2026-08-01 — business-rule review against the customer's own documents
 
 - Q: FR-027 denies Operator on KVGS and denies Supervisor on Entry/Exit, so no single non-Admin
@@ -1006,7 +1014,10 @@ depends on.
 - **FR-016**: System MUST present a correlation id with every unhandled-error message
   shown to the user, and MUST log the same correlation id on the server (Cross-Feature).
 - **FR-017**: System MUST force the default Admin to change password on first login and
-  MUST keep the system in a degraded state until that change is made (F-01).
+  MUST keep the system in a degraded state until that change is made (F-01). The initial
+  Admin password MUST be generated per install by the installer, shown once on screen and
+  never shared between installs; a password the Admin has chosen MUST never be replaced
+  by an installer run (ADR-0009).
 - **FR-018**: System MUST lock an account for 15 minutes after 5 failed logins within 10
   minutes, and MUST end any session after 30 minutes of inactivity (F-01).
 - **FR-019**: System MUST be idempotent for retried write commands when the same

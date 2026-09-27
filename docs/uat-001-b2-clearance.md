@@ -33,7 +33,7 @@
 | # | Bước | Kết quả | Ghi chú |
 |---|------|---------|---------|
 | 1 | Giải nén gói `B2Clearance-<version>-offline.zip`, chạy `.\install.ps1` với quyền Administrator, chấp nhận mặc định → dịch vụ được tạo và khởi động | ⬜ Pass / ⬜ Fail | |
-| 2 | Mở Desktop, đăng nhập Admin mặc định → hệ thống ép đổi mật khẩu | ⬜ Pass / ⬜ Fail | |
+| 2 | Khi cài, màn hình hiện khung **TÀI KHOẢN QUẢN TRỊ BAN ĐẦU** (mật khẩu ngẫu nhiên, khác mỗi lần cài). Mở Desktop, đăng nhập `admin` bằng mật khẩu đó → hệ thống ép đổi mật khẩu. Mật khẩu `Change-Me-Now-1!` cũ **không** đăng nhập được | ⬜ Pass / ⬜ Fail | |
 | 3 | Thêm 1 Người xử lý + 1 Bãi | ⬜ Pass / ⬜ Fail | |
 | 4 | Tạo 1 tờ khai với 2 phương tiện | ⬜ Pass / ⬜ Fail | |
 | 5 | Tìm kiếm bằng 4 chữ số cuối biển số → tìm thấy cả 2 | ⬜ Pass / ⬜ Fail | |
@@ -108,6 +108,8 @@
 |---|----------|---------|
 | U1 | Chạy lại `.\install.ps1` từ gói mới → dịch vụ dừng, chép đè, khởi động lại, **không** lỗi 1073 | ⬜ Pass / ⬜ Fail |
 | U2 | Dữ liệu cũ trong `C:\ProgramData\B2` còn nguyên (tờ khai, mã phục hồi, backup) | ⬜ Pass / ⬜ Fail |
+| U3 | Admin **đã** đổi mật khẩu trước khi nâng cấp → sau nâng cấp mật khẩu đó vẫn đăng nhập được (khung mật khẩu ban đầu, nếu hiện, ghi "bỏ qua") | ⬜ Pass / ⬜ Fail |
+| U4 | `icacls C:\ProgramData\B2` chỉ còn `NT AUTHORITY\SYSTEM` và `BUILTIN\Administrators`; tài khoản Windows thường mở `C:\ProgramData\B2\keys` bị từ chối | ⬜ Pass / ⬜ Fail |
 
 ---
 

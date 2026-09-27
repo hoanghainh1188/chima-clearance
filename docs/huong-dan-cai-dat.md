@@ -31,7 +31,7 @@ Thông thường hệ thống gồm **2 máy** trong cùng mạng LAN:
 | Ổ đĩa | Còn trống ít nhất **1 GB** trên ổ `C:` |
 | Mạng | 2 máy cùng mạng LAN. Nhờ IT đặt **IP tĩnh** cho máy cổng vào và để mạng ở chế độ **Private** |
 | Internet | **Không cần** trên máy cài (chỉ cần ở máy chuẩn bị USB) |
-| Nhận từ đội phát triển | Gói `B2Clearance-<phiên bản>-offline.zip` và **bản PDF hướng dẫn** (có mật khẩu Admin ban đầu — giữ như tài liệu mật, không gửi qua email) |
+| Nhận từ đội phát triển | Gói `B2Clearance-<phiên bản>-offline.zip` |
 | Vật dụng | 1 USB, 1 phong bì để niêm phong mã phục hồi |
 
 ---
@@ -66,8 +66,8 @@ thư mục `Desktop\`, `Templates\`, `docs\` (chính hướng dẫn này và s�
 
 4. Chờ khoảng 1–3 phút. Script tự làm các bước: cài VC++ và WebView2 → chép chương trình
    vào `C:\Program Files\B2Clearance` → đăng ký dịch vụ **B2ClearanceService** (tự chạy cùng
-   Windows) → mở firewall TCP 5000 → **hiển thị MÃ PHỤC HỒI** → tạo shortcut trên Desktop →
-   khởi động dịch vụ.
+   Windows) → mở firewall TCP 5000 → **hiển thị MÃ PHỤC HỒI** → **hiển thị MẬT KHẨU ADMIN BAN
+   ĐẦU** → tạo shortcut trên Desktop → khởi động dịch vụ.
 5. Khi thấy dòng chữ xanh **HOAN TAT**, cài đặt đã xong.
 6. Ghi lại **địa chỉ IP** của máy này (chạy `ipconfig`, xem dòng `IPv4 Address`, ví dụ
    `192.168.1.10`) — cần cho bước cài máy cổng ra.
@@ -80,17 +80,25 @@ thư mục `Desktop\`, `Templates\`, `docs\` (chính hướng dẫn này và s�
 - Mã này là cách duy nhất để giải mã bản sao lưu nếu mất mật khẩu cài đặt.
 - Sau khi đã cất phong bì, **xóa** file `B2-Recovery-Code.txt` trên Desktop.
 
+### 🔑 Mật khẩu Admin ban đầu — BẮT BUỘC ghi lại
+
+- Ngay sau mã phục hồi, màn hình hiện khung **TÀI KHOẢN QUẢN TRỊ BAN ĐẦU**: tên đăng nhập
+  `admin` và một mật khẩu ngẫu nhiên dạng `Hk7m-Pq4R-xT2n-Wd9s` (có dấu `-`, phân biệt chữ
+  hoa/thường). Mỗi lần cài có mật khẩu **khác nhau**.
+- Mật khẩu chỉ hiện **một lần** và **không** được lưu ra file. Chép ra giấy trước khi nhấn Enter,
+  dùng ở § 4, rồi hủy tờ giấy sau khi đã đổi mật khẩu.
+- Lỡ mất trước khi đăng nhập lần đầu: PowerShell **Run as administrator**, chạy
+  `& "C:\Program Files\B2Clearance\B2Clearance.exe" reset-initial-admin` để cấp mật khẩu mới.
+
 ---
 
 ## 4. Đăng nhập lần đầu và cấu hình (trên máy cổng vào)
 
 1. Mở shortcut **"Sổ B2 — Cửa khẩu Chi Ma"** trên Desktop.
-2. Đăng nhập tài khoản **`admin`** với mật khẩu ban đầu ghi trong **bản PDF hướng dẫn** do đội
-   phát triển bàn giao (mật khẩu không có trong gói cài).
+2. Đăng nhập tài khoản **`admin`** với mật khẩu ban đầu đã ghi ở § 3.
 
-   > ⚠️ Mọi bản cài đều dùng **chung** mật khẩu ban đầu này. Máy cổng vào mở cổng 5000 cho mạng
-   > nội bộ, nên cho tới khi đổi mật khẩu, **bất kỳ máy nào trong LAN** cũng đăng nhập được.
-   > Làm bước 3 **ngay trong buổi cài**, không để qua ngày.
+   > ⚠️ Máy cổng vào mở cổng 5000 cho mạng nội bộ: cho tới khi đổi mật khẩu, ai biết mật khẩu
+   > ban đầu đều đăng nhập được từ máy khác trong LAN. Làm bước 3 **ngay trong buổi cài**.
 3. Hệ thống **bắt buộc đổi mật khẩu** ngay. Mật khẩu mới: ít nhất 10 ký tự, gồm ít nhất
    3 trong 4 loại: chữ hoa, chữ thường, số, ký tự đặc biệt.
 4. Cấu hình ban đầu trong ứng dụng:
@@ -156,6 +164,7 @@ Nếu sau này IP máy cổng vào thay đổi: sửa `serverUrl` trong file tr�
 | `The script ... contains a "#requires" statement for running as Administrator` | PowerShell chưa chạy quyền Administrator — mở lại theo § 3 bước 2. |
 | `-ClientOnly phai di kem -ServerUrl` | Thiếu IP máy cổng vào trong lệnh — xem § 5 bước 2. |
 | `robocopy that bai` | Kiểm tra ổ `C:` còn trống và không có ai đang mở ứng dụng Sổ B2 / thư mục `C:\Program Files\B2Clearance`. Chạy lại `install.ps1`. |
+| Mất mật khẩu Admin ban đầu trước lần đăng nhập đầu tiên | PowerShell **Run as administrator**: `& "C:\Program Files\B2Clearance\B2Clearance.exe" reset-initial-admin` — hiện mật khẩu mới và khởi động lại dịch vụ. Nếu báo "đã đổi mật khẩu" thì làm theo [`runbook.md`](runbook.md) § 2. |
 | `B2Clearance.exe install that bai` hoặc dòng lỗi có `sc.exe` | Chụp màn hình toàn bộ nội dung lỗi và gửi đội phát triển (§ 9). Không sửa tay trong Registry/Services. |
 | `Khong thay WebView2 standalone installer` | Thiếu file WebView2 trong `prereqs\` — làm lại § 2 bước 2–3, rồi chạy lại `install.ps1`. |
 | Ứng dụng mở lên rồi tự tắt | Thường do thiếu WebView2 hoặc VC++. Chạy thủ công 2 file trong `prereqs\`, rồi mở lại ứng dụng. |

@@ -65,7 +65,8 @@ prereqs/
 `install.ps1` sẽ tự động: cài VC++ + WebView2 (im lặng) → chép chương trình vào
 `C:\Program Files\B2Clearance` → gọi `B2Clearance.exe install` (tạo thư mục dữ liệu, chứng
 chỉ TLS localhost, đăng ký Windows Service tự khởi động, mở firewall TCP 5000, **sinh + hiển
-thị MÃ PHỤC HỒI**) → tạo shortcut desktop → khởi động dịch vụ.
+thị MÃ PHỤC HỒI** và **mật khẩu Admin ban đầu** sinh ngẫu nhiên cho riêng lần cài này — ADR-0009) →
+tạo shortcut desktop → khởi động dịch vụ.
 
 > 📋 **Ghi lại MÃ PHỤC HỒI** hiển thị trên màn hình (và file `B2-Recovery-Code.txt` trên
 > Desktop) vào phong bì dán kín — dùng để giải mã backup khi quên mật khẩu cài đặt (FR-026).
