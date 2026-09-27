@@ -84,3 +84,7 @@ litestream.yml.local
 .claude/settings.local.json
 .claude/scheduled_tasks.lock
 .claude/*.lock
+
+# Operator-docs PDFs (ADR-0008) — generated handouts; never commit
+tools/docs-pdf/out/
+.venv-docs-pdf/
