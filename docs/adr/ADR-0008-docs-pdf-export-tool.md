@@ -59,7 +59,7 @@ step is removed and the install-guide PDF stops being confidential.
 - **+** CommonMark parsing fixes the list/code/blockquote rendering class of bugs by construction.
 - **+** Password handling is explicit and reviewable instead of manual copy-paste.
 - **−** A second language (Python) in the repo, for tooling only. Mitigated by keeping it to one
-  ~120-line script with no framework and a pinned two-package environment.
+  ~170-line script with no framework and a pinned two-package environment.
 - **−** Requires Python 3 and a Chromium-based browser on the developer's machine (Chrome on the
   maintainer's Mac; Edge ships with Windows 10/11).
 - **−** Output depends on the local browser version's print engine; minor layout drift between
