@@ -399,22 +399,25 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
     private async Task Init()
     {
         _filterEventsEnabled = false;
-        if (Yards.Count == 0)
+
+        // Re-read on every visit (the page is shown again on each sidebar click) so a yard added
+        // under "Danh mục" appears in the filter without a restart. Rebuilding the picker source
+        // clears its selection, so the chosen yard is restored by Id; a yard deactivated
+        // meanwhile falls back to "Tất cả".
+        try
         {
-            try
-            {
-                var y = await _api.ListYardsAsync(includeInactive: false, page: 1, pageSize: 500).ConfigureAwait(true);
-                Yards = y.Items;
-                RebuildYardPickerSource();
-                SelectedYard ??= YardPickerSource[0];
-            }
-            catch (HttpRequestException)
-            {
-                // Yard filter optional; ledger still loads.
-            }
-            catch (ApiException)
-            {
-            }
+            var yardId = SelectedYard?.Id;
+            var y = await _api.ListYardsAsync(includeInactive: false, page: 1, pageSize: 500).ConfigureAwait(true);
+            Yards = y.Items;
+            RebuildYardPickerSource();
+            SelectedYard = YardPickerSource.FirstOrDefault(x => x.Id == yardId) ?? YardPickerSource[0];
+        }
+        catch (HttpRequestException)
+        {
+            // Yard filter optional; ledger still loads with the last known list.
+        }
+        catch (ApiException)
+        {
         }
 
         _filterEventsEnabled = true;

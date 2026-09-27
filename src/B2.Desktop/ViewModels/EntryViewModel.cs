@@ -260,10 +260,18 @@ public partial class EntryViewModel : ObservableObject, IDisposable
         ErrorMessage = null;
         try
         {
-            var p = await _api.ListProcessorsAsync(includeInactive: false, page: 1, pageSize: 500).ConfigureAwait(false);
-            var y = await _api.ListYardsAsync(includeInactive: false, page: 1, pageSize: 500).ConfigureAwait(false);
-            Processors = p.Items;
-            Yards = y.Items;
+            var processorsTask = _api.ListProcessorsAsync(includeInactive: false, page: 1, pageSize: 500);
+            var yardsTask = _api.ListYardsAsync(includeInactive: false, page: 1, pageSize: 500);
+            await Task.WhenAll(processorsTask, yardsTask).ConfigureAwait(true);
+
+            // Replacing ItemsSource clears the Picker selection, so a half-filled form keeps its
+            // choice by Id. A processor/yard deactivated meanwhile drops out and must be re-picked.
+            var processorId = SelectedProcessor?.Id;
+            var yardId = SelectedYard?.Id;
+            Processors = (await processorsTask.ConfigureAwait(true)).Items;
+            Yards = (await yardsTask.ConfigureAwait(true)).Items;
+            SelectedProcessor = Processors.FirstOrDefault(x => x.Id == processorId);
+            SelectedYard = Yards.FirstOrDefault(x => x.Id == yardId);
         }
         catch (Exception)
         {
