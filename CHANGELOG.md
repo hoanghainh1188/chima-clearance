@@ -6,6 +6,13 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 
+Nothing pending.
+
+## [1.2.1] — 2026-09-27 — clean installs register the service; install guide ships in the zip
+
+Every offline zip from v1.1.0 to v1.2.0 aborts a **clean** install at service registration
+(`sc.exe` syntax). Use **v1.2.1** for any new install, including the `T-S6-12` UAT PCs.
+
 ### Fixed
 
 #### Deployment — clean-install service registration, operator guide, release hardening
@@ -1109,7 +1116,8 @@ seeded admin bootstrap, and FR-017 force-rotate-password.
   applied during their respective sprints (M2 + M5 + M7 in S1; M3 + M4 + M6 in
   S3..S5). None block this release.
 
-[Unreleased]: https://example.invalid/chima-clearance/compare/v1.2.0...HEAD
+[Unreleased]: https://example.invalid/chima-clearance/compare/v1.2.1...HEAD
+[1.2.1]: https://example.invalid/chima-clearance/compare/v1.2.0...v1.2.1
 [1.2.0]: https://example.invalid/chima-clearance/compare/v1.1.1...v1.2.0
 [1.1.1]: https://example.invalid/chima-clearance/compare/v1.1.0...v1.1.1
 [1.1.0]: https://example.invalid/chima-clearance/compare/v1.0.0...v1.1.0
