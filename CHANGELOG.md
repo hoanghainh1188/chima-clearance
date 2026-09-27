@@ -6,6 +6,13 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 
+Nothing pending.
+
+## [1.2.2] — 2026-09-27 — data directory locked to SYSTEM + Administrators; single-PC install guide
+
+Upgrade **every** installed entry-gate PC with `.\install.ps1`: re-running it applies the new
+permissions on `C:\ProgramData\B2`. Use v1.2.2 for new installs and the `T-S6-12` UAT.
+
 ### Security
 
 #### Data directory readable by every local Windows user
@@ -1149,7 +1156,8 @@ seeded admin bootstrap, and FR-017 force-rotate-password.
   applied during their respective sprints (M2 + M5 + M7 in S1; M3 + M4 + M6 in
   S3..S5). None block this release.
 
-[Unreleased]: https://example.invalid/chima-clearance/compare/v1.2.1...HEAD
+[Unreleased]: https://example.invalid/chima-clearance/compare/v1.2.2...HEAD
+[1.2.2]: https://example.invalid/chima-clearance/compare/v1.2.1...v1.2.2
 [1.2.1]: https://example.invalid/chima-clearance/compare/v1.2.0...v1.2.1
 [1.2.0]: https://example.invalid/chima-clearance/compare/v1.1.1...v1.2.0
 [1.1.1]: https://example.invalid/chima-clearance/compare/v1.1.0...v1.1.1

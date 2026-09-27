@@ -112,13 +112,15 @@ Phase 1 ships in 6 × 2-week sprints (S0..S6) per
 | **S6** | Hardening (F-17 simple v1 + a11y + FR-021 archive + runbook + installer + UAT) | 🔄 in progress — `T-S6-01..11` done, **`T-S6-12` (on-site UAT) is the only task left**. **F-17** sticky plate–trailer suggestions (#59); **a11y** audit + `AxeRunner` static analysis, FR-021 `AnnualArchiveJob`, Vietnamese `docs/runbook.md` (#61); installer + UAT template (#63); UAT-blocking Desktop fixes (#64, #65). Then two post-`v1.0.0` rounds: **#103** self-contained offline deployment — Velopack dropped for a plain `B2Clearance.exe install\|uninstall` CLI + `deploy/install.ps1`, after `ADR-0007` evaluated and **rejected** a Go backend port (stack stays .NET); **#112** FR-021 archive data-loss + FR-022 un-exit race + KVGS lock + installer upgrade path. `docs/uat-001-b2-clearance.md` is the sign-off sheet for the remaining task and is still an unfilled template. |
 
 Released builds: **`v1.0.0`** (2026-06-07) → **`v1.1.0`** (2026-07-19) →
-**`v1.1.1`** (2026-07-26) → **`v1.2.0`** (2026-08-02) → **`v1.2.1`** (2026-09-27,
-current). `v1.2.0` re-checks the implementation against the unit's own documents —
-several rules the code enforced had no basis in them, and the exit-gate PC had never
-been deployable (see `CHANGELOG.md`). `v1.2.1` fixes clean installs (v1.1.0 to v1.2.0 fail
-at service registration) and ships the Vietnamese install guide
-(`docs/huong-dan-cai-dat.md`) inside the zip. **`v1.2.1` is the build to run `T-S6-12`
-with**; Phase-1 GA is gated on that sign-off, not on another feature.
+**`v1.1.1`** (2026-07-26) → **`v1.2.0`** (2026-08-02) → **`v1.2.1`** (2026-09-27) →
+**`v1.2.2`** (2026-09-27, current). `v1.2.0` re-checks the implementation against the
+unit's own documents — several rules the code enforced had no basis in them, and the
+exit-gate PC had never been deployable (see `CHANGELOG.md`). `v1.2.1` fixes clean installs
+(v1.1.0 to v1.2.0 fail at service registration) and ships the Vietnamese install guide
+(`docs/huong-dan-cai-dat.md`) inside the zip. `v1.2.2` locks `C:\ProgramData\B2` to SYSTEM +
+Administrators (keys were readable by every local user) and adds the single-PC layout to the
+guide. **`v1.2.2` is the build to run `T-S6-12` with**; Phase-1 GA is gated on that
+sign-off, not on another feature.
 
 ---
 
