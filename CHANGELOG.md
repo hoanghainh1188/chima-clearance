@@ -18,6 +18,14 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
   uninstall/reinstall and a v1.2.0 regression check, plus a note that the server's macOS dev
   mode stores secrets unencrypted.
 
+#### Docs — single-PC setup and where `b2-client.json` lives
+
+- `docs/huong-dan-cai-dat.md` adds the **one PC for both gates** layout (plain `install.ps1`,
+  skip § 5, never `-ClientOnly`; one account per officer so the audit log stays attributable),
+  states that `b2-client.json` exists **only on the exit-gate PC** and sits in the install
+  folder's `Desktop\` (not the Windows desktop), and adds a checklist item + troubleshooting row
+  for a missing file.
+
 ## [1.2.1] — 2026-09-27 — clean installs register the service; install guide ships in the zip
 
 Every offline zip from v1.1.0 to v1.2.0 aborts a **clean** install at service registration
