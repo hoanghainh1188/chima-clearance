@@ -4,14 +4,21 @@
 > Chi tiết kỹ thuật của gói cài: [`deployment-offline.md`](deployment-offline.md).
 > Vận hành hằng ngày sau khi cài: [`runbook.md`](runbook.md).
 
-Hệ thống gồm **2 máy** trong cùng mạng LAN:
+Thông thường hệ thống gồm **2 máy** trong cùng mạng LAN:
 
 | Máy | Vai trò | Lệnh cài |
 | --- | --- | --- |
 | **Cổng vào** | Máy chủ (chạy dịch vụ, giữ cơ sở dữ liệu và bản sao lưu) + ứng dụng Sổ B2 | `.\install.ps1` |
 | **Cổng ra** | Chỉ ứng dụng Sổ B2, kết nối tới máy cổng vào | `.\install.ps1 -ClientOnly -ServerUrl <IP máy cổng vào>` |
+| **Một máy dùng cho cả hai cổng** | Máy chủ + ứng dụng, làm cả việc cổng vào lẫn cổng ra | `.\install.ps1` |
 
 **Luôn cài máy cổng vào trước.**
+
+> **Chỉ có một máy?** Cài như máy cổng vào (§ 3, § 4) rồi dừng — **bỏ qua § 5**, không dùng
+> `-ClientOnly`. Ứng dụng trên máy đó làm được cả nhập xe lẫn xác nhận xe ra; quyền đi theo
+> tài khoản, không theo máy. Mỗi cán bộ vẫn đăng nhập **tài khoản riêng** (đăng xuất khi đổi
+> người) để nhật ký ghi đúng ai làm gì. Sau này thêm máy cổng ra: chỉ cần làm § 5 trên máy mới,
+> không phải cài lại máy này.
 
 ---
 
@@ -24,7 +31,7 @@ Hệ thống gồm **2 máy** trong cùng mạng LAN:
 | Ổ đĩa | Còn trống ít nhất **1 GB** trên ổ `C:` |
 | Mạng | 2 máy cùng mạng LAN. Nhờ IT đặt **IP tĩnh** cho máy cổng vào và để mạng ở chế độ **Private** |
 | Internet | **Không cần** trên máy cài (chỉ cần ở máy chuẩn bị USB) |
-| Nhận từ đội phát triển | Gói `B2Clearance-<phiên bản>-offline.zip` và **mật khẩu Admin ban đầu** (bàn giao riêng, không gửi qua email) |
+| Nhận từ đội phát triển | Gói `B2Clearance-<phiên bản>-offline.zip` và **bản PDF hướng dẫn** (có mật khẩu Admin ban đầu — giữ như tài liệu mật, không gửi qua email) |
 | Vật dụng | 1 USB, 1 phong bì để niêm phong mã phục hồi |
 
 ---
@@ -78,7 +85,12 @@ thư mục `Desktop\`, `Templates\`, `docs\` (chính hướng dẫn này và s�
 ## 4. Đăng nhập lần đầu và cấu hình (trên máy cổng vào)
 
 1. Mở shortcut **"Sổ B2 — Cửa khẩu Chi Ma"** trên Desktop.
-2. Đăng nhập tài khoản **`admin`** với mật khẩu ban đầu do đội phát triển bàn giao.
+2. Đăng nhập tài khoản **`admin`** với mật khẩu ban đầu ghi trong **bản PDF hướng dẫn** do đội
+   phát triển bàn giao (mật khẩu không có trong gói cài).
+
+   > ⚠️ Mọi bản cài đều dùng **chung** mật khẩu ban đầu này. Máy cổng vào mở cổng 5000 cho mạng
+   > nội bộ, nên cho tới khi đổi mật khẩu, **bất kỳ máy nào trong LAN** cũng đăng nhập được.
+   > Làm bước 3 **ngay trong buổi cài**, không để qua ngày.
 3. Hệ thống **bắt buộc đổi mật khẩu** ngay. Mật khẩu mới: ít nhất 10 ký tự, gồm ít nhất
    3 trong 4 loại: chữ hoa, chữ thường, số, ký tự đặc biệt.
 4. Cấu hình ban đầu trong ứng dụng:
@@ -106,8 +118,13 @@ thư mục `Desktop\`, `Templates\`, `docs\` (chính hướng dẫn này và s�
    máy cổng vào.
 4. Mở ứng dụng, đăng nhập bằng tài khoản đã tạo ở § 4.
 
-Nếu sau này IP máy cổng vào thay đổi: sửa `serverUrl` trong
-`C:\Program Files\B2Clearance\Desktop\b2-client.json` rồi mở lại ứng dụng — không cần cài lại.
+Tham số `-ServerUrl` tạo file `C:\Program Files\B2Clearance\Desktop\b2-client.json` (thư mục
+`Desktop` **bên trong thư mục cài**, không phải màn hình Desktop của Windows). File này **chỉ có
+trên máy cổng ra** — máy cổng vào (hoặc máy dùng cho cả hai cổng) không có file này là đúng: ứng
+dụng tự kết nối tới dịch vụ trên chính máy đó.
+
+Nếu sau này IP máy cổng vào thay đổi: sửa `serverUrl` trong file trên (mở Notepad bằng
+**Run as administrator**) rồi mở lại ứng dụng — không cần cài lại.
 
 ---
 
@@ -125,6 +142,8 @@ Nếu sau này IP máy cổng vào thay đổi: sửa `serverUrl` trong
 **Máy cổng ra**
 
 - [ ] Mở ứng dụng, đăng nhập được, góc trên hiện **🟢 Online**.
+- [ ] File `C:\Program Files\B2Clearance\Desktop\b2-client.json` tồn tại và `serverUrl` đúng IP
+      máy cổng vào.
 - [ ] Nhập thử một xe ở cổng vào → xe hiện trên màn hình cổng ra trong vài giây.
 
 ---
@@ -141,6 +160,7 @@ Nếu sau này IP máy cổng vào thay đổi: sửa `serverUrl` trong
 | `Khong thay WebView2 standalone installer` | Thiếu file WebView2 trong `prereqs\` — làm lại § 2 bước 2–3, rồi chạy lại `install.ps1`. |
 | Ứng dụng mở lên rồi tự tắt | Thường do thiếu WebView2 hoặc VC++. Chạy thủ công 2 file trong `prereqs\`, rồi mở lại ứng dụng. |
 | Máy cổng vào báo **🔴 Mất kết nối** | Kiểm tra dịch vụ: `Get-Service B2ClearanceService`. Nếu `Stopped` → `Start-Service B2ClearanceService`, chờ 15 giây. |
+| Máy cổng ra thiếu file `b2-client.json` | Lúc cài chưa truyền `-ServerUrl` (không thấy dòng `Endpoint desktop -> ...`). Chạy lại `.\install.ps1 -ClientOnly -ServerUrl <IP máy cổng vào>`. |
 | Máy cổng vào 🟢 nhưng máy cổng ra **🔴 Mất kết nối** | 1) Trên máy cổng ra: `ping <IP máy cổng vào>`. 2) Đối chiếu IP trong `b2-client.json` (§ 5). 3) Trên máy cổng vào: `Get-NetConnectionProfile` phải là `Private` — firewall chỉ mở cổng 5000 cho mạng Private; nếu là `Public`, nhờ IT chuyển sang Private. |
 
 Chạy lại `install.ps1` là an toàn: dữ liệu tại `C:\ProgramData\B2` được giữ nguyên.
