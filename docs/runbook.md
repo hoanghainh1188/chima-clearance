@@ -53,9 +53,20 @@ Get-ChildItem C:\ProgramData\B2\logs\b2-*.log |
 
 ## 2. Admin quên mật khẩu
 
-> ⚠️ **v1 chưa có công cụ tự đặt lại mật khẩu Admin.** Lệnh
-> `B2.Server.Service.exe --reset-admin-password` từng được mô tả ở đây **chưa được xây dựng**
-> — đừng chạy lệnh này.
+> ⚠️ Lệnh `B2.Server.Service.exe --reset-admin-password` từng được mô tả ở đây **không tồn
+> tại** — đừng chạy lệnh này.
+
+**Chưa đăng nhập lần nào** (mất mật khẩu ban đầu hiện lúc cài): trên máy cổng vào, PowerShell
+**Run as administrator**:
+
+```powershell
+& "C:\Program Files\B2Clearance\B2Clearance.exe" reset-initial-admin
+```
+
+Lệnh hiện mật khẩu ban đầu mới và khởi động lại dịch vụ. Lệnh **từ chối** nếu admin đã từng tự
+đổi mật khẩu — khi đó làm theo các bước dưới.
+
+**Đã từng đổi mật khẩu rồi quên:**
 
 1. Nếu còn một tài khoản Admin khác đăng nhập được: vào **Quản trị → Người dùng**, chọn tài
    khoản Admin bị quên mật khẩu → **Đặt lại mật khẩu** (xem mục 6, Lỗi 3).

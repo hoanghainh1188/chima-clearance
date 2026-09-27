@@ -30,6 +30,7 @@ public static class ApplicationServiceCollectionExtensions
         services.AddScoped<LoginCommandHandler>();
         services.AddScoped<RefreshCommandHandler>();
         services.AddScoped<ChangePasswordCommandHandler>();
+        services.AddScoped<AdminPasswordBootstrapper>();
         services.AddScoped<UserCommandHandler>();
         services.AddScoped<MasterDataCommandHandler>();
         services.AddScoped<CreateDeclarationCommandHandler>();

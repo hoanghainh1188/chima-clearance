@@ -18,7 +18,7 @@ clients. SQLite + Litestream for persistence and continuous backup.
 > 7. [`.specify/memory/constitution.md`](./.specify/memory/constitution.md) — non-negotiable rules (v1.1.0)
 > 8. [`docs/adr/`](./docs/adr/) — Architecture Decision Records (ADR-0001..0006 locked;
 >    ADR-0007 evaluated a Go-backend port — rejected, stack stays .NET; ADR-0008 dev-only
->    PDF export tool for the operator docs)
+>    PDF export tool for the operator docs; ADR-0009 per-install initial Admin password)
 
 ---
 
@@ -47,7 +47,7 @@ chima-clearance/
 │   ├── B2.Desktop.Tests/           # ViewModel unit + accessibility AC.
 │   └── B2.Performance.Tests/       # NBomber scenarios; nightly on the spec VM.
 ├── docs/
-│   ├── adr/                        # ADR-0001..0006 (see § 9 of impl plan) + ADR-0007 (Go-port eval) + ADR-0008 (docs PDF tool).
+│   ├── adr/                        # ADR-0001..0006 (see § 9 of impl plan) + ADR-0007 (Go-port eval) + ADR-0008 (docs PDF tool) + ADR-0009 (initial Admin password).
 │   ├── huong-dan-cai-dat.md        # Vietnamese step-by-step install guide (gate operators).
 │   ├── runbook.md                  # Vietnamese operator runbook (S6 deliverable).
 │   ├── prompts.md                  # Spec Kit prompts (per-skill directives).

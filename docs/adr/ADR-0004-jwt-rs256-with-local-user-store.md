@@ -24,7 +24,8 @@ Adopt **JWT with RS256** signatures + a **local user store** in SQLite, with
   use, revocation on logout.
 - BCrypt cost = 10. Password policy: ≥ 10 characters, 3 of 4 character classes.
 - Default Admin (`username = "admin"`, password = `"Change-Me-Now-1!"`) ships with
-  `MustChangePassword = true` (FR-017); the system stays in a degraded state until
+  `MustChangePassword = true` (FR-017) — **superseded by ADR-0009**: the password is now
+  generated per install by the installer and the shared seed hash is retired (migration 0004); the system stays in a degraded state until
   the password is rotated, surfaced on the Health page (F-18).
 - Account lockout after 5 failed logins within 10 min, lasting 15 min (FR-018).
 - Idle-session timeout: 30 min (FR-018).

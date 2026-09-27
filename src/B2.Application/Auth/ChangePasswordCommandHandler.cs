@@ -14,19 +14,22 @@ public sealed class ChangePasswordCommandHandler
     private readonly IClock _clock;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditContext _audit;
+    private readonly IAdminBootstrapStore _adminBootstrap;
 
     public ChangePasswordCommandHandler(
         IUserRepository users,
         IPasswordHasher hasher,
         IClock clock,
         IUnitOfWork unitOfWork,
-        IAuditContext audit)
+        IAuditContext audit,
+        IAdminBootstrapStore adminBootstrap)
     {
         _users = users;
         _hasher = hasher;
         _clock = clock;
         _unitOfWork = unitOfWork;
         _audit = audit;
+        _adminBootstrap = adminBootstrap;
     }
 
     public async Task HandleAsync(Guid userId, ChangePasswordRequest request, CancellationToken cancellationToken)
@@ -47,6 +50,12 @@ public sealed class ChangePasswordCommandHandler
         var before = System.Text.Json.JsonSerializer.Serialize(new { mustChangePassword = user.MustChangePassword });
         user.SetPasswordHash(_hasher.HashPassword(request.NewPassword), mustChange: false);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        if (user.Username == AdminPasswordBootstrapper.SeedAdminUsername)
+        {
+            // F-01: from now on no installer run may replace this password (ADR-0009).
+            _adminBootstrap.WriteState(AdminPasswordState.Rotated);
+        }
+
         var after = System.Text.Json.JsonSerializer.Serialize(new { mustChangePassword = user.MustChangePassword });
         _audit.Set(new AuditEnvelope(userId, AuditAction.Update, nameof(User), user.Id, before, after, null));
     }

@@ -22,7 +22,8 @@ do not infer requirements from existing code alone:
 6. `.specify/memory/constitution.md` (v1.1.0) — **highest authority; non-negotiable**
 7. `docs/adr/ADR-0001..0006` — locked architectural decisions
    (`ADR-0007` evaluated a Go-backend port — **rejected**, stack stays .NET;
-   `ADR-0008` dev-only PDF export tool for the operator docs)
+   `ADR-0008` dev-only PDF export tool for the operator docs;
+   `ADR-0009` per-install initial Admin password)
 
 When Spec Kit artifacts (`specs/001-b2-clearance/{spec,plan,tasks}.md`) conflict
 with the hand-written `specs/0X-*.md`, follow the Spec Kit artifacts.
