@@ -6,7 +6,17 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 
-Nothing pending.
+### Added
+
+#### Docs — install rehearsal on a Windows VM for Mac developers
+
+- `docs/deployment-offline.md` gains "Diễn tập cài đặt trên máy ảo": which Windows VM to use on
+  Apple Silicon vs Intel Macs, a `clean` snapshot per run (re-installing over a used VM takes
+  the upgrade path and hides clean-install-only bugs such as the v1.1.0–v1.2.0 `sc create`
+  failure), host-only networking to mimic the offline LAN (and flipping it to the **Private**
+  profile the firewall rule needs), an 8-step scenario covering both gates, upgrade,
+  uninstall/reinstall and a v1.2.0 regression check, plus a note that the server's macOS dev
+  mode stores secrets unencrypted.
 
 ## [1.2.1] — 2026-09-27 — clean installs register the service; install guide ships in the zip
 

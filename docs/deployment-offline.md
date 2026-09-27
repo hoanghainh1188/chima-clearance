@@ -114,6 +114,98 @@ nếu đã tồn tại (idempotent).
 .\uninstall.ps1 -PurgeData   # xóa cả dữ liệu (không hồi phục được)
 ```
 
+## Diễn tập cài đặt trên máy ảo (dành cho dev trên Mac)
+
+Gói cài và app desktop **chỉ chạy trên Windows** (`win-x64`, Windows Service, `sc.exe`,
+WebView2), nên trên Mac không cài thử trực tiếp được. Trước mỗi đợt UAT hoặc sau khi sửa
+`install.ps1` / `B2.Installer`, diễn tập trên máy ảo Windows để bắt lỗi cài đặt sớm — lỗi
+`sc create` của v1.1.0–v1.2.0 chỉ lộ ra trên máy **sạch**, đúng loại lỗi mà bước này bắt được.
+
+> Máy ảo **không thay thế** kiểm tra trên PC x64 thật ở cửa khẩu (hiệu năng, driver, chính sách
+> nhóm của đơn vị). Kết quả UAT chính thức vẫn ghi trên PC thật.
+
+### Chọn máy ảo
+
+| Mac | Máy ảo | Độ sát với PC thật |
+| --- | --- | --- |
+| Apple Silicon (M1 trở lên) | **Windows 11 ARM** trên Parallels Desktop, VMware Fusion hoặc UTM | Khá — Windows 11 ARM chạy app x64 qua giả lập. Đủ để kiểm tra script, đăng ký service, firewall, đăng nhập, 2 máy qua LAN. |
+| Intel | **Windows 10/11 x64** trên Parallels / VMware Fusion / VirtualBox | Sát nhất — cùng kiến trúc với PC cửa khẩu. |
+
+Tránh chạy Windows x64 giả lập hoàn toàn trên Apple Silicon (UTM chế độ *Emulate*): chậm tới mức
+không dùng được cho diễn tập.
+
+Cấu hình tối thiểu mỗi máy ảo: 2 vCPU, 4 GB RAM, 64 GB ổ đĩa. Windows chưa kích hoạt vẫn dùng
+được cho diễn tập.
+
+### Chuẩn bị máy ảo sạch (làm 1 lần)
+
+1. Cài Windows, tạo tài khoản quản trị cục bộ. **Không** cài .NET, Visual Studio hay công cụ dev
+   — máy ảo phải giống PC cửa khẩu.
+2. Tắt đồng bộ/chia sẻ thư mục mặc định nếu không cần, rồi **chụp snapshot** tên `clean`.
+   Mọi lần diễn tập đều bắt đầu bằng việc khôi phục snapshot này — cài đè lên máy đã từng cài
+   sẽ đi nhánh *nâng cấp* và che mất lỗi chỉ có ở lần cài đầu.
+3. Muốn diễn tập máy cổng ra: nhân bản (clone) máy ảo thành máy thứ hai, đổi tên máy
+   (`Rename-Computer`) để 2 máy không trùng tên trên mạng, chụp snapshot `clean` cho máy này.
+
+### Mô phỏng mạng offline + LAN
+
+- Đặt card mạng của cả 2 máy ảo ở chế độ **host-only** (Parallels: *Host-Only Network*;
+  VMware Fusion: *Private to my Mac*; UTM: *Host Only*). Máy ảo thấy nhau nhưng **không** ra
+  internet — đúng như cửa khẩu.
+- Mạng host-only thường bị Windows xếp là **Public**, mà rule firewall TCP 5000 do installer tạo
+  chỉ áp cho **Private**. Trên máy cổng vào, kiểm tra và chỉnh:
+
+  ```powershell
+  Get-NetConnectionProfile
+  Set-NetConnectionProfile -InterfaceAlias '<tên card>' -NetworkCategory Private
+  ```
+
+  Ghi nhận nếu phải làm bước này — PC thật có thể gặp đúng tình huống đó
+  (xem [`huong-dan-cai-dat.md`](huong-dan-cai-dat.md) § 7).
+
+### Đưa gói cài vào máy ảo
+
+Chuẩn bị thư mục như § Bước 1 trên Mac (giải nén zip, thêm WebView2 Standalone **x64** vào
+`prereqs\`), rồi chép vào máy ảo bằng thư mục chia sẻ hoặc kéo-thả. **Chép vào `C:\B2-Setup\`
+trước khi chạy** — không chạy `install.ps1` trực tiếp từ đường dẫn mạng/chia sẻ
+(`\\Mac\...`), vì robocopy và ExecutionPolicy xử lý đường dẫn UNC khác ổ cục bộ.
+
+Windows 11 đã có sẵn WebView2 Runtime, nên trên máy ảo Windows 11 bước cài WebView2 gần như
+không có tác dụng; PC cửa khẩu chạy Windows 10 thì có. Vẫn đặt file vào `prereqs\` để diễn tập
+đúng quy trình.
+
+### Kịch bản diễn tập
+
+Làm theo [`huong-dan-cai-dat.md`](huong-dan-cai-dat.md) từng bước, như người cài thật. Ghi lại
+mọi chỗ tài liệu thiếu hoặc sai.
+
+| # | Kịch bản | Kỳ vọng |
+| --- | --- | --- |
+| 1 | Máy cổng vào (snapshot `clean`): `.\install.ps1` | Hiện mã phục hồi, `HOAN TAT`; `Get-Service B2ClearanceService` → `Running` |
+| 2 | Đăng nhập `admin` lần đầu | Bị buộc đổi mật khẩu; sau đó 🟢 Online |
+| 3 | Máy cổng ra (snapshot `clean`): `.\install.ps1 -ClientOnly -ServerUrl <IP máy cổng vào>` | `HOAN TAT (client-only)`; app 🟢 Online |
+| 4 | Nhập 1 xe ở cổng vào | Xe hiện trên máy cổng ra trong vài giây |
+| 5 | Tắt service trên máy cổng vào | Máy cổng ra chuyển 🔴 Mất kết nối; bật lại → 🟢 |
+| 6 | Chạy lại `.\install.ps1` trên máy cổng vào (nâng cấp) | Không lỗi; dữ liệu ở bước 4 còn nguyên; mã phục hồi không đổi |
+| 7 | `.\uninstall.ps1` rồi `.\install.ps1` lại | Dữ liệu còn nguyên (không có `-PurgeData`) |
+| 8 | *(kiểm tra hồi quy)* Khôi phục `clean`, cài bằng gói **v1.2.0** | **Thất bại** ở bước đăng ký dịch vụ (`sc.exe`) — xác nhận máy ảo tái hiện được lỗi đã sửa ở v1.2.1 |
+
+Sau khi xong, khôi phục snapshot `clean` để lần sau dùng lại. Lỗi phát hiện được: mở issue kèm
+ảnh chụp màn hình và log (`C:\ProgramData\B2\logs\`, `%LOCALAPPDATA%\B2\logs\`).
+
+### Chạy server trên Mac (không phải diễn tập cài đặt)
+
+Để phát triển/kiểm thử API, server chạy thẳng trên Mac:
+
+```bash
+dotnet run --project src/B2.Server.Service -- --console
+```
+
+Trên macOS, server **không** dùng DPAPI — secrets (mật khẩu cài đặt, mã phục hồi, khóa JWT) được
+lưu ở file dev **không mã hóa** (`keys/backup-secrets.dev.json`, `keys/jwt-rsa.dev.pem`) trong
+thư mục dữ liệu của người dùng. Chỉ dùng cho dev, không bao
+giờ cho dữ liệu thật. App desktop không build được trên Mac.
+
 ## Vì sao chọn xcopy thay vì Velopack
 
 - Client **offline vĩnh viễn** ⇒ cơ chế auto-update/feed của Velopack là gánh nặng vô dụng.
