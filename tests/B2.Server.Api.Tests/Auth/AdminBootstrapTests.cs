@@ -45,7 +45,7 @@ public sealed class AdminBootstrapTests
         _ = factory.CreateClient();
         var keys = Path.Combine(factory.DataDirectory, "keys");
 
-        File.Exists(Path.Combine(keys, AdminBootstrapStore.DevFileName)).Should().BeFalse();
+        File.Exists(AdminBootstrapFiles.PendingPath(factory.DataDirectory)).Should().BeFalse();
         (await File.ReadAllTextAsync(Path.Combine(keys, AdminBootstrapStore.StateFileName))).Should().Be("initial");
 
         using var scope = factory.Services.CreateScope();
@@ -78,8 +78,7 @@ public sealed class AdminBootstrapTests
 
         // Simulate an upgrade re-issuing an initial password, then the next service start.
         var keys = Path.Combine(factory.DataDirectory, "keys");
-        await File.WriteAllTextAsync(
-            Path.Combine(keys, AdminBootstrapStore.DevFileName), "{\"Password\":\"Zz9x-Yy8w-Xx7v-Ww6u\"}");
+        AdminBootstrapFiles.StagePending(factory.DataDirectory, "Zz9x-Yy8w-Xx7v-Ww6u");
         using (var scope = factory.Services.CreateScope())
         {
             var (outcome, _) = await scope.ServiceProvider.GetRequiredService<AdminPasswordBootstrapper>()
@@ -87,7 +86,7 @@ public sealed class AdminBootstrapTests
             outcome.Should().Be(AdminBootstrapOutcome.AdminAlreadyRotated);
         }
 
-        File.Exists(Path.Combine(keys, AdminBootstrapStore.DevFileName)).Should().BeFalse();
+        File.Exists(AdminBootstrapFiles.PendingPath(factory.DataDirectory)).Should().BeFalse();
         (await File.ReadAllTextAsync(Path.Combine(keys, AdminBootstrapStore.StateFileName))).Should().Be("rotated");
         var stillWorks = await client.PostAsJsonAsync(
             "/api/auth/login", new LoginRequest("admin", AuthHttpExtensions.BootstrappedAdminPassword));
@@ -140,8 +139,7 @@ public sealed class AdminBootstrapTests
         client.DefaultRequestHeaders.Authorization = null;
 
         var keys = Path.Combine(factory.DataDirectory, "keys");
-        await File.WriteAllTextAsync(
-            Path.Combine(keys, AdminBootstrapStore.DevFileName), "{\"Password\":\"Zz9x-Yy8w-Xx7v-Ww6u\"}");
+        AdminBootstrapFiles.StagePending(factory.DataDirectory, "Zz9x-Yy8w-Xx7v-Ww6u");
         using (var scope = factory.Services.CreateScope())
         {
             var (outcome, _) = await scope.ServiceProvider.GetRequiredService<AdminPasswordBootstrapper>()

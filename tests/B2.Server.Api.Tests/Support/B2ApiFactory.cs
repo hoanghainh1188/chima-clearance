@@ -1,4 +1,3 @@
-using B2.Infrastructure.Auth;
 using B2.Server.Api;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
@@ -27,10 +26,7 @@ public sealed class B2ApiFactory : WebApplicationFactory<Program>, IAsyncDisposa
         Directory.CreateDirectory(_dataDirectory);
         if (ProvisionAdminPassword)
         {
-            var keys = Directory.CreateDirectory(Path.Combine(_dataDirectory, "keys"));
-            File.WriteAllText(
-                Path.Combine(keys.FullName, AdminBootstrapStore.DevFileName),
-                $"{{\"Password\":\"{AuthHttpExtensions.InitialAdminPassword}\"}}");
+            AdminBootstrapFiles.StagePending(_dataDirectory, AuthHttpExtensions.InitialAdminPassword);
         }
 
         builder.UseEnvironment("Testing");
