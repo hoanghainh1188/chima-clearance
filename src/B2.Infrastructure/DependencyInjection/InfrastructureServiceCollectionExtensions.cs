@@ -52,6 +52,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IBackupSnapshotService>(_ => new BackupSnapshotService(Path.Combine(dataDirectory, "db", "b2.db")));
         services.AddSingleton<IDatabaseRestoreService>(_ => new DatabaseRestoreService(Path.Combine(dataDirectory, "db", "b2.db")));
         services.AddSingleton<IBackupSecretsStore>(_ => new BackupSecretsStore(dataDirectory));
+        services.AddSingleton<IAdminBootstrapStore>(_ => new AdminBootstrapStore(dataDirectory));
         services.AddSingleton<ISoB2Exporter>(_ => new ClosedXmlSoB2Exporter(dataDirectory));
 
         if (enableBackgroundJobs)

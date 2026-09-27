@@ -1,3 +1,4 @@
+using System.Text;
 using B2.Installer;
 
 // Standalone offline installer CLI (no update framework). Runs elevated (app.manifest
@@ -7,8 +8,13 @@ using B2.Installer;
 //
 //   B2Clearance.exe install    → scaffold dirs, TLS cert, service, firewall, recovery code, start
 //   B2Clearance.exe uninstall  → stop + remove the service and firewall rule (keeps data)
+//   B2Clearance.exe reset-initial-admin → re-issue the initial Admin password (F-01), only
+//                                          while the Admin has not chosen their own yet
 //
 // All actions are idempotent, so re-running install over an existing deployment is safe.
+
+// Vietnamese text and box-drawing characters; the legacy console code page mangles both.
+Console.OutputEncoding = Encoding.UTF8;
 
 var command = args.Length > 0 ? args[0].Trim().ToLowerInvariant() : string.Empty;
 
@@ -22,9 +28,15 @@ if (command == "install")
     InstallerActions.RegisterService(appDir);
     InstallerActions.AddFirewallRule();
     RecoveryCodeSetup.InitializeAndDisplay();
+    AdminBootstrapSetup.InitializeAndDisplay();
     InstallerActions.StartService();
     Console.WriteLine("Cài đặt hoàn tất. Dịch vụ B2 đã được đăng ký và khởi động.");
     return 0;
+}
+
+if (command == "reset-initial-admin")
+{
+    return AdminBootstrapSetup.ResetInitialAdmin();
 }
 
 if (command == "uninstall")
@@ -36,6 +48,6 @@ if (command == "uninstall")
 
 var version = typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "dev";
 Console.WriteLine($"B2 Clearance Installer v{version}");
-Console.WriteLine("Dùng: B2Clearance.exe install | uninstall   (chạy bằng quyền Administrator)");
+Console.WriteLine("Dùng: B2Clearance.exe install | uninstall | reset-initial-admin   (chạy bằng quyền Administrator)");
 Console.WriteLine("Thông thường bạn chạy deploy\\install.ps1 thay vì gọi trực tiếp.");
 return 0;

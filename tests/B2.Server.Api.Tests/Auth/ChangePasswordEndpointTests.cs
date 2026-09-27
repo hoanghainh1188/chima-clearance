@@ -97,7 +97,7 @@ public sealed class ChangePasswordEndpointTests
 
         var weak = await client.PostAsJsonAsync(
             "/api/auth/change-password",
-            new ChangePasswordRequest("Change-Me-Now-1!", "short"));
+            new ChangePasswordRequest(AuthHttpExtensions.BootstrappedAdminPassword, "short"));
         weak.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
 }
