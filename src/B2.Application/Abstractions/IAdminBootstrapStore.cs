@@ -14,6 +14,12 @@ public interface IAdminBootstrapStore
     /// <summary>Deletes the pending password (after it was applied or deliberately ignored).</summary>
     void DeletePending();
 
-    /// <summary>Records the Admin password state for the installer to read.</summary>
+    /// <summary>The last recorded state, or <c>null</c> before the first F-01 start.</summary>
+    AdminPasswordState? ReadState();
+
+    /// <summary>
+    /// Records the Admin password state for the installer to read. Best effort: a write
+    /// failure is logged by the implementation, never thrown to the caller.
+    /// </summary>
     void WriteState(AdminPasswordState state);
 }

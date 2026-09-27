@@ -3,8 +3,10 @@ using System.Net.Http.Json;
 using B2.Application.Auth;
 using B2.Infrastructure.Auth;
 using B2.Infrastructure.Persistence;
+using B2.Infrastructure.Migrations;
 using B2.Server.Api.Tests.Support;
 using B2.Shared.Contracts.Auth;
+using B2.Shared.Contracts.Users;
 using FluentAssertions;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
@@ -90,5 +92,74 @@ public sealed class AdminBootstrapTests
         var stillWorks = await client.PostAsJsonAsync(
             "/api/auth/login", new LoginRequest("admin", AuthHttpExtensions.BootstrappedAdminPassword));
         stillWorks.StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    [Trait("Feature", "F-01")]
+    public async Task Admin_password_change_marks_state_rotated_immediately()
+    {
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+
+        await client.LoginAsAdminAsync(); // forced change → BootstrappedAdminPassword
+
+        var state = Path.Combine(factory.DataDirectory, "keys", AdminBootstrapStore.StateFileName);
+        (await File.ReadAllTextAsync(state)).Should().Be("rotated");
+    }
+
+    [Fact]
+    [Trait("Feature", "F-01")]
+    public async Task Reset_by_another_admin_does_not_reopen_the_initial_password()
+    {
+        // Security review regression: rotate `admin`, have a second Admin reset it (sets
+        // MustChangePassword again), stage a new initial password, restart — must be ignored.
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+        (await client.PostAsJsonAsync(
+            "/api/users", new UserCreateRequest("admin2", "Second Admin", UserRoleDto.Admin, "Temp-Admin2-Pw-1!")))
+            .EnsureSuccessStatusCode();
+        client.DefaultRequestHeaders.Authorization = null;
+        var second = (await (await client.PostAsJsonAsync(
+            "/api/auth/login", new LoginRequest("admin2", "Temp-Admin2-Pw-1!")))
+            .Content.ReadFromJsonAsync<LoginResponse>(TestJson.Options))!;
+        client.SetBearer(second.AccessToken);
+        (await client.PostAsJsonAsync(
+            "/api/auth/change-password", new ChangePasswordRequest("Temp-Admin2-Pw-1!", "Second-Admin-Pw-2!")))
+            .EnsureSuccessStatusCode();
+        client.DefaultRequestHeaders.Authorization = null;
+        second = (await (await client.PostAsJsonAsync(
+            "/api/auth/login", new LoginRequest("admin2", "Second-Admin-Pw-2!")))
+            .Content.ReadFromJsonAsync<LoginResponse>(TestJson.Options))!;
+        client.SetBearer(second.AccessToken);
+        (await client.PostAsJsonAsync(
+            $"/api/users/{RetireSharedAdminSeedHash0004.SeedAdminId}/reset-password",
+            new PasswordResetRequest("Temp-Reset-Pw-3!")))
+            .EnsureSuccessStatusCode();
+        client.DefaultRequestHeaders.Authorization = null;
+
+        var keys = Path.Combine(factory.DataDirectory, "keys");
+        await File.WriteAllTextAsync(
+            Path.Combine(keys, AdminBootstrapStore.DevFileName), "{\"Password\":\"Zz9x-Yy8w-Xx7v-Ww6u\"}");
+        using (var scope = factory.Services.CreateScope())
+        {
+            var (outcome, _) = await scope.ServiceProvider.GetRequiredService<AdminPasswordBootstrapper>()
+                .RunAsync(CancellationToken.None);
+            outcome.Should().Be(AdminBootstrapOutcome.AdminAlreadyRotated);
+        }
+
+        (await client.PostAsJsonAsync("/api/auth/login", new LoginRequest("admin", "Zz9x-Yy8w-Xx7v-Ww6u")))
+            .StatusCode.Should().Be(HttpStatusCode.Unauthorized);
+        (await client.PostAsJsonAsync("/api/auth/login", new LoginRequest("admin", "Temp-Reset-Pw-3!")))
+            .StatusCode.Should().Be(HttpStatusCode.OK);
+    }
+
+    [Fact]
+    [Trait("Feature", "F-01")]
+    public void Migration_placeholder_matches_the_bootstrapper_constant()
+    {
+        RetireSharedAdminSeedHash0004.UnusablePlaceholderHash
+            .Should().Be(AdminPasswordBootstrapper.RetiredSeedPlaceholderHash);
     }
 }

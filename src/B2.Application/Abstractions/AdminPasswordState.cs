@@ -6,6 +6,10 @@ public enum AdminPasswordState
     /// <summary><c>MustChangePassword</c> is still true: the installer may issue a new initial password.</summary>
     Initial = 0,
 
-    /// <summary>The Admin chose their own password: the installer must never replace it.</summary>
+    /// <summary>
+    /// The Admin chose their own password: the installer must never replace it. One-way —
+    /// once recorded it is never downgraded, even if another Admin later resets the account
+    /// (which sets <c>MustChangePassword</c> again).
+    /// </summary>
     Rotated = 1,
 }

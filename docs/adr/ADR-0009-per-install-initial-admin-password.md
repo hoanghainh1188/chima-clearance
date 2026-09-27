@@ -29,10 +29,18 @@ process from the service, and on a fresh install the database does not exist yet
    start, after migrations, the service (`AdminPasswordBootstrapper`) applies it with
    `MustChangePassword = true`, clears any lockout, writes an audit row, and deletes the file
    *after* saving. The installer never opens the database.
-3. **A password the Admin chose is never overwritten.** The service treats
-   `MustChangePassword == false` as "rotated": any pending file is discarded. On every start it
-   records `keys\admin-password.state` (`initial` / `rotated`); the installer issues a new password
-   only when the state is not `rotated`.
+3. **A password a person chose is never overwritten.** `keys\admin-password.state` records
+   `initial` / `rotated`, and **`rotated` is one-way**:
+   - `ChangePasswordCommandHandler` writes `rotated` the moment `admin` changes its password;
+   - on start, `initial` holds only while `MustChangePassword` is still set; with no state yet
+     (install older than F-01) the account counts as initial **only** if its hash is exactly the
+     migration-0004 placeholder — any other hash was set by a person;
+   - a reset by another Admin sets `MustChangePassword` again but can never downgrade `rotated`
+     (deriving "initial" from `MustChangePassword` alone would allow that — found in security
+     review).
+
+   The installer issues a new password only when the state is not `rotated`; the service ignores
+   and deletes a pending password for a rotated account.
 4. **Upgrades rotate a still-shared password.** Upgrading an install whose Admin never changed the
    seed password issues a new one. Installs from before this ADR have no state file; the installer
    then issues one and says it only applies if the Admin never changed their password — the service

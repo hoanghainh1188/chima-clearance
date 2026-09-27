@@ -14,9 +14,12 @@ namespace B2.Infrastructure.Migrations
     /// </summary>
     public partial class RetireSharedAdminSeedHash0004 : Migration
     {
-        private const string SeedAdminId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
-        private const string SharedSeedHash = "$2a$10$DC08sVNrW.UQgIG3Yspllu6ugYvMu8VPWtkLPYROYKs.er.3h.eWy";
-        private const string UnusablePlaceholderHash = "$2a$10$Rc6l/bZiNu2wd84mpsm8Q.90Xgwy433DRX6qrg62WdrnKgXqAcZxa";
+        public const string SeedAdminId = "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa";
+        public const string SharedSeedHash = "$2a$10$DC08sVNrW.UQgIG3Yspllu6ugYvMu8VPWtkLPYROYKs.er.3h.eWy";
+
+        // Kept literal (migrations are frozen snapshots); a test pins it to
+        // AdminPasswordBootstrapper.RetiredSeedPlaceholderHash.
+        public const string UnusablePlaceholderHash = "$2a$10$Rc6l/bZiNu2wd84mpsm8Q.90Xgwy433DRX6qrg62WdrnKgXqAcZxa";
 
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

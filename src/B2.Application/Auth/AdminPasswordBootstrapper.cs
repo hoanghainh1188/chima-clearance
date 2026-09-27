@@ -5,14 +5,29 @@ namespace B2.Application.Auth;
 
 /// <summary>
 /// F-01 / FR-017 — applies the per-install initial Admin password that the installer sealed,
-/// once, on service start (after migrations). A password the Admin chose themselves
-/// (<c>MustChangePassword == false</c>) is never overwritten. The pending secret is deleted
-/// only after the new hash is saved, so a crash in between re-applies it on the next start.
+/// once, on service start (after migrations). The pending secret is deleted only after the
+/// new hash is saved, so a crash in between re-applies it on the next start.
+///
+/// "Still initial" must not be derived from <c>MustChangePassword</c> alone: an Admin reset by
+/// another Admin also has it set, and replacing that password would break ADR-0009. So:
+/// <list type="bullet">
+///   <item><description>state <c>rotated</c> is one-way (also written by
+///   <see cref="ChangePasswordCommandHandler"/> the moment <c>admin</c> changes password);</description></item>
+///   <item><description>state <c>initial</c> holds while <c>MustChangePassword</c> is still set;</description></item>
+///   <item><description>no state yet (install older than F-01): initial only if the hash is exactly
+///   the unusable placeholder migration 0004 put on the untouched shared seed.</description></item>
+/// </list>
 /// </summary>
 public sealed class AdminPasswordBootstrapper
 {
     /// <summary>Username of the Admin seeded by migration <c>0001_BaselineSchema</c>.</summary>
     public const string SeedAdminUsername = "admin";
+
+    /// <summary>
+    /// Hash that migration <c>0004_RetireSharedAdminSeedHash</c> puts on the untouched shared seed:
+    /// BCrypt of a random value discarded when the migration was written (matches no password).
+    /// </summary>
+    public const string RetiredSeedPlaceholderHash = "$2a$10$Rc6l/bZiNu2wd84mpsm8Q.90Xgwy433DRX6qrg62WdrnKgXqAcZxa";
 
     private readonly IUserRepository _users;
     private readonly IPasswordHasher _hasher;
@@ -43,7 +58,7 @@ public sealed class AdminPasswordBootstrapper
             return (AdminBootstrapOutcome.AdminMissing, null);
         }
 
-        if (!admin.MustChangePassword)
+        if (!IsStillInitial(admin.PasswordHash, admin.MustChangePassword, _store.ReadState()))
         {
             DiscardPending(pending);
             _store.WriteState(AdminPasswordState.Rotated);
@@ -68,6 +83,14 @@ public sealed class AdminPasswordBootstrapper
         _store.DeletePending();
         return (AdminBootstrapOutcome.Applied, admin.Id);
     }
+
+    private static bool IsStillInitial(string passwordHash, bool mustChangePassword, AdminPasswordState? state) =>
+        state switch
+        {
+            AdminPasswordState.Rotated => false,
+            AdminPasswordState.Initial => mustChangePassword,
+            _ => passwordHash == RetiredSeedPlaceholderHash,
+        };
 
     private void DiscardPending(string? pending)
     {

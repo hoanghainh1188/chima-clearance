@@ -24,10 +24,11 @@ public sealed class AdminPasswordBootstrapperTests
 
     private AdminPasswordBootstrapper Sut => new(_users, _hasher, _unitOfWork, _store);
 
-    private User GivenAdmin(bool mustChangePassword)
+    private User GivenAdmin(bool mustChangePassword, AdminPasswordState? state, string hash = "old-hash")
     {
-        var admin = new User(Guid.NewGuid(), new Username("admin"), "old-hash", "Admin", Role.Admin, T0, mustChangePassword);
+        var admin = new User(Guid.NewGuid(), new Username("admin"), hash, "Admin", Role.Admin, T0, mustChangePassword);
         _users.GetByUsernameAsync("admin", Arg.Any<CancellationToken>()).Returns(admin);
+        _store.ReadState().Returns(state);
         return admin;
     }
 
@@ -35,7 +36,7 @@ public sealed class AdminPasswordBootstrapperTests
     [Trait("Feature", "F-01")]
     public async Task Pending_password_is_applied_to_an_admin_that_never_chose_one()
     {
-        var admin = GivenAdmin(mustChangePassword: true);
+        var admin = GivenAdmin(mustChangePassword: true, AdminPasswordState.Initial);
         for (var i = 0; i < 5; i++)
         {
             admin.RecordFailedLogin(T0.AddMinutes(i));
@@ -62,7 +63,7 @@ public sealed class AdminPasswordBootstrapperTests
     [Trait("Feature", "F-01")]
     public async Task A_password_the_admin_chose_is_never_overwritten()
     {
-        var admin = GivenAdmin(mustChangePassword: false);
+        var admin = GivenAdmin(mustChangePassword: false, AdminPasswordState.Initial);
         _store.TryReadPendingPassword().Returns(Pending);
 
         var (outcome, _) = await Sut.RunAsync(CancellationToken.None);
@@ -78,7 +79,7 @@ public sealed class AdminPasswordBootstrapperTests
     [Trait("Feature", "F-01")]
     public async Task Without_a_pending_password_state_stays_initial_and_nothing_changes()
     {
-        var admin = GivenAdmin(mustChangePassword: true);
+        var admin = GivenAdmin(mustChangePassword: true, AdminPasswordState.Initial);
         _store.TryReadPendingPassword().Returns((string?)null);
 
         var (outcome, _) = await Sut.RunAsync(CancellationToken.None);
@@ -93,7 +94,7 @@ public sealed class AdminPasswordBootstrapperTests
     [Trait("Feature", "F-01")]
     public async Task A_weak_pending_password_is_discarded_not_applied()
     {
-        var admin = GivenAdmin(mustChangePassword: true);
+        var admin = GivenAdmin(mustChangePassword: true, AdminPasswordState.Initial);
         _store.TryReadPendingPassword().Returns("short");
 
         var (outcome, _) = await Sut.RunAsync(CancellationToken.None);
@@ -102,6 +103,54 @@ public sealed class AdminPasswordBootstrapperTests
         admin.PasswordHash.Should().Be("old-hash");
         _store.Received(1).DeletePending();
         await _unitOfWork.DidNotReceive().SaveChangesAsync(Arg.Any<CancellationToken>());
+    }
+
+    [Fact]
+    [Trait("Feature", "F-01")]
+    public async Task Rotated_is_one_way_even_after_another_admin_reset_the_account()
+    {
+        // Security review finding: a reset by another Admin sets MustChangePassword again; that
+        // must not let an installer run replace the account's password.
+        var admin = GivenAdmin(mustChangePassword: true, AdminPasswordState.Rotated);
+        _store.TryReadPendingPassword().Returns(Pending);
+
+        var (outcome, _) = await Sut.RunAsync(CancellationToken.None);
+
+        outcome.Should().Be(AdminBootstrapOutcome.AdminAlreadyRotated);
+        admin.PasswordHash.Should().Be("old-hash");
+        _store.Received(1).DeletePending();
+        _store.Received(1).WriteState(AdminPasswordState.Rotated);
+        _store.DidNotReceive().WriteState(AdminPasswordState.Initial);
+    }
+
+    [Fact]
+    [Trait("Feature", "F-01")]
+    public async Task Pre_F01_install_is_initial_only_on_the_retired_seed_placeholder()
+    {
+        var admin = GivenAdmin(
+            mustChangePassword: true, state: null, hash: AdminPasswordBootstrapper.RetiredSeedPlaceholderHash);
+        _store.TryReadPendingPassword().Returns(Pending);
+
+        var (outcome, _) = await Sut.RunAsync(CancellationToken.None);
+
+        outcome.Should().Be(AdminBootstrapOutcome.Applied);
+        admin.PasswordHash.Should().Be("hash:" + Pending);
+    }
+
+    [Fact]
+    [Trait("Feature", "F-01")]
+    public async Task Pre_F01_install_with_a_human_set_password_counts_as_rotated()
+    {
+        // Upgrade from v1.2.x where another Admin had reset `admin` (MustChangePassword set,
+        // hash is not the placeholder): the password was chosen by a person — keep it.
+        var admin = GivenAdmin(mustChangePassword: true, state: null, hash: "reset-by-other-admin");
+        _store.TryReadPendingPassword().Returns(Pending);
+
+        var (outcome, _) = await Sut.RunAsync(CancellationToken.None);
+
+        outcome.Should().Be(AdminBootstrapOutcome.AdminAlreadyRotated);
+        admin.PasswordHash.Should().Be("reset-by-other-admin");
+        _store.Received(1).WriteState(AdminPasswordState.Rotated);
     }
 
     [Fact]

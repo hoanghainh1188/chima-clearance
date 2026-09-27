@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using B2.Application.Abstractions;
+using Microsoft.Extensions.Logging;
 
 namespace B2.Infrastructure.Auth;
 
@@ -19,11 +20,15 @@ public sealed class AdminBootstrapStore : IAdminBootstrapStore
     public const string StateFileName = "admin-password.state";
 
     private readonly string _keysDirectory;
+    private readonly ILogger<AdminBootstrapStore> _logger;
 
-    public AdminBootstrapStore(string dataDirectory)
+    public AdminBootstrapStore(string dataDirectory, ILogger<AdminBootstrapStore> logger)
     {
         _keysDirectory = Path.Combine(dataDirectory, "keys");
+        _logger = logger;
     }
+
+    private string StatePath => Path.Combine(_keysDirectory, StateFileName);
 
     private string PendingPath => Path.Combine(
         _keysDirectory, OperatingSystem.IsWindows() ? SealedFileName : DevFileName);
@@ -54,12 +59,34 @@ public sealed class AdminBootstrapStore : IAdminBootstrapStore
 
     public void DeletePending() => File.Delete(PendingPath);
 
+    public AdminPasswordState? ReadState()
+    {
+        if (!File.Exists(StatePath))
+        {
+            return null;
+        }
+
+        return File.ReadAllText(StatePath).Trim() switch
+        {
+            "rotated" => AdminPasswordState.Rotated,
+            "initial" => AdminPasswordState.Initial,
+            _ => null,
+        };
+    }
+
     public void WriteState(AdminPasswordState state)
     {
-        Directory.CreateDirectory(_keysDirectory);
-        File.WriteAllText(
-            Path.Combine(_keysDirectory, StateFileName),
-            state == AdminPasswordState.Rotated ? "rotated" : "initial");
+        try
+        {
+            Directory.CreateDirectory(_keysDirectory);
+            File.WriteAllText(StatePath, state == AdminPasswordState.Rotated ? "rotated" : "initial");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            // Not fatal: the password change already succeeded. The bootstrapper re-derives the
+            // state on the next start (MustChangePassword == false ⇒ rotated).
+            _logger.LogWarning(ex, "F-01: could not record Admin password state {State} at {Path}.", state, StatePath);
+        }
     }
 
     private sealed record Payload(string Password);
