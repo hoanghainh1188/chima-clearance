@@ -31,7 +31,7 @@ Thông thường hệ thống gồm **2 máy** trong cùng mạng LAN:
 | Ổ đĩa | Còn trống ít nhất **1 GB** trên ổ `C:` |
 | Mạng | 2 máy cùng mạng LAN. Nhờ IT đặt **IP tĩnh** cho máy cổng vào và để mạng ở chế độ **Private** |
 | Internet | **Không cần** trên máy cài (chỉ cần ở máy chuẩn bị USB) |
-| Nhận từ đội phát triển | Gói `B2Clearance-<phiên bản>-offline.zip` |
+| Nhận từ đội phát triển | Gói `B2Clearance-<phiên bản>-offline.zip` và **bản PDF hướng dẫn** (có mật khẩu Admin ban đầu — giữ như tài liệu mật, không gửi qua email) |
 | Vật dụng | 1 USB, 1 phong bì để niêm phong mã phục hồi |
 
 ---
@@ -85,11 +85,8 @@ thư mục `Desktop\`, `Templates\`, `docs\` (chính hướng dẫn này và s�
 ## 4. Đăng nhập lần đầu và cấu hình (trên máy cổng vào)
 
 1. Mở shortcut **"Sổ B2 — Cửa khẩu Chi Ma"** trên Desktop.
-2. Đăng nhập bằng tài khoản ban đầu:
-
-   | Tên đăng nhập | Mật khẩu ban đầu |
-   | --- | --- |
-   | `admin` | `Change-Me-Now-1!` |
+2. Đăng nhập tài khoản **`admin`** với mật khẩu ban đầu ghi trong **bản PDF hướng dẫn** do đội
+   phát triển bàn giao (mật khẩu không có trong gói cài).
 
    > ⚠️ Mọi bản cài đều dùng **chung** mật khẩu ban đầu này. Máy cổng vào mở cổng 5000 cho mạng
    > nội bộ, nên cho tới khi đổi mật khẩu, **bất kỳ máy nào trong LAN** cũng đăng nhập được.
