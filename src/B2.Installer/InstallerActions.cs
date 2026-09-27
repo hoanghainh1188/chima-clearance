@@ -1,7 +1,9 @@
 using System.Diagnostics;
 using System.Net;
+using System.Security.AccessControl;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Security.Principal;
 
 namespace B2.Installer;
 
@@ -38,6 +40,34 @@ internal static class InstallerActions
         {
             Directory.CreateDirectory(dir);
         }
+
+        RestrictDataDirectoryAcl();
+    }
+
+    /// <summary>
+    /// Locks <see cref="DataDir"/> down to SYSTEM (the service account) and Administrators.
+    /// Left to inherit from C:\ProgramData, every local user could read keys\ — and all
+    /// secrets there are DPAPI-sealed with LocalMachine scope, which any local account may
+    /// unseal (JWT signing key, backup secrets, server.pfx). Setting a protected DACL on the
+    /// root also re-propagates to existing children, so an upgrade fixes older installs.
+    /// </summary>
+    private static void RestrictDataDirectoryAcl()
+    {
+        const InheritanceFlags inheritToAll = InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit;
+
+        var security = new DirectorySecurity();
+        security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+        foreach (var sidType in new[] { WellKnownSidType.LocalSystemSid, WellKnownSidType.BuiltinAdministratorsSid })
+        {
+            security.AddAccessRule(new FileSystemAccessRule(
+                new SecurityIdentifier(sidType, domainSid: null),
+                FileSystemRights.FullControl,
+                inheritToAll,
+                PropagationFlags.None,
+                AccessControlType.Allow));
+        }
+
+        new DirectoryInfo(DataDir).SetAccessControl(security);
     }
 
     /// <summary>

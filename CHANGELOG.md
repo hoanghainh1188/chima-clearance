@@ -6,6 +6,25 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 
+Nothing pending.
+
+## [1.2.2] — 2026-09-27 — data directory locked to SYSTEM + Administrators; single-PC install guide
+
+Upgrade **every** installed entry-gate PC with `.\install.ps1`: re-running it applies the new
+permissions on `C:\ProgramData\B2`. Use v1.2.2 for new installs and the `T-S6-12` UAT.
+
+### Security
+
+#### Data directory readable by every local Windows user
+
+- `C:\ProgramData\B2` inherited `C:\ProgramData`'s ACL, so any local account could read `keys\`.
+  Every secret there is DPAPI-sealed with **LocalMachine** scope, which any local account may
+  unseal — the JWT signing key (forge an Admin token), the backup secrets (decrypt backups) and
+  `server.pfx` — and could read `db\b2.db` directly. `B2Clearance.exe install` now sets a
+  protected DACL on the data root: SYSTEM + Administrators, full control, inherited by all
+  children; re-running `install.ps1` fixes existing installs. Operators need an elevated
+  PowerShell (or a UAC prompt in Explorer) to read service logs; runbook and install guide say so.
+
 ### Added
 
 #### ADR-0008 — dev-only tool to export the operator docs to PDF
@@ -1158,7 +1177,8 @@ seeded admin bootstrap, and FR-017 force-rotate-password.
   applied during their respective sprints (M2 + M5 + M7 in S1; M3 + M4 + M6 in
   S3..S5). None block this release.
 
-[Unreleased]: https://example.invalid/chima-clearance/compare/v1.2.1...HEAD
+[Unreleased]: https://example.invalid/chima-clearance/compare/v1.2.2...HEAD
+[1.2.2]: https://example.invalid/chima-clearance/compare/v1.2.1...v1.2.2
 [1.2.1]: https://example.invalid/chima-clearance/compare/v1.2.0...v1.2.1
 [1.2.0]: https://example.invalid/chima-clearance/compare/v1.1.1...v1.2.0
 [1.1.1]: https://example.invalid/chima-clearance/compare/v1.1.0...v1.1.1

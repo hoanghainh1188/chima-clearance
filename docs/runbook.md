@@ -37,7 +37,9 @@ lại máy chủ, nó sẽ tự chạy mà không cần can thiệp.
 ### Kiểm tra log dịch vụ
 
 Dịch vụ ghi log ra file theo ngày tại `C:\ProgramData\B2\logs\b2-yyyyMMdd.log`
-(cũng xem được trong ứng dụng: **Sức khỏe → Nhật ký hệ thống**, mục 5). Log của ứng dụng
+(cũng xem được trong ứng dụng: **Sức khỏe → Nhật ký hệ thống**, mục 5). Thư mục
+`C:\ProgramData\B2` chỉ **Administrator** đọc được (chứa khoá và cơ sở dữ liệu) — chạy lệnh dưới
+trong PowerShell **Run as administrator**; mở bằng File Explorer thì Windows sẽ hỏi xác nhận. Log của ứng dụng
 Desktop nằm trên từng máy tại `%LOCALAPPDATA%\B2\logs\`.
 
 ```powershell
