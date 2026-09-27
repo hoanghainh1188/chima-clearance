@@ -25,6 +25,9 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
   states that `b2-client.json` exists **only on the exit-gate PC** and sits in the install
   folder's `Desktop\` (not the Windows desktop), and adds a checklist item + troubleshooting row
   for a missing file.
+- § 4 now states the seeded login (`admin` / `Change-Me-Now-1!`, already in
+  `specs/001-b2-clearance/quickstart.md`) instead of "handed over separately", with a warning that
+  it is shared by every install and reachable from the LAN until the forced change is done.
 
 ## [1.2.1] — 2026-09-27 — clean installs register the service; install guide ships in the zip
 
