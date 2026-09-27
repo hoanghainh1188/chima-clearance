@@ -8,6 +8,34 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 Nothing pending.
 
+## [1.2.1] — 2026-09-27 — clean installs register the service; install guide ships in the zip
+
+Every offline zip from v1.1.0 to v1.2.0 aborts a **clean** install at service registration
+(`sc.exe` syntax). Use **v1.2.1** for any new install, including the `T-S6-12` UAT PCs.
+
+### Fixed
+
+#### Deployment — clean-install service registration, operator guide, release hardening
+
+- **`B2Clearance.exe install` could not register the service on a clean PC.** `sc create`
+  passed `binpath="…"`, `start=auto` without the space `sc.exe` requires after each
+  `option=`, so `sc` printed usage and exited non-zero. `sc failure` (`reset=60`,
+  `actions=…`) had the same defect and runs on upgrades too. Every offline zip from
+  **v1.1.0 to v1.2.0** carries this. Installer errors now include `sc`/`netsh` stdout, where
+  those tools report failures.
+- **New `docs/huong-dan-cai-dat.md`** — step-by-step install guide for gate operators: entry
+  gate (server + app) then exit gate (`-ClientOnly -ServerUrl`), first admin login + forced
+  password change, initial setup, per-PC checklists, install troubleshooting (incl. the
+  firewall rule only covering the **Private** network profile), upgrade/uninstall.
+- **`docs/runbook.md`**: removed the `--reset-admin-password` procedure (never implemented) in
+  favour of admin-to-admin reset; log check reads `C:\ProgramData\B2\logs\b2-*.log` (Serilog
+  file sink) instead of the Event Log, and names the Desktop log folder.
+- **Release (`release.yml`)**: the zip now ships `docs/` (install guide, runbook, offline
+  notes) since gate PCs cannot reach GitHub; release notes point at that guide and list both
+  install commands; `prereqs/README-WebView2.txt` is Vietnamese (UTF-8 BOM); Litestream
+  download is pinned to its upstream SHA-256 and the VC++ redist must carry a valid Microsoft
+  Authenticode signature, otherwise the release fails.
+
 ## [1.2.0] — 2026-08-02 — business rules re-checked against the unit's own documents
 
 A pass over `docs/Business rules - Hướng dẫn điền sổ B2.md` and `docs/Định nghĩa yêu cầu.md`
@@ -1088,7 +1116,8 @@ seeded admin bootstrap, and FR-017 force-rotate-password.
   applied during their respective sprints (M2 + M5 + M7 in S1; M3 + M4 + M6 in
   S3..S5). None block this release.
 
-[Unreleased]: https://example.invalid/chima-clearance/compare/v1.2.0...HEAD
+[Unreleased]: https://example.invalid/chima-clearance/compare/v1.2.1...HEAD
+[1.2.1]: https://example.invalid/chima-clearance/compare/v1.2.0...v1.2.1
 [1.2.0]: https://example.invalid/chima-clearance/compare/v1.1.1...v1.2.0
 [1.1.1]: https://example.invalid/chima-clearance/compare/v1.1.0...v1.1.1
 [1.1.0]: https://example.invalid/chima-clearance/compare/v1.0.0...v1.1.0

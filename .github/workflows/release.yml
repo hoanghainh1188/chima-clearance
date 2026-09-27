@@ -112,6 +112,7 @@ jobs:
       #     Templates/                  ← Sổ B2 Excel template
       #     litestream.exe              ← Continuous backup binary
       #     prereqs/                    ← VC++ redist (+ WebView2 added on USB)
+      #     docs/                       ← install guide + runbook (operators are offline)
       # Shipped as a single .zip: extract on USB, run install.ps1 elevated on the gate PC.
       # -----------------------------------------------------------------------
       - name: Download Litestream
@@ -119,11 +120,15 @@ jobs:
         run: |
           # v0.5.11 is the first release with a Windows x86_64 binary.
           # Filename format: litestream-0.5.11-windows-x86_64.zip (no 'v' prefix, x86_64 not amd64)
+          # SHA-256 pinned from the upstream release's checksums.txt — a swapped or corrupted
+          # download fails the release instead of shipping to the offline gate PCs.
           LITESTREAM_TAG="v0.5.11"
           LITESTREAM_VER="0.5.11"
-          curl -sSL \
+          LITESTREAM_SHA256="9116e8605d4b479e15044ccbccf2aa756be7a8a64b9237f67a074ec1742444a3"
+          curl -fsSL \
             "https://github.com/benbjohnson/litestream/releases/download/${LITESTREAM_TAG}/litestream-${LITESTREAM_VER}-windows-x86_64.zip" \
             -o litestream.zip
+          echo "${LITESTREAM_SHA256}  litestream.zip" | sha256sum -c -
           unzip -q litestream.zip -d litestream-bin
           cp litestream-bin/litestream.exe publish/installer/litestream.exe
 
@@ -135,15 +140,36 @@ jobs:
         shell: bash
         run: |
           mkdir -p publish/prereqs
-          curl -sSL "https://aka.ms/vs/17/release/vc_redist.x64.exe" -o publish/prereqs/vc_redist.x64.exe
-          cat > publish/prereqs/README-WebView2.txt <<'EOF'
-          Place MicrosoftEdgeWebView2RuntimeInstaller x64 (Evergreen STANDALONE / offline
-          installer) here before copying this folder to the offline gate PC. Download it on
-          an internet-connected machine from:
-            https://developer.microsoft.com/microsoft-edge/webview2/  (Standalone Installer, x64)
-          Install order on the target: vc_redist.x64.exe, then the WebView2 standalone installer.
-          See docs/deployment-offline.md.
+          curl -fsSL "https://aka.ms/vs/17/release/vc_redist.x64.exe" -o publish/prereqs/vc_redist.x64.exe
+          # Operator note in Vietnamese. UTF-8 BOM so Notepad on older Windows 10 shows the
+          # diacritics correctly.
+          {
+            printf '\xEF\xBB\xBF'
+            cat <<'EOF'
+          Đặt bộ cài Microsoft Edge WebView2 Runtime vào thư mục này TRƯỚC khi chép sang máy
+          cửa khẩu (máy không có internet).
+
+          Tải trên máy có internet:
+            https://developer.microsoft.com/microsoft-edge/webview2/
+            -> Evergreen Standalone Installer -> x64
+          Tên file dạng: MicrosoftEdgeWebView2RuntimeInstallerX64.exe
+
+          install.ps1 tự cài vc_redist.x64.exe rồi đến WebView2.
+          Xem hướng dẫn đầy đủ: docs\huong-dan-cai-dat.md (ở thư mục gốc gói cài).
           EOF
+          } > publish/prereqs/README-WebView2.txt
+
+      # vc_redist comes from a moving aka.ms link (always the latest build), so a hash
+      # cannot be pinned — verify the Authenticode signature is valid and Microsoft's instead.
+      - name: Verify VC++ redist signature
+        shell: pwsh
+        run: |
+          $sig = Get-AuthenticodeSignature -FilePath 'publish/prereqs/vc_redist.x64.exe'
+          if ($sig.Status -ne 'Valid') { throw "vc_redist.x64.exe signature status: $($sig.Status)" }
+          if ($sig.SignerCertificate.Subject -notmatch 'O=Microsoft Corporation') {
+            throw "vc_redist.x64.exe signed by unexpected subject: $($sig.SignerCertificate.Subject)"
+          }
+          Write-Host "vc_redist.x64.exe signed by: $($sig.SignerCertificate.Subject)"
 
       - name: Assemble package dir
         shell: bash
@@ -161,6 +187,11 @@ jobs:
           cp -r publish/prereqs/. publish/pkg/prereqs/
           # Operator scripts at payload root
           cp deploy/install.ps1 deploy/uninstall.ps1 publish/pkg/
+          # Operator docs — gate PCs are offline, so the guide must travel inside the zip.
+          # Same relative layout as the repo so links between the docs keep working;
+          # install.ps1 copies docs\ into Program Files too, leaving the runbook on the PC.
+          mkdir -p publish/pkg/docs
+          cp docs/huong-dan-cai-dat.md docs/runbook.md docs/deployment-offline.md publish/pkg/docs/
 
       # -----------------------------------------------------------------------
       # Ship the payload as a single offline .zip. No installer framework, no
@@ -177,9 +208,25 @@ jobs:
       - name: Create GitHub Release
         shell: bash
         run: |
+          cat > release-notes.md <<'EOF'
+          ## Cài đặt offline
+
+          1. Giải nén `B2Clearance-<phiên bản>-offline.zip`, bổ sung WebView2 Standalone x64 vào
+             `prereqs\` (xem `prereqs\README-WebView2.txt`), chép sang USB.
+          2. Mở **`docs\huong-dan-cai-dat.md`** trong gói cài và làm theo từng bước.
+          3. PowerShell **Run as administrator**, trong thư mục gói cài:
+
+          | Máy | Lệnh |
+          | --- | --- |
+          | Cổng vào (máy chủ) — cài trước | `.\install.ps1` |
+          | Cổng ra (chỉ ứng dụng) | `.\install.ps1 -ClientOnly -ServerUrl <IP máy cổng vào>` |
+
+          Nâng cấp: chạy lại đúng lệnh đã dùng khi cài; dữ liệu và mã phục hồi được giữ nguyên.
+          Thay đổi chi tiết: `CHANGELOG.md`.
+          EOF
           gh release create "${GITHUB_REF_NAME}" \
             --title "B2 Clearance ${GITHUB_REF_NAME}" \
-            --notes "Cài đặt offline: giải nén zip, xem \`docs/deployment-offline.md\` (chạy install.ps1 bằng quyền Administrator)." \
+            --notes-file release-notes.md \
             "Releases/B2Clearance-${VERSION}-offline.zip"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

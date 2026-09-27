@@ -130,17 +130,19 @@ internal static class InstallerActions
         }
         else
         {
+            // sc.exe requires a space after every "option=" ("binpath= <value>"); without it
+            // sc prints usage and exits non-zero, so a clean install could never register.
             Run("sc.exe",
-                $"create \"{ServiceName}\" binpath=\"{serviceExe}\" " +
-                $"start=auto obj=LocalSystem displayname=\"{ServiceDisplayName}\"");
+                $"create \"{ServiceName}\" binpath= \"{serviceExe}\" " +
+                $"start= auto obj= LocalSystem displayname= \"{ServiceDisplayName}\"");
         }
 
         Run("sc.exe", $"description \"{ServiceName}\" \"{ServiceDescription}\"");
 
         // Auto-restart: 5 s, 10 s, 30 s, then reset the failure count after 60 s uptime.
         Run("sc.exe",
-            $"failure \"{ServiceName}\" reset=60 " +
-            "actions=restart/5000/restart/10000/restart/30000");
+            $"failure \"{ServiceName}\" reset= 60 " +
+            "actions= restart/5000/restart/10000/restart/30000");
     }
 
     /// <summary>Opens TCP 5000 inbound on the Private firewall profile for the API.</summary>
@@ -220,9 +222,10 @@ internal static class InstallerActions
         proc.WaitForExit(30_000);
         if (expectSuccess && proc.ExitCode != 0)
         {
-            var stderr = proc.StandardError.ReadToEnd().Trim();
+            // sc.exe and netsh report failures on stdout, not stderr — include both.
+            var output = $"{proc.StandardOutput.ReadToEnd()} {proc.StandardError.ReadToEnd()}".Trim();
             throw new InvalidOperationException(
-                $"'{exe} {args}' exited {proc.ExitCode}: {stderr}");
+                $"'{exe} {args}' exited {proc.ExitCode}: {output}");
         }
     }
 }

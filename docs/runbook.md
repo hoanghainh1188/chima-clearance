@@ -36,44 +36,32 @@ lại máy chủ, nó sẽ tự chạy mà không cần can thiệp.
 
 ### Kiểm tra log dịch vụ
 
+Dịch vụ ghi log ra file theo ngày tại `C:\ProgramData\B2\logs\b2-yyyyMMdd.log`
+(cũng xem được trong ứng dụng: **Sức khỏe → Nhật ký hệ thống**, mục 5). Log của ứng dụng
+Desktop nằm trên từng máy tại `%LOCALAPPDATA%\B2\logs\`.
+
 ```powershell
-# 50 dòng gần nhất từ Event Viewer
-Get-EventLog -LogName Application -Source "B2ClearanceService" -Newest 50
+# 50 dòng gần nhất của file log dịch vụ mới nhất
+Get-ChildItem C:\ProgramData\B2\logs\b2-*.log |
+    Sort-Object LastWriteTime | Select-Object -Last 1 |
+    Get-Content -Tail 50
 ```
 
 ---
 
-## 2. Đặt lại mật khẩu Admin (thủ tục ngoại tuyến với mã phục hồi)
+## 2. Admin quên mật khẩu
 
-**Khi nào dùng**: Admin quên mật khẩu và không thể đăng nhập.
+> ⚠️ **v1 chưa có công cụ tự đặt lại mật khẩu Admin.** Lệnh
+> `B2.Server.Service.exe --reset-admin-password` từng được mô tả ở đây **chưa được xây dựng**
+> — đừng chạy lệnh này.
 
-### Bước 1 — Lấy mã phục hồi
+1. Nếu còn một tài khoản Admin khác đăng nhập được: vào **Quản trị → Người dùng**, chọn tài
+   khoản Admin bị quên mật khẩu → **Đặt lại mật khẩu** (xem mục 6, Lỗi 3).
+2. Nếu không còn Admin nào đăng nhập được: **không** tự xóa hay sửa file
+   `C:\ProgramData\B2\db\b2.db`. Liên hệ đội phát triển (mục 7). Chuẩn bị sẵn phong bì
+   mã phục hồi (không đọc mã qua điện thoại/email).
 
-Mã phục hồi (24 ký tự Crockford base32) được in và lưu trong phong bì dán
-kín tại phòng quản lý. Cần có mã này để thực hiện bước tiếp theo.
-
-### Bước 2 — Mở giao diện đặt lại (Recovery Mode)
-
-1. Dừng dịch vụ B2 (xem mục 1).
-2. Mở PowerShell với quyền Administrator:
-
-```powershell
-cd "C:\Program Files\B2Clearance"
-.\B2.Server.Service.exe --reset-admin-password
-```
-
-3. Nhập mã phục hồi khi được yêu cầu.
-4. Nhập mật khẩu Admin mới (ít nhất 10 ký tự, gồm chữ hoa, chữ thường, số
-   và ký tự đặc biệt).
-5. Khởi động lại dịch vụ.
-
-> ⚠️ Sau khi đặt lại, đăng nhập bằng mật khẩu mới và tạo bản sao lưu ngay
-> (xem mục 3) trước khi vận hành lại.
-
-### Nếu mất cả mật khẩu lẫn mã phục hồi
-
-Liên hệ ngay đội phát triển (xem mục 7 — Leo thang). Không có cách nào khác
-để lấy lại quyền truy cập mà không xóa cơ sở dữ liệu.
+> 💡 Phòng ngừa: tạo **ít nhất 2 tài khoản Admin** ngay sau khi cài đặt.
 
 ---
 
@@ -169,7 +157,9 @@ ghi tờ khai mới.
 **Kiểm tra**:
 1. Ping máy chủ: `ping <ip-máy-chủ>` trên máy client bị lỗi.
 2. Kiểm tra dịch vụ B2 còn chạy không (xem mục 1).
-3. Kiểm tra tường lửa Windows: cổng 5000 (hoặc cổng đã cấu hình) phải mở.
+3. Kiểm tra tường lửa Windows trên máy cổng vào: cổng 5000 chỉ được mở cho mạng **Private**.
+   Chạy `Get-NetConnectionProfile` — nếu `NetworkCategory` là `Public`, nhờ IT chuyển sang
+   `Private`.
 4. **Trên máy cổng ra**: mở `C:\Program Files\B2Clearance\Desktop\b2-client.json` và đối chiếu
    `serverUrl` với IP hiện tại của máy cổng vào (`ipconfig` trên máy đó). IP đổi sau khi khởi
    động lại router là nguyên nhân phổ biến nhất.
