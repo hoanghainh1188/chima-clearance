@@ -4,13 +4,10 @@ Renders docs/huong-dan-cai-dat.md, docs/runbook.md and docs/deployment-offline.m
 markdown-it-py (CommonMark + tables) and prints them to A4 PDF with a headless
 Chromium-based browser (Chrome, Chromium or Edge) already installed on this machine.
 
-The install guide is the confidential edition: the "password is in the handed-over PDF"
-step is replaced by the seed admin password (read from the test helper, the single
-source of truth) and a red banner is added. PDFs contain a credential — never commit
-them or attach them to a GitHub Release.
+No credential is injected: since F-01 (ADR-0009) each install shows its own initial Admin
+password on screen, so the PDFs are plain handouts. Output is still git-ignored.
 
     python tools/docs-pdf/build_docs_pdf.py                  # -> tools/docs-pdf/out/
-    python tools/docs-pdf/build_docs_pdf.py --no-password    # shareable install guide
 """
 
 from __future__ import annotations
@@ -34,26 +31,6 @@ DOCS = {
     "runbook.md": "Sổ tay vận hành",
     "deployment-offline.md": "Triển khai offline",
 }
-INSTALL_GUIDE = "huong-dan-cai-dat.md"
-SEED_SOURCE = REPO / "tests/B2.Server.Api.Tests/Support/AuthHttpExtensions.cs"
-
-# Must match docs/huong-dan-cai-dat.md § 4 step 2 exactly; the build fails otherwise so a
-# doc edit cannot silently drop the password from the confidential edition.
-PASSWORD_PLACEHOLDER = (
-    "2. Đăng nhập tài khoản **`admin`** với mật khẩu ban đầu ghi trong **bản PDF hướng dẫn** do đội\n"
-    "   phát triển bàn giao (mật khẩu không có trong gói cài).\n"
-)
-PASSWORD_TABLE = (
-    "2. Đăng nhập bằng tài khoản ban đầu:\n\n"
-    "   | Tên đăng nhập | Mật khẩu ban đầu |\n"
-    "   | --- | --- |\n"
-    "   | `admin` | `{password}` |\n"
-)
-CONFIDENTIAL_BANNER = (
-    '<div class="confidential">TÀI LIỆU MẬT — có mật khẩu Admin ban đầu. '
-    "Không gửi qua email, không để kèm USB cài đặt.</div>"
-)
-
 BROWSER_CANDIDATES = [
     "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
     "/Applications/Chromium.app/Contents/MacOS/Chromium",
@@ -80,13 +57,6 @@ def find_browser() -> str:
     sys.exit("No Chrome/Chromium/Edge found. Set B2_PDF_BROWSER to the browser executable.")
 
 
-def read_seed_password() -> str:
-    match = re.search(r'SeedAdminPassword\s*=\s*"([^"]+)"', SEED_SOURCE.read_text(encoding="utf-8-sig"))
-    if not match:
-        sys.exit(f"SeedAdminPassword not found in {SEED_SOURCE}")
-    return match.group(1)
-
-
 def release_label() -> str:
     try:
         tag = subprocess.run(
@@ -108,13 +78,13 @@ def rewrite_links(body: str) -> str:
     return re.sub(r'href="([^"]+)"', fix, body)
 
 
-def render_html(name: str, source: str, css: str, banner: str, label: str) -> str:
+def render_html(name: str, source: str, css: str, label: str) -> str:
     source = source.replace("- [ ] ", "- ☐ ").replace("- [x] ", "- ☑ ")
     body = rewrite_links(MarkdownIt("commonmark", {"html": False}).enable("table").render(source))
     return (
         f'<!doctype html><html lang="vi"><head><meta charset="utf-8">'
         f"<title>{html.escape(DOCS[name])}</title><style>{css}</style></head>"
-        f'<body>{banner}{body}<p class="footer-src">Nguồn: docs/{name} — {html.escape(label)}</p>'
+        f'<body>{body}<p class="footer-src">Nguồn: docs/{name} — {html.escape(label)}</p>'
         f"</body></html>"
     )
 
@@ -136,8 +106,6 @@ def print_pdf(browser: str, html_path: Path, pdf_path: Path) -> None:
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--out", type=Path, default=TOOL_DIR / "out", help="output folder")
-    parser.add_argument("--no-password", action="store_true",
-                        help="keep the install guide's 'see the handed-over PDF' sentence (shareable edition)")
     args = parser.parse_args()
 
     browser = find_browser()
@@ -149,17 +117,11 @@ def main() -> None:
         tmp_dir = Path(tmp)
         for name in DOCS:
             source = (REPO / "docs" / name).read_text(encoding="utf-8-sig")
-            banner = ""
-            if name == INSTALL_GUIDE and not args.no_password:
-                if PASSWORD_PLACEHOLDER not in source:
-                    sys.exit(f"Password step not found in docs/{name} § 4 — update PASSWORD_PLACEHOLDER.")
-                source = source.replace(PASSWORD_PLACEHOLDER, PASSWORD_TABLE.format(password=read_seed_password()))
-                banner = CONFIDENTIAL_BANNER
             html_path = tmp_dir / name.replace(".md", ".html")
-            html_path.write_text(render_html(name, source, css, banner, label), encoding="utf-8")
+            html_path.write_text(render_html(name, source, css, label), encoding="utf-8")
             pdf_path = args.out.resolve() / name.replace(".md", ".pdf")
             print_pdf(browser, html_path, pdf_path)
-            print(f"{pdf_path}{'  (CONFIDENTIAL)' if banner else ''}")
+            print(pdf_path)
 
 
 if __name__ == "__main__":

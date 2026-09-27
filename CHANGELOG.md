@@ -27,6 +27,15 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 - Docs: install guide (new initial-password step), runbook § 2, quickstart (dev staging),
   FR-017, ADR-0004 bullet superseded, UAT steps 2/U3/U4.
 
+### Added
+
+#### `tools/docs-pdf/` — export the operator docs to PDF (ADR-0008)
+
+- `build_docs_pdf.py` renders `huong-dan-cai-dat.md`, `runbook.md` and `deployment-offline.md`
+  with markdown-it-py (pinned in `requirements.txt`) and prints A4 PDFs with the local Chrome,
+  Chromium or Edge. Output in `tools/docs-pdf/out/`, git-ignored. No password is injected: with
+  F-01 each install shows its own initial Admin password, so the PDFs carry no credential.
+
 ## [1.2.2] — 2026-09-27 — data directory locked to SYSTEM + Administrators; single-PC install guide
 
 Upgrade **every** installed entry-gate PC with `.\install.ps1`: re-running it applies the new
@@ -45,14 +54,6 @@ permissions on `C:\ProgramData\B2`. Use v1.2.2 for new installs and the `T-S6-12
   PowerShell (or a UAC prompt in Explorer) to read service logs; runbook and install guide say so.
 
 ### Added
-
-#### `tools/docs-pdf/` — export the operator docs to PDF (ADR-0008)
-
-- `build_docs_pdf.py` renders `huong-dan-cai-dat.md`, `runbook.md` and `deployment-offline.md`
-  with markdown-it-py (pinned in `requirements.txt`) and prints A4 PDFs with the local Chrome,
-  Chromium or Edge. The install guide gets the seed admin password (read from `SeedAdminPassword`)
-  and a "TÀI LIỆU MẬT" banner; `--no-password` builds a shareable edition. The build fails if the
-  password step in § 4 changes. Output in `tools/docs-pdf/out/`, git-ignored.
 
 #### ADR-0008 — dev-only tool to export the operator docs to PDF
 

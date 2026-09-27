@@ -9,7 +9,6 @@
   --table-head: #eef2f6;
   --note-bg: #fff6e0;
   --note-rule: #d4a017;
-  --danger: #b42318;
   --font-body: "Helvetica Neue", "Segoe UI", Arial, sans-serif;
   --font-mono: Menlo, Consolas, monospace;
 }
@@ -36,8 +35,4 @@ blockquote p { margin: 3pt 0; }
 a { color: var(--accent); text-decoration: none; }
 hr { border: 0; border-top: 1px solid var(--rule); margin: 12pt 0; }
 
-.confidential {
-  border: 2px solid var(--danger); color: var(--danger); font-weight: 700;
-  padding: 5pt 8pt; margin-bottom: 10pt; text-align: center; font-size: 10pt;
-}
 .footer-src { color: var(--muted); font-size: 8.5pt; margin-top: 18pt; }
