@@ -31,6 +31,7 @@
     <Compile Include="../../src/B2.Desktop/Services/ApiEndpointResolver.cs" Link="Linked/ApiEndpointResolver.cs" />
     <Compile Include="../../src/B2.Desktop/Services/ApiEndpoint.cs" Link="Linked/ApiEndpoint.cs" />
     <Compile Include="../../src/B2.Desktop/Services/ApiEndpointSource.cs" Link="Linked/ApiEndpointSource.cs" />
+    <Compile Include="../../src/B2.Desktop/Services/Api/ApiErrorCode.cs" Link="Linked/ApiErrorCode.cs" />
   </ItemGroup>
 
 </Project>
