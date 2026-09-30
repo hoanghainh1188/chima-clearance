@@ -53,6 +53,14 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
   Desktop now reads the server's error `code` (`ApiErrorCode`) and shows a specific Vietnamese
   message; a real network failure says the entry-gate server is unreachable.
 
+#### Sổ B2 Excel export: no template leftovers, duplicate numbers flagged again — `F-13` (audit X1)
+
+- Every export carried the template's sample value **1358** in P1 (the legacy "Tìm xe" box).
+  P1 is now cleared, keeping its styling.
+- The template's duplicate-number rule on cột C was split across its sample rows, so deleting
+  them shrank it to C1 and **exported duplicates were never flagged red** (business rules cột C).
+  One duplicate rule now covers every exported row of cột C, in the template's colours.
+
 ## [1.2.2] — 2026-09-27 — data directory locked to SYSTEM + Administrators; single-PC install guide
 
 Upgrade **every** installed entry-gate PC with `.\install.ps1`: re-running it applies the new
