@@ -114,14 +114,17 @@ Phase 1 ships in 6 × 2-week sprints (S0..S6) per
 
 Released builds: **`v1.0.0`** (2026-06-07) → **`v1.1.0`** (2026-07-19) →
 **`v1.1.1`** (2026-07-26) → **`v1.2.0`** (2026-08-02) → **`v1.2.1`** (2026-09-27) →
-**`v1.2.2`** (2026-09-27, current). `v1.2.0` re-checks the implementation against the
+**`v1.2.2`** (2026-09-27) → **`v1.3.0`** (2026-10-02, current). `v1.2.0` re-checks the implementation against the
 unit's own documents — several rules the code enforced had no basis in them, and the
 exit-gate PC had never been deployable (see `CHANGELOG.md`). `v1.2.1` fixes clean installs
 (v1.1.0 to v1.2.0 fail at service registration) and ships the Vietnamese install guide
 (`docs/huong-dan-cai-dat.md`) inside the zip. `v1.2.2` locks `C:\ProgramData\B2` to SYSTEM +
 Administrators (keys were readable by every local user) and adds the single-PC layout to the
-guide. **`v1.2.2` is the build to run `T-S6-12` with**; Phase-1 GA is gated on that
-sign-off, not on another feature.
+guide. `v1.3.0` replaces the shared initial Admin password with one generated per install
+(F-01, ADR-0009), turns continuous backup on by default, and fixes the pre-UAT findings of the
+requirements-fit audit (`docs/danh-gia-phu-hop-yeu-cau.md`). **`v1.3.0` is the build to run
+`T-S6-12` with**; Phase-1 GA is gated on that sign-off and on the unit's answers listed in the
+audit, not on another feature.
 
 ---
 
