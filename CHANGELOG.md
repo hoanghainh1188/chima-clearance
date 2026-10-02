@@ -52,6 +52,24 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
   leave it blank on the same PC). The envelope is only needed on a replaced PC.
 - Runbook § 4 told operators to type "KHÔI PHỤC"; the screen requires `RESTORE`.
 
+#### Exit-gate search skips cancelled declarations; Entry/Exit say what went wrong — `F-07`, `F-05`, `F-08` (audit S1, F1)
+
+- **Cancelled declarations showed up in the exit-gate search** (FR-023): their vehicles could be
+  selected and then failed with 409 when marked exited. The suffix search now excludes them.
+- **Every Entry/Exit failure showed one generic message** ("…kiểm tra kết nối hoặc quyền"), so a
+  duplicate declaration number (409 `DECLARATION_NUMBER_DUPLICATE`) or a vehicle already marked
+  exited at the other PC (FR-024 `VEHICLE_ALREADY_EXITED`) looked like a network problem. The
+  Desktop now reads the server's error `code` (`ApiErrorCode`) and shows a specific Vietnamese
+  message; a real network failure says the entry-gate server is unreachable.
+
+#### Sổ B2 Excel export: no template leftovers, duplicate numbers flagged again — `F-13` (audit X1)
+
+- Every export carried the template's sample value **1358** in P1 (the legacy "Tìm xe" box).
+  P1 is now cleared, keeping its styling.
+- The template's duplicate-number rule on cột C was split across its sample rows, so deleting
+  them shrank it to C1 and **exported duplicates were never flagged red** (business rules cột C).
+  One duplicate rule now covers every exported row of cột C, in the template's colours.
+
 ## [1.2.2] — 2026-09-27 — data directory locked to SYSTEM + Administrators; single-PC install guide
 
 Upgrade **every** installed entry-gate PC with `.\install.ps1`: re-running it applies the new

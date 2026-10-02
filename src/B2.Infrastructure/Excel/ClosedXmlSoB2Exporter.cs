@@ -18,6 +18,10 @@ public sealed class ClosedXmlSoB2Exporter : ISoB2Exporter
     private const int HeaderTitleRow = 1;
     private const int FirstDataRow = 2;
     private const int LastColumn = 15; // A..O
+    private const int DeclarationNumberColumn = 3; // C
+
+    /// <summary>Cột P, row 1: the legacy "Tìm xe" input box; the template ships a sample value.</summary>
+    private const int SearchBoxColumn = 16;
 
     /// <summary>Display form from business rules cột I/K: "26/2/2026 13:16".</summary>
     private const string TimestampFormat = "d/M/yyyy H:mm";
@@ -25,6 +29,10 @@ public sealed class ClosedXmlSoB2Exporter : ISoB2Exporter
     private static readonly XLColor UnexitedRed = XLColor.Red;
     private static readonly XLColor AllExitedGreen = XLColor.FromArgb(0xC6, 0xEF, 0xCE);
     private static readonly XLColor DayHeaderFill = XLColor.FromArgb(0xD9, 0xE1, 0xF2);
+
+    // Excel's "light red fill with dark red text" — what the template's duplicate rule uses.
+    private static readonly XLColor DuplicateText = XLColor.FromArgb(0x9C, 0x00, 0x06);
+    private static readonly XLColor DuplicateFill = XLColor.FromArgb(0xFF, 0xC7, 0xCE);
 
     private readonly string? _onDiskTemplatePath;
 
@@ -62,6 +70,8 @@ public sealed class ClosedXmlSoB2Exporter : ISoB2Exporter
             }
         }
 
+        HighlightDuplicateDeclarationNumbers(ws, row - 1);
+
         using var output = new MemoryStream();
         workbook.SaveAs(output);
         return output.ToArray();
@@ -74,6 +84,29 @@ public sealed class ClosedXmlSoB2Exporter : ISoB2Exporter
         {
             ws.Rows(FirstDataRow, lastRow).Delete();
         }
+
+        // The template's sample "Tìm xe" value (1358) is not data; keep the cell's styling only.
+        ws.Cell(HeaderTitleRow, SearchBoxColumn).Clear(XLClearOptions.Contents);
+    }
+
+    /// <summary>
+    /// Business rules cột C: a duplicated declaration number is flagged red. The template's
+    /// duplicate rule was split across its sample rows, so deleting them shrank it to C1;
+    /// re-create one rule over every exported row, in the template's colours.
+    /// </summary>
+    private static void HighlightDuplicateDeclarationNumbers(IXLWorksheet ws, int lastDataRow)
+    {
+        ws.ConditionalFormats.RemoveAll();
+        if (lastDataRow < FirstDataRow)
+        {
+            return;
+        }
+
+        var duplicates = ws.Range(FirstDataRow, DeclarationNumberColumn, lastDataRow, DeclarationNumberColumn)
+            .AddConditionalFormat()
+            .WhenIsDuplicate();
+        duplicates.Font.SetFontColor(DuplicateText);
+        duplicates.Fill.SetBackgroundColor(DuplicateFill);
     }
 
     /// <summary>

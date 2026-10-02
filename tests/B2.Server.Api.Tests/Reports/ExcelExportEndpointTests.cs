@@ -75,6 +75,46 @@ public sealed class ExcelExportEndpointTests
 
     [Fact]
     [Trait("Feature", "F-13")]
+    public async Task Template_sample_search_value_is_not_exported()
+    {
+        // Audit X1: cột P row 1 is the legacy "Tìm xe" box; the template's sample 1358 leaked
+        // into every export.
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+        var decl = await CreateDeclarationAsync(client, "31A30020");
+        var date = decl.BusinessDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        var ws = await ExportWorksheetAsync(client, date, date);
+
+        ws.Cell(1, 16).GetString().Should().BeEmpty();
+    }
+
+    [Fact]
+    [Trait("Feature", "F-13")]
+    public async Task Duplicate_declaration_numbers_are_flagged_across_every_exported_row()
+    {
+        // Audit X1 / business rules cột C: the template's duplicate rule shrank to C1 when its
+        // sample rows were deleted, so exported duplicates were never flagged.
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+        var decl = await CreateDeclarationAsync(client, "31A30030");
+        await CreateDeclarationAsync(client, "31A30031");
+        var date = decl.BusinessDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        var ws = await ExportWorksheetAsync(client, date, date);
+
+        var lastRow = ws.LastRowUsed()!.RowNumber();
+        var rule = ws.ConditionalFormats.Should().ContainSingle().Subject;
+        rule.ConditionalFormatType.Should().Be(XLConditionalFormatType.IsDuplicate);
+        rule.Range.RangeAddress.ToString().Should().Be($"C2:C{lastRow}");
+    }
+
+    [Fact]
+    [Trait("Feature", "F-13")]
     public async Task Should_render_unexited_vehicle_in_red()
     {
         await using var factory = new B2ApiFactory();

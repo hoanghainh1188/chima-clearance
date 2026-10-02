@@ -611,4 +611,16 @@ Alt+1 … Alt+8 — Chuyển nhanh giữa các tab
 
 (Các phím tắt chưa kích hoạt sẽ được bổ sung ở phiên bản tiếp theo.)</value>
   </data>
+  <data name="Common_Error_ServerUnreachable" xml:space="preserve">
+    <value>Không kết nối được máy chủ ở cổng vào. Kiểm tra mạng rồi thử lại.</value>
+  </data>
+  <data name="Entry_Error_DuplicateNumber" xml:space="preserve">
+    <value>Số tờ khai này đã có trong sổ (ở một tờ khai chưa hủy). Kiểm tra lại số trước khi lưu.</value>
+  </data>
+  <data name="Exit_Error_AlreadyExited" xml:space="preserve">
+    <value>Xe này đã được đánh dấu ra ở máy khác. Tìm lại để xem trạng thái mới nhất.</value>
+  </data>
+  <data name="Exit_Error_DeclarationCancelled" xml:space="preserve">
+    <value>Tờ khai của xe này đã bị hủy, không đánh dấu ra được.</value>
+  </data>
 </root>
