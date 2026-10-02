@@ -27,6 +27,22 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 - Docs: install guide (new initial-password step), runbook § 2, quickstart (dev staging),
   FR-017, ADR-0004 bullet superseded, UAT steps 2/U3/U4.
 
+### Fixed
+
+#### Backups: continuous backup on by default; same-PC restore needs no envelope — `F-15` (audit D1, D2)
+
+- **Continuous backup never ran.** Litestream only started with an explicit
+  `B2:Litestream` config that the installer never wrote, while the runbook promised "every
+  60 s". On Windows it is now on by default (`{data}\litestream.exe`, replica
+  `{data}\backup\replica`); config can still disable it or add USB/LAN replicas
+  (`appsettings.Production.json`, documented in runbook § 3). The local replica shares the
+  disk, so weekly manual backups remain in the runbook.
+- **Restore depended on the recovery-code envelope even on the same PC.** The install password
+  is sealed on the entry-gate PC and never shown; with no secret supplied the restore endpoint
+  now uses that sealed password, and the Desktop no longer requires the field (label says to
+  leave it blank on the same PC). The envelope is only needed on a replaced PC.
+- Runbook § 4 told operators to type "KHÔI PHỤC"; the screen requires `RESTORE`.
+
 ## [1.2.2] — 2026-09-27 — data directory locked to SYSTEM + Administrators; single-PC install guide
 
 Upgrade **every** installed entry-gate PC with `.\install.ps1`: re-running it applies the new

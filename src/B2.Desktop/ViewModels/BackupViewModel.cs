@@ -61,8 +61,7 @@ public sealed partial class BackupViewModel : ObservableObject
     private bool CanRestore =>
         IsRestoreConfirmVisible
         && _selectedFileBytes is not null
-        && string.Equals(RestoreConfirmText, ConfirmWord, StringComparison.Ordinal)
-        && !string.IsNullOrWhiteSpace(RestorePassword);
+        && string.Equals(RestoreConfirmText, ConfirmWord, StringComparison.Ordinal);
 
     [RelayCommand]
     private async Task BackupNowAsync()
