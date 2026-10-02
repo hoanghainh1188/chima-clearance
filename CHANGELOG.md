@@ -6,6 +6,20 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 
+Nothing pending.
+
+## [1.3.0] — 2026-10-02 — per-install Admin password; automatic backup; pre-UAT fixes from the requirements audit
+
+**Upgrade every entry-gate PC with `.\install.ps1`** — not by copying files. The installer issues
+the per-install initial Admin password that migration `0004` relies on: if `admin` never changed
+the shared seed password, the old password stops working and the new one is shown on screen
+(copy it before pressing Enter; `B2Clearance.exe reset-initial-admin` re-issues it). An Admin who
+already chose a password keeps it. Exit-gate PCs: re-run `.\install.ps1 -ClientOnly -ServerUrl …`.
+After upgrading, **Sức khỏe → Tổng quan** should show Litestream ✅ running.
+
+Use v1.3.0 for new installs, upgrades and the `T-S6-12` UAT. The requirements-fit audit
+(`docs/danh-gia-phu-hop-yeu-cau.md`) lists what is still open and the questions for the unit.
+
 ### Security
 
 #### Per-install initial Admin password — `F-01`, ADR-0009
@@ -1239,7 +1253,8 @@ seeded admin bootstrap, and FR-017 force-rotate-password.
   applied during their respective sprints (M2 + M5 + M7 in S1; M3 + M4 + M6 in
   S3..S5). None block this release.
 
-[Unreleased]: https://example.invalid/chima-clearance/compare/v1.2.2...HEAD
+[Unreleased]: https://example.invalid/chima-clearance/compare/v1.3.0...HEAD
+[1.3.0]: https://example.invalid/chima-clearance/compare/v1.2.2...v1.3.0
 [1.2.2]: https://example.invalid/chima-clearance/compare/v1.2.1...v1.2.2
 [1.2.1]: https://example.invalid/chima-clearance/compare/v1.2.0...v1.2.1
 [1.2.0]: https://example.invalid/chima-clearance/compare/v1.1.1...v1.2.0
