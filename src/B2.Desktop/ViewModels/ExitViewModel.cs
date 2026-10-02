@@ -160,13 +160,18 @@ public partial class ExitViewModel : ObservableObject, IDisposable
             Results.Clear();
             SelectedResult = null;
         }
-        catch (ApiException)
+        catch (ApiException ex)
         {
-            ErrorMessage = AppResources.Exit_Error_MarkExit;
+            ErrorMessage = ApiErrorCode.FromProblemJson(ex.Content) switch
+            {
+                ApiErrorCode.VehicleAlreadyExited => AppResources.Exit_Error_AlreadyExited,
+                ApiErrorCode.DeclarationCancelled => AppResources.Exit_Error_DeclarationCancelled,
+                _ => AppResources.Exit_Error_MarkExit,
+            };
         }
         catch (HttpRequestException)
         {
-            ErrorMessage = AppResources.Exit_Error_MarkExit;
+            ErrorMessage = AppResources.Common_Error_ServerUnreachable;
         }
     }
 

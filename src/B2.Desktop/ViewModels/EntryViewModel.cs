@@ -392,13 +392,15 @@ public partial class EntryViewModel : ObservableObject, IDisposable
 
             await _toast.ShowAsync(AppResources.Entry_Toast_Saved, ToastSeverity.Success).ConfigureAwait(false);
         }
-        catch (ApiException)
+        catch (ApiException ex)
         {
-            ErrorMessage = AppResources.Entry_Error_CreateDeclaration;
+            ErrorMessage = ApiErrorCode.FromProblemJson(ex.Content) == ApiErrorCode.DeclarationNumberDuplicate
+                ? AppResources.Entry_Error_DuplicateNumber
+                : AppResources.Entry_Error_CreateDeclaration;
         }
         catch (HttpRequestException)
         {
-            ErrorMessage = AppResources.Entry_Error_CreateDeclaration;
+            ErrorMessage = AppResources.Common_Error_ServerUnreachable;
         }
     }
 

@@ -66,6 +66,40 @@ public sealed class SearchEndpointTests
 
     [Fact]
     [Trait("Feature", "F-07")]
+    [Trait("Requirement", "FR-023")]
+    public async Task Search_excludes_vehicles_of_cancelled_declarations()
+    {
+        // Audit S1: a cancelled declaration's vehicle used to show up at the exit gate and then
+        // fail with 409 when marked exited.
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+        var create = await client.PostAsJsonAsync(
+            "/api/declarations",
+            new DeclarationCreateRequest(
+                [TestDeclarationNumbers.Next()],
+                SeedIds.ProcessorId,
+                "C1",
+                "G1",
+                SeedIds.YardId,
+                new VehicleAddRequest("29C18642", null, null)),
+            TestJson.Options);
+        create.EnsureSuccessStatusCode();
+        var decl = (await create.Content.ReadFromJsonAsync<DeclarationDto>(TestJson.Options))!;
+        (await client.PostAsJsonAsync(
+            $"/api/declarations/{decl.Id}/cancel", new CancelDeclarationRequest("Nhập nhầm"), TestJson.Options))
+            .EnsureSuccessStatusCode();
+
+        var search = await client.GetAsync("/api/vehicles/search?suffix=8642&unexited=true");
+        search.EnsureSuccessStatusCode();
+        var list = await search.Content.ReadFromJsonAsync<List<VehicleSearchResultDto>>(TestJson.Options);
+
+        list.Should().BeEmpty();
+    }
+
+    [Fact]
+    [Trait("Feature", "F-07")]
     public async Task Should_search_three_or_four_digit_suffix()
     {
         await using var factory = new B2ApiFactory();

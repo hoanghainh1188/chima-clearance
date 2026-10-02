@@ -42,7 +42,8 @@ public sealed class VehicleSuffixSearchRepository : IVehicleSuffixSearchReposito
                   v."ExitMarked"
                 FROM "Vehicles" AS v
                 INNER JOIN "Declarations" AS d ON d."Id" = v."DeclarationId"
-                WHERE (@unexitedOnly = 0 OR v."ExitMarked" = 0)
+                WHERE d."Status" <> 'Cancelled'
+                  AND (@unexitedOnly = 0 OR v."ExitMarked" = 0)
                   AND (
                     @hasSuffix = 0
                     OR (@isFour = 1 AND v."PlateLast4" = @suffix)
