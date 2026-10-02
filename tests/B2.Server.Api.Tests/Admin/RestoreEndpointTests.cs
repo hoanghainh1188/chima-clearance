@@ -48,6 +48,30 @@ public sealed class RestoreEndpointTests
 
     [Fact]
     [Trait("Feature", "F-15")]
+    [Trait("Requirement", "FR-026")]
+    public async Task Restore_on_the_same_pc_needs_no_secret()
+    {
+        // Pre-UAT audit D2: restoring on the entry-gate PC that made the backup must not depend
+        // on the recovery-code envelope; the server uses its own sealed install password.
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+        var snapshot = await (await client.PostAsync("/api/admin/backup-now", content: null)).Content.ReadAsByteArrayAsync();
+
+        using var form = new MultipartFormDataContent
+        {
+            { new ByteArrayContent(snapshot), "file", "snapshot.bak" },
+            { new StringContent(string.Empty), "password" },
+        };
+        var res = await client.PostAsync("/api/admin/restore", form);
+
+        res.StatusCode.Should().Be(HttpStatusCode.OK);
+        factory.Services.GetRequiredService<IDatabaseRestoreService>().ApplyPending().Should().NotBeNull();
+    }
+
+    [Fact]
+    [Trait("Feature", "F-15")]
     public async Task Should_accept_restore_upload_and_audit()
     {
         await using var factory = new B2ApiFactory();

@@ -1007,7 +1007,7 @@ Alt+1 … Alt+8 — Chuyển nhanh giữa các tab
     <value>Nhập "RESTORE" để xác nhận:</value>
   </data>
   <data name="Backup_Restore_PasswordLabel" xml:space="preserve">
-    <value>Mật khẩu sao lưu (hoặc mã khôi phục):</value>
+    <value>Mã phục hồi (để trống nếu khôi phục trên chính máy cổng vào):</value>
   </data>
   <data name="Backup_Restore_Confirm" xml:space="preserve">
     <value>Khôi phục</value>
