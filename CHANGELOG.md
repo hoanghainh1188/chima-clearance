@@ -27,6 +27,15 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 - Docs: install guide (new initial-password step), runbook § 2, quickstart (dev staging),
   FR-017, ADR-0004 bullet superseded, UAT steps 2/U3/U4.
 
+### Added
+
+#### `tools/docs-pdf/` — export the operator docs to PDF (ADR-0008)
+
+- `build_docs_pdf.py` renders `huong-dan-cai-dat.md`, `runbook.md` and `deployment-offline.md`
+  with markdown-it-py (pinned in `requirements.txt`) and prints A4 PDFs with the local Chrome,
+  Chromium or Edge. Output in `tools/docs-pdf/out/`, git-ignored. No password is injected: with
+  F-01 each install shows its own initial Admin password, so the PDFs carry no credential.
+
 ### Fixed
 
 #### Backups: continuous backup on by default; same-PC restore needs no envelope — `F-15` (audit D1, D2)
