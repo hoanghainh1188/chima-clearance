@@ -30,4 +30,16 @@ public sealed class ApiErrorCodeTests
     {
         ApiErrorCode.FromProblemJson(body).Should().BeNull();
     }
+
+    [Theory]
+    [Trait("Requirement", "F-02")]
+    [InlineData("USERNAME_TAKEN", ApiErrorCode.UsernameTaken)]
+    [InlineData("CANNOT_DEACTIVATE_SELF", ApiErrorCode.CannotDeactivateSelf)]
+    [InlineData("LAST_ADMIN_LOCKOUT", ApiErrorCode.LastAdminLockout)]
+    public void Reads_the_user_admin_conflict_codes(string serverCode, string expected)
+    {
+        var body = $$"""{"status":409,"code":"{{serverCode}}","correlationId":"abc"}""";
+
+        ApiErrorCode.FromProblemJson(body).Should().Be(expected);
+    }
 }

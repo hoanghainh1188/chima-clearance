@@ -53,14 +53,15 @@ public sealed class ApiEndpointResolverTests : IDisposable
     // -- Exit gate: pointed at the entry-gate PC ----------------------------------------
 
     [Theory]
-    [InlineData("192.168.1.10", "http://192.168.1.10:5000/")]
-    [InlineData("192.168.1.10:5000", "http://192.168.1.10:5000/")]
-    [InlineData("http://192.168.1.10:5000", "http://192.168.1.10:5000/")]
-    [InlineData("http://192.168.1.10:5000/", "http://192.168.1.10:5000/")]
-    [InlineData("  192.168.1.10  ", "http://192.168.1.10:5000/")]
-    [InlineData("gate-pc", "http://gate-pc:5000/")]
+    [InlineData("192.168.1.10", "https://192.168.1.10:5001/")]
+    [InlineData("192.168.1.10:5001", "https://192.168.1.10:5001/")]
+    [InlineData("https://192.168.1.10:5001", "https://192.168.1.10:5001/")]
+    [InlineData("https://192.168.1.10:5001/", "https://192.168.1.10:5001/")]
+    [InlineData("  192.168.1.10  ", "https://192.168.1.10:5001/")]
+    [InlineData("gate-pc", "https://gate-pc:5001/")]
+    [InlineData("https://gate-pc", "https://gate-pc:5001/")]
+    [InlineData("https://gate-pc:8443", "https://gate-pc:8443/")]
     [InlineData("http://gate-pc:8080", "http://gate-pc:8080/")]
-    [InlineData("https://gate-pc:5001", "https://gate-pc:5001/")]
     public void Config_file_address_is_normalised(string configured, string expected)
     {
         WriteConfig("{\"serverUrl\": \"" + configured.Trim() + "\"}");
@@ -73,10 +74,17 @@ public sealed class ApiEndpointResolverTests : IDisposable
     }
 
     [Fact]
+    public void Default_is_https_on_loopback_port_5001()
+    {
+        // #147: the service no longer listens on plain HTTP 5000.
+        new Uri(ApiEndpointResolver.DefaultBaseAddress).Should().Be(new Uri("https://127.0.0.1:5001/"));
+    }
+
+    [Fact]
     public void Base_address_always_ends_in_a_slash()
     {
         // Refit drops the last path segment of a base address without a trailing slash.
-        WriteConfig("{\"serverUrl\": \"http://gate-pc:5000\"}");
+        WriteConfig("{\"serverUrl\": \"https://gate-pc:5001\"}");
 
         ApiEndpointResolver.Resolve(_dir, null).BaseUri.AbsoluteUri.Should().EndWith("/");
     }
@@ -89,7 +97,7 @@ public sealed class ApiEndpointResolverTests : IDisposable
         var result = ApiEndpointResolver.Resolve(_dir, environmentOverride: null);
 
         result.Source.Should().Be(ApiEndpointSource.ConfigFile);
-        result.BaseUri.Should().Be(new Uri("http://192.168.1.10:5000/"));
+        result.BaseUri.Should().Be(new Uri("https://192.168.1.10:5001/"));
     }
 
     [Fact]
@@ -104,7 +112,7 @@ public sealed class ApiEndpointResolverTests : IDisposable
         var result = ApiEndpointResolver.Resolve(_dir, environmentOverride: null);
 
         result.Source.Should().Be(ApiEndpointSource.ConfigFile);
-        result.BaseUri.Should().Be(new Uri("http://192.168.1.10:5000/"));
+        result.BaseUri.Should().Be(new Uri("https://192.168.1.10:5001/"));
     }
 
     // -- Bad input must be loud, not silent ---------------------------------------------
@@ -158,7 +166,7 @@ public sealed class ApiEndpointResolverTests : IDisposable
 
         var result = ApiEndpointResolver.Resolve(_dir, "10.0.0.5:6000");
 
-        result.BaseUri.Should().Be(new Uri("http://10.0.0.5:6000/"));
+        result.BaseUri.Should().Be(new Uri("https://10.0.0.5:6000/"));
         result.Source.Should().Be(ApiEndpointSource.Environment);
     }
 

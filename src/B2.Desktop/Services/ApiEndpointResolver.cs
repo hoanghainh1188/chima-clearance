@@ -17,14 +17,21 @@ namespace B2.Desktop.Services;
 /// </list>
 /// <para>
 /// Values are lenient by design: operators type <c>192.168.1.10</c>, not a URL. A bare host gets
-/// <c>http://</c> and port 5000; a missing trailing slash is added (Refit drops the last segment
+/// <c>https://</c> and port 5001; a missing trailing slash is added (Refit drops the last segment
 /// of a base address without one).
+/// </para>
+/// <para>
+/// #147 / ADR-0010: the service is HTTPS-only. Trust comes from the OS store, not from code — the
+/// installer puts the server's self-signed certificate in LocalMachine\Root (entry gate: issued
+/// there; exit gate: <c>install.ps1 -ServerCertificate b2-server.cer</c>). HttpClient and the
+/// SignalR WebSocket therefore validate it with no custom callback, and the certificate's SANs
+/// cover the host names / LAN IPs an operator would put in <c>serverUrl</c>.
 /// </para>
 /// </summary>
 public static class ApiEndpointResolver
 {
     /// <summary>Server on this PC — the entry gate, and what a client install overrides.</summary>
-    public const string DefaultBaseAddress = "http://127.0.0.1:5000/";
+    public const string DefaultBaseAddress = "https://127.0.0.1:5001/";
 
     /// <summary>Config file read from the executable's directory.</summary>
     public const string ConfigFileName = "b2-client.json";
@@ -35,7 +42,7 @@ public static class ApiEndpointResolver
     /// <summary>Environment variable checked before the config file.</summary>
     public const string EnvironmentVariableName = "B2_SERVER_URL";
 
-    private const int DefaultPort = 5000;
+    private const int DefaultPort = 5001;
 
     /// <summary>
     /// Resolves the endpoint. <paramref name="appDirectory"/> is where <see cref="ConfigFileName"/>
@@ -157,7 +164,7 @@ public static class ApiEndpointResolver
 
     /// <summary>
     /// Accepts what an operator would actually type — <c>192.168.1.10</c>,
-    /// <c>192.168.1.10:5000</c>, <c>http://gate-pc:5000</c> — and returns a base URI Refit can use,
+    /// <c>192.168.1.10:5001</c>, <c>https://gate-pc:5001</c> — and returns a base URI Refit can use,
     /// or null when the value cannot be understood.
     /// </summary>
     private static Uri? TryNormalize(string? raw)
@@ -171,7 +178,7 @@ public static class ApiEndpointResolver
         var hasScheme = text.Contains("://", StringComparison.Ordinal);
         if (!hasScheme)
         {
-            text = Uri.UriSchemeHttp + "://" + text;
+            text = Uri.UriSchemeHttps + "://" + text;
         }
 
         if (!Uri.TryCreate(text, UriKind.Absolute, out var parsed))
@@ -197,8 +204,8 @@ public static class ApiEndpointResolver
 
     /// <summary>
     /// True when the authority carries an explicit <c>:port</c>. <see cref="Uri.IsDefaultPort"/>
-    /// cannot answer this — it is also true for an explicit <c>:80</c> — and a bare host must land
-    /// on 5000, not 80.
+    /// cannot answer this — it is also true for an explicit <c>:443</c> — and a bare host must land
+    /// on 5001, not 443.
     /// </summary>
     private static bool HasExplicitPort(string textWithScheme)
     {
@@ -211,7 +218,7 @@ public static class ApiEndpointResolver
             authority = authority[..end];
         }
 
-        // IPv6 literals ("[::1]:5000") carry colons inside the brackets.
+        // IPv6 literals ("[::1]:5001") carry colons inside the brackets.
         var closingBracket = authority.LastIndexOf(']');
         var searchFrom = closingBracket >= 0 ? closingBracket : 0;
 

@@ -64,7 +64,8 @@ prereqs/
 
 `install.ps1` sẽ tự động: cài VC++ + WebView2 (im lặng) → chép chương trình vào
 `C:\Program Files\B2Clearance` → gọi `B2Clearance.exe install` (tạo thư mục dữ liệu, chứng
-chỉ TLS localhost, đăng ký Windows Service tự khởi động, mở firewall TCP 5000, **sinh + hiển
+chỉ TLS cho tên máy + IP LAN — xuất `C:\ProgramData\B2\b2-server.cer` cho máy cổng ra, ADR-0010
+—, đăng ký Windows Service tự khởi động, mở firewall TCP 5001 (HTTPS), **sinh + hiển
 thị MÃ PHỤC HỒI** và **mật khẩu Admin ban đầu** sinh ngẫu nhiên cho riêng lần cài này — ADR-0009) →
 tạo shortcut desktop → khởi động dịch vụ.
 
@@ -85,28 +86,49 @@ Nghiệp vụ có **2 máy**: máy **cổng vào** chạy service (vừa server 
 chỉ là client, nối qua LAN. Cài máy cổng ra bằng:
 
 ```powershell
-.\install.ps1 -ClientOnly -ServerUrl 192.168.1.10     # IP của máy cổng vào
+# b2-server.cer chép bằng USB từ C:\ProgramData\B2\ của máy cổng vào
+.\install.ps1 -ClientOnly -ServerUrl 192.168.1.10 -ServerCertificate E:\b2-server.cer
 ```
 
 - `-ServerUrl` ghi `Desktop\b2-client.json` → `{"serverUrl": "192.168.1.10"}`. Nhận IP trần
-  (tự hiểu `http://…:5000/`), `ip:port`, hoặc URL đầy đủ. Không có file này thì desktop dùng
-  `http://127.0.0.1:5000/` (máy cổng vào).
-- `-ClientOnly` bỏ qua đăng ký service, chứng chỉ và mã phục hồi — máy cổng ra **không** có
-  database riêng. Bắt buộc đi kèm `-ServerUrl`.
+  (tự hiểu `https://…:5001/`), `ip:port`, hoặc URL đầy đủ. Không có file này thì desktop dùng
+  `https://127.0.0.1:5001/` (máy cổng vào).
+- `-ServerCertificate` nhập chứng chỉ **công khai** của máy cổng vào vào `LocalMachine\Root`
+  (gỡ chứng chỉ B2 cũ nếu có) và in **Thumbprint** — đối chiếu với dòng `Thumbprint` hiện trên
+  máy cổng vào lúc cài. Từ chối tệp có khóa bí mật (`server.pfx` không bao giờ rời máy cổng vào).
+- `-ClientOnly` bỏ qua đăng ký service, cấp chứng chỉ và mã phục hồi — máy cổng ra **không** có
+  database riêng. Bắt buộc đi kèm `-ServerUrl` và `-ServerCertificate`.
 - Đổi địa chỉ sau khi cài: sửa trực tiếp `C:\Program Files\B2Clearance\Desktop\b2-client.json`
   rồi mở lại app. Không cần cài lại. (Lưu bằng Notepad kèm BOM vẫn đọc được.)
 - Biến môi trường `B2_SERVER_URL` ghi đè file — tiện khi cần thử nhanh một địa chỉ khác.
 
-Server lắng nghe `http://0.0.0.0:5000` (khai báo trong `appsettings.json`) nên máy khác trong
-LAN gọi được; installer đã mở sẵn firewall TCP 5000 ở profile Private. Nếu app báo
-🔴 **Mất kết nối**: `ping <ip-máy-cổng-vào>`, rồi kiểm tra service đang chạy và firewall.
+Server chỉ lắng nghe **HTTPS** `https://0.0.0.0:5001` (khai báo trong `appsettings.json`;
+`http://` trên địa chỉ LAN bị từ chối lúc khởi động — #147) nên máy khác trong LAN gọi được qua
+kênh mã hóa; installer đã mở sẵn firewall TCP 5001 ở profile Private. Chứng chỉ có SAN gồm
+`localhost`, tên máy và mọi IPv4 LAN đang hoạt động lúc cài. Nếu app báo 🔴 **Mất kết nối**:
+`ping <ip-máy-cổng-vào>`, rồi kiểm tra service đang chạy, firewall, và chứng chỉ (dưới đây).
+
+### Đổi IP / tên máy cổng vào
+
+Chứng chỉ gắn với IP + tên máy lúc cấp. Sau khi đổi IP (nên đặt **IP tĩnh** cho máy cổng vào)
+hoặc đổi tên máy, chạy trên máy cổng vào (Administrator):
+
+```powershell
+& 'C:\Program Files\B2Clearance\B2Clearance.exe' renew-certificate
+```
+
+Lệnh chỉ cấp lại khi tên/IP hiện tại không còn nằm trong chứng chỉ (hoặc sắp hết hạn), rồi khởi
+động lại dịch vụ. Khi in "Đã cấp chứng chỉ TLS mới", chép `b2-server.cer` mới sang từng máy cổng
+ra và chạy lại `install.ps1 -ClientOnly -ServerUrl … -ServerCertificate …`.
 
 ## Cập nhật phiên bản (vẫn offline)
 
 Không có auto-update. Nâng cấp = chạy lại `install.ps1` từ gói zip mới (qua USB): script dừng
 dịch vụ, chép đè binaries, khởi động lại. Dữ liệu `C:\ProgramData\B2` (database, backup, keys,
-mã phục hồi) **được giữ nguyên** — `B2Clearance.exe install` bỏ qua các bước sinh secrets/cert
-nếu đã tồn tại (idempotent).
+mã phục hồi) **được giữ nguyên** — `B2Clearance.exe install` bỏ qua các bước sinh secrets
+nếu đã tồn tại (idempotent). Chứng chỉ TLS chỉ được cấp lại khi chứng chỉ cũ không còn đúng tên
+máy / IP LAN — bản ≤ v1.3.0 chỉ có `localhost`, nên lần nâng cấp đầu lên HTTPS **luôn** cấp mới:
+sau đó cài lại máy cổng ra với `-ServerCertificate` như trên.
 
 ## Gỡ cài
 
@@ -153,7 +175,7 @@ Cấu hình tối thiểu mỗi máy ảo: 2 vCPU, 4 GB RAM, 64 GB ổ đĩa. Wi
 - Đặt card mạng của cả 2 máy ảo ở chế độ **host-only** (Parallels: *Host-Only Network*;
   VMware Fusion: *Private to my Mac*; UTM: *Host Only*). Máy ảo thấy nhau nhưng **không** ra
   internet — đúng như cửa khẩu.
-- Mạng host-only thường bị Windows xếp là **Public**, mà rule firewall TCP 5000 do installer tạo
+- Mạng host-only thường bị Windows xếp là **Public**, mà rule firewall TCP 5001 do installer tạo
   chỉ áp cho **Private**. Trên máy cổng vào, kiểm tra và chỉnh:
 
   ```powershell
@@ -184,7 +206,7 @@ mọi chỗ tài liệu thiếu hoặc sai.
 | --- | --- | --- |
 | 1 | Máy cổng vào (snapshot `clean`): `.\install.ps1` | Hiện mã phục hồi, `HOAN TAT`; `Get-Service B2ClearanceService` → `Running` |
 | 2 | Đăng nhập `admin` lần đầu | Bị buộc đổi mật khẩu; sau đó 🟢 Online |
-| 3 | Máy cổng ra (snapshot `clean`): `.\install.ps1 -ClientOnly -ServerUrl <IP máy cổng vào>` | `HOAN TAT (client-only)`; app 🟢 Online |
+| 3 | Máy cổng ra (snapshot `clean`): `.\install.ps1 -ClientOnly -ServerUrl <IP máy cổng vào> -ServerCertificate <b2-server.cer>` | `HOAN TAT (client-only)`; app 🟢 Online |
 | 4 | Nhập 1 xe ở cổng vào | Xe hiện trên máy cổng ra trong vài giây |
 | 5 | Tắt service trên máy cổng vào | Máy cổng ra chuyển 🔴 Mất kết nối; bật lại → 🟢 |
 | 6 | Chạy lại `.\install.ps1` trên máy cổng vào (nâng cấp) | Không lỗi; dữ liệu ở bước 4 còn nguyên; mã phục hồi không đổi |

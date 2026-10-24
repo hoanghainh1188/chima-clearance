@@ -29,6 +29,8 @@ if (WindowsServiceHelpers.IsWindowsService())
     builder.Services.AddSingleton<IServiceRestarter, WindowsServiceRestarter>();
 }
 
+// #147: HTTPS-only on the LAN with the installer-issued keys\server.pfx (ADR-0010).
+KestrelHttpsSetup.Configure(builder, B2ApiHost.ResolveDataDirectory(builder));
 B2ApiHost.ConfigureServices(builder);
 builder.Services.AddB2QuartzStartup();
 builder.Services.AddB2Litestream(builder.Configuration, B2ApiHost.ResolveDataDirectory(builder));
