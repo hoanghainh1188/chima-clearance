@@ -33,6 +33,7 @@ public static class MauiProgram
         builder.Services.AddSingleton<ConnectivityService>();
         builder.Services.AddSingleton<IToastService, ToastService>();
         builder.Services.AddSingleton<IModalService, ModalService>();
+        builder.Services.AddSingleton<IUserFormDialog, UserFormDialog>();
         builder.Services.AddSingleton<ISessionCorrelationService, SessionCorrelationService>();
         builder.Services.AddSingleton<ISessionContext, SessionContext>();
         builder.Services.AddSingleton<IAppNavigator, AppNavigator>();

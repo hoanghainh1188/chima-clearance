@@ -1,39 +1,182 @@
 <?xml version="1.0" encoding="UTF-8" ?>
 <ContentView x:Class="B2.Desktop.Views.Admin.UsersPage"
+             x:Name="PageRoot"
              xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:vm="clr-namespace:B2.Desktop.ViewModels.Admin"
              xmlns:s="clr-namespace:B2.Desktop.Resources.Strings"
-             xmlns:contracts="clr-namespace:B2.Shared.Contracts.Users;assembly=B2.Shared.Contracts"
              xmlns:common="clr-namespace:B2.Desktop.Views.Common"
              x:DataType="vm:UsersViewModel"
              BackgroundColor="{StaticResource ColorSurface}">
-  <Grid Padding="{StaticResource SpacingM}" RowDefinitions="Auto,*">
-    <Label Grid.Row="0"
-           Text="{x:Static s:AppResources.Users_PageTitle}"
-           FontSize="{StaticResource FontSizeXL}"
-           TextColor="{StaticResource ColorPrimary}" />
-    <Grid Grid.Row="1">
+  <!-- Wireframe § 6.8 — F-02 Admin Users. Four list states per § 8: Loading (skeleton),
+       Empty (icon + action), Error (red banner + retry + correlationId), Offline (banner +
+       last-success timestamp). Writes are disabled while offline (FR-028 🔴). -->
+  <Grid Padding="{StaticResource SpacingM}"
+        RowDefinitions="Auto,Auto,Auto,Auto,Auto,*,Auto"
+        RowSpacing="{StaticResource SpacingS}">
+
+    <Grid Grid.Row="0" ColumnDefinitions="*,Auto">
+      <Label Grid.Column="0"
+             Text="{x:Static s:AppResources.Users_PageTitle}"
+             VerticalOptions="Center"
+             FontSize="{StaticResource FontSizeXL}"
+             TextColor="{StaticResource ColorPrimary}" />
+      <Button Grid.Column="1"
+              Text="{x:Static s:AppResources.Users_Add}"
+              Command="{Binding AddUserCommand}"
+              BackgroundColor="{StaticResource ColorPrimary}"
+              TextColor="{StaticResource ColorSurface}"
+              SemanticProperties.Hint="{x:Static s:AppResources.Users_Add}" />
+    </Grid>
+
+    <Border Grid.Row="1"
+            Padding="{StaticResource SpacingS}"
+            BackgroundColor="{StaticResource ColorErrorBg}"
+            IsVisible="{Binding ShowOfflineBanner}">
+      <VerticalStackLayout>
+        <Label Text="{x:Static s:AppResources.Connectivity_OfflineBanner}"
+               TextColor="{StaticResource ColorError}"
+               SemanticProperties.Description="{x:Static s:AppResources.Connectivity_OfflineBanner}" />
+        <Label Text="{Binding LastUpdatedText}"
+               FontSize="{StaticResource FontSizeS}"
+               TextColor="{StaticResource ColorError}"
+               IsVisible="{Binding LastUpdatedText, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+      </VerticalStackLayout>
+    </Border>
+    <Border Grid.Row="2"
+            Padding="{StaticResource SpacingS}"
+            BackgroundColor="{StaticResource ColorWarningBanner}"
+            IsVisible="{Binding ShowPollingBanner}">
+      <VerticalStackLayout>
+        <Label Text="{x:Static s:AppResources.Connectivity_PollingBanner}"
+               TextColor="{StaticResource ColorWarning}" />
+        <Label Text="{Binding LastUpdatedText}"
+               FontSize="{StaticResource FontSizeS}"
+               TextColor="{StaticResource ColorWarning}"
+               IsVisible="{Binding LastUpdatedText, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+      </VerticalStackLayout>
+    </Border>
+
+    <Border Grid.Row="3"
+            Padding="{StaticResource SpacingS}"
+            BackgroundColor="{StaticResource ColorErrorBg}"
+            IsVisible="{Binding HasError}">
+      <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource SpacingM}">
+        <VerticalStackLayout Grid.Column="0" VerticalOptions="Center">
+          <Label Text="{Binding ErrorMessage}"
+                 TextColor="{StaticResource ColorError}"
+                 SemanticProperties.Description="{Binding ErrorMessage}" />
+          <common:ErrorCodeBanner BindingContext="{Binding Correlation}" />
+        </VerticalStackLayout>
+        <Button Grid.Column="1"
+                Text="{x:Static s:AppResources.Common_Retry}"
+                Command="{Binding LoadCommand}"
+                SemanticProperties.Hint="{x:Static s:AppResources.Common_Retry}" />
+      </Grid>
+    </Border>
+
+    <HorizontalStackLayout Grid.Row="4" Spacing="{StaticResource SpacingS}">
+      <Label Text="{x:Static s:AppResources.Users_Filter_Label}"
+             VerticalOptions="Center"
+             TextColor="{StaticResource ColorOnSurface}" />
+      <Picker ItemsSource="{Binding StatusFilterOptions}"
+              SelectedIndex="{Binding SelectedStatusIndex}"
+              MinimumWidthRequest="180"
+              SemanticProperties.Hint="{x:Static s:AppResources.Users_Filter_Hint}" />
+      <Entry Text="{Binding SearchText}"
+             Placeholder="{x:Static s:AppResources.Users_Search_Placeholder}"
+             MinimumWidthRequest="280"
+             ClearButtonVisibility="WhileEditing"
+             SemanticProperties.Hint="{x:Static s:AppResources.Users_Search_Placeholder}" />
+    </HorizontalStackLayout>
+
+    <Grid Grid.Row="5">
       <common:SkeletonRows IsVisible="{Binding IsLoading}"
                            VerticalOptions="Start" />
-      <VerticalStackLayout Spacing="{StaticResource SpacingS}"
-                           IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
-        <Label Text="{Binding ErrorMessage}"
-               TextColor="{StaticResource ColorError}"
-               IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
-        <common:ErrorCodeBanner BindingContext="{Binding Correlation}" />
-        <CollectionView ItemsSource="{Binding Users}">
+
+      <VerticalStackLayout IsVisible="{Binding ShowEmpty}"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"
+                           Spacing="{StaticResource SpacingS}">
+        <Label Text="{x:Static s:AppResources.Users_Empty_Icon}"
+               FontSize="{StaticResource FontSizeXXL}"
+               HorizontalOptions="Center" />
+        <Label Text="{x:Static s:AppResources.Users_Empty_Heading}"
+               FontSize="{StaticResource FontSizeL}"
+               TextColor="{StaticResource ColorOnSurfaceMuted}"
+               HorizontalOptions="Center" />
+        <Button Text="{x:Static s:AppResources.Users_Add}"
+                Command="{Binding AddUserCommand}"
+                HorizontalOptions="Center"
+                SemanticProperties.Hint="{x:Static s:AppResources.Users_Add}" />
+      </VerticalStackLayout>
+
+      <Grid IsVisible="{Binding ShowList}" RowDefinitions="Auto,*">
+        <Grid Grid.Row="0"
+              Padding="{StaticResource SpacingS}"
+              BackgroundColor="{StaticResource ColorLedgerDailyHeaderBg}"
+              ColumnDefinitions="2*,3*,2*,2*,4*"
+              ColumnSpacing="{StaticResource SpacingS}">
+          <Label Grid.Column="0" Text="{x:Static s:AppResources.Users_Col_Username}" FontAttributes="Bold" />
+          <Label Grid.Column="1" Text="{x:Static s:AppResources.Users_Col_FullName}" FontAttributes="Bold" />
+          <Label Grid.Column="2" Text="{x:Static s:AppResources.Users_Col_Role}" FontAttributes="Bold" />
+          <Label Grid.Column="3" Text="{x:Static s:AppResources.Users_Col_Status}" FontAttributes="Bold" />
+          <Label Grid.Column="4" Text="{x:Static s:AppResources.Users_Col_Actions}" FontAttributes="Bold" />
+        </Grid>
+        <CollectionView Grid.Row="1"
+                        ItemsSource="{Binding Rows}"
+                        SelectionMode="None">
           <CollectionView.ItemTemplate>
-            <DataTemplate x:DataType="contracts:UserDto">
-              <VerticalStackLayout Padding="8">
-                <Label Text="{Binding Username}" FontAttributes="Bold" />
-                <Label Text="{Binding FullName}" />
-                <Label Text="{Binding Role}" FontSize="{StaticResource FontSizeXS}" TextColor="{StaticResource ColorOnSurface}" />
-              </VerticalStackLayout>
+            <DataTemplate x:DataType="vm:UserRow">
+              <Grid Padding="{StaticResource SpacingS}"
+                    ColumnDefinitions="2*,3*,2*,2*,4*"
+                    ColumnSpacing="{StaticResource SpacingS}">
+                <Label Grid.Column="0" Text="{Binding Username}" FontAttributes="Bold" VerticalOptions="Center" />
+                <Label Grid.Column="1" Text="{Binding FullName}" VerticalOptions="Center" />
+                <Label Grid.Column="2" Text="{Binding RoleLabel}" VerticalOptions="Center" />
+                <!-- Status = icon + colour + text together (wireframe § 1 D5 / WCAG 1.4.1). -->
+                <Grid Grid.Column="3" VerticalOptions="Center">
+                  <Label Text="{x:Static s:AppResources.Users_Status_Active}"
+                         TextColor="{StaticResource ColorSuccess}"
+                         FontAttributes="Bold"
+                         IsVisible="{Binding IsActive}"
+                         SemanticProperties.Description="{x:Static s:AppResources.Users_Status_Active}" />
+                  <Label Text="{x:Static s:AppResources.Users_Status_Inactive}"
+                         TextColor="{StaticResource ColorError}"
+                         FontAttributes="Bold"
+                         IsVisible="{Binding IsActive, Converter={StaticResource InvertedBoolConverter}}"
+                         SemanticProperties.Description="{x:Static s:AppResources.Users_Status_Inactive}" />
+                </Grid>
+                <HorizontalStackLayout Grid.Column="4" Spacing="{StaticResource SpacingS}">
+                  <Button Text="{x:Static s:AppResources.Users_Action_Edit}"
+                          Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.EditUserCommand}"
+                          CommandParameter="{Binding .}"
+                          SemanticProperties.Hint="{x:Static s:AppResources.Users_Action_Edit}" />
+                  <Button Text="{x:Static s:AppResources.Users_Action_ResetPassword}"
+                          Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.ResetPasswordCommand}"
+                          CommandParameter="{Binding .}"
+                          SemanticProperties.Hint="{x:Static s:AppResources.Users_Action_ResetPassword}" />
+                  <Button Text="{x:Static s:AppResources.Users_Action_Deactivate}"
+                          IsVisible="{Binding CanDeactivate}"
+                          Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.ToggleActiveCommand}"
+                          CommandParameter="{Binding .}"
+                          SemanticProperties.Hint="{x:Static s:AppResources.Users_Action_Deactivate}" />
+                  <Button Text="{x:Static s:AppResources.Users_Action_Reactivate}"
+                          IsVisible="{Binding CanReactivate}"
+                          Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.ToggleActiveCommand}"
+                          CommandParameter="{Binding .}"
+                          SemanticProperties.Hint="{x:Static s:AppResources.Users_Action_Reactivate}" />
+                </HorizontalStackLayout>
+              </Grid>
             </DataTemplate>
           </CollectionView.ItemTemplate>
         </CollectionView>
-      </VerticalStackLayout>
+      </Grid>
     </Grid>
+
+    <Label Grid.Row="6"
+           Text="{Binding SummaryText}"
+           TextColor="{StaticResource ColorOnSurfaceMuted}"
+           FontSize="{StaticResource FontSizeS}" />
   </Grid>
 </ContentView>
