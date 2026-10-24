@@ -30,7 +30,7 @@ public sealed class AnnualArchiveJobTests
             .Returns(5);
 
         var writer = Substitute.For<IAnnualArchiveWriter>();
-        writer.WriteExcelAsync(2022, Arg.Any<byte[]>(), Arg.Any<CancellationToken>())
+        writer.WriteExcelAsync(2022, Arg.Any<Func<Stream, CancellationToken, Task>>(), Arg.Any<CancellationToken>())
             .Returns("/archive/2022/file.xlsx");
         writer.VerifyExcel("/archive/2022/file.xlsx", 5).Returns(true);
 
@@ -38,7 +38,7 @@ public sealed class AnnualArchiveJobTests
         var clock = new FixedClock(new DateTimeOffset(2026, 6, 6, 0, 0, 0, TimeSpan.Zero));
         var uow = new CountingUow();
 
-        var sut = new AnnualArchiveJobHandler(archiveRepo, writer, exportHandler, clock, uow);
+        var sut = new AnnualArchiveJobHandler(archiveRepo, writer, exportHandler, Substitute.For<ISoB2StreamingExporter>(), clock, uow);
 
         // Act
         var results = await sut.HandleAsync(CancellationToken.None);
@@ -70,12 +70,13 @@ public sealed class AnnualArchiveJobTests
             .Returns(10);
 
         var writer = Substitute.For<IAnnualArchiveWriter>();
-        writer.WriteExcelAsync(2022, Arg.Any<byte[]>(), Arg.Any<CancellationToken>())
+        writer.WriteExcelAsync(2022, Arg.Any<Func<Stream, CancellationToken, Task>>(), Arg.Any<CancellationToken>())
             .Returns("/archive/2022/file.xlsx");
         writer.VerifyExcel("/archive/2022/file.xlsx", 10).Returns(false); // FAIL
 
         var sut = new AnnualArchiveJobHandler(
             archiveRepo, writer, BuildExportHandler(),
+            Substitute.For<ISoB2StreamingExporter>(),
             new FixedClock(new DateTimeOffset(2026, 6, 6, 0, 0, 0, TimeSpan.Zero)),
             new CountingUow());
 
@@ -106,6 +107,7 @@ public sealed class AnnualArchiveJobTests
             archiveRepo,
             Substitute.For<IAnnualArchiveWriter>(),
             BuildExportHandler(),
+            Substitute.For<ISoB2StreamingExporter>(),
             new FixedClock(new DateTimeOffset(2026, 6, 6, 0, 0, 0, TimeSpan.Zero)),
             new CountingUow());
 
@@ -136,6 +138,7 @@ public sealed class AnnualArchiveJobTests
             archiveRepo,
             Substitute.For<IAnnualArchiveWriter>(),
             BuildExportHandler(),
+            Substitute.For<ISoB2StreamingExporter>(),
             new FixedClock(today),
             new CountingUow());
 
@@ -160,12 +163,13 @@ public sealed class AnnualArchiveJobTests
             .Returns(3);
 
         var writer = Substitute.For<IAnnualArchiveWriter>();
-        writer.WriteExcelAsync(Arg.Any<int>(), Arg.Any<byte[]>(), Arg.Any<CancellationToken>())
+        writer.WriteExcelAsync(Arg.Any<int>(), Arg.Any<Func<Stream, CancellationToken, Task>>(), Arg.Any<CancellationToken>())
             .Returns(c => $"/archive/{c.ArgAt<int>(0)}/file.xlsx");
         writer.VerifyExcel(Arg.Any<string>(), Arg.Any<int>()).Returns(true);
 
         var sut = new AnnualArchiveJobHandler(
             archiveRepo, writer, BuildExportHandler(),
+            Substitute.For<ISoB2StreamingExporter>(),
             new FixedClock(new DateTimeOffset(2026, 6, 6, 0, 0, 0, TimeSpan.Zero)),
             new CountingUow());
 
@@ -191,11 +195,12 @@ public sealed class AnnualArchiveJobTests
             .Returns(1);
 
         var writer = Substitute.For<IAnnualArchiveWriter>();
-        writer.WriteExcelAsync(Arg.Any<int>(), Arg.Any<byte[]>(), Arg.Any<CancellationToken>())
+        writer.WriteExcelAsync(Arg.Any<int>(), Arg.Any<Func<Stream, CancellationToken, Task>>(), Arg.Any<CancellationToken>())
             .Returns<string>(_ => throw new IOException("disk full"));
 
         var sut = new AnnualArchiveJobHandler(
             archiveRepo, writer, BuildExportHandler(),
+            Substitute.For<ISoB2StreamingExporter>(),
             new FixedClock(new DateTimeOffset(2026, 6, 6, 0, 0, 0, TimeSpan.Zero)),
             new CountingUow());
 
@@ -207,6 +212,67 @@ public sealed class AnnualArchiveJobTests
 
         await archiveRepo.DidNotReceive().DeleteAsync(
             Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<CancellationToken>());
+    }
+
+    // -----------------------------------------------------------------------
+    // #167: the year is streamed month by month into the archive file
+    // -----------------------------------------------------------------------
+
+    [Fact]
+    [Trait("Requirement", "FR-021")]
+    public async Task Should_stream_the_year_into_the_archive_one_month_at_a_time()
+    {
+        var archiveRepo = Substitute.For<IAnnualArchiveRepository>();
+        archiveRepo.GetYearsOlderThanAsync(Arg.Any<DateOnly>(), Arg.Any<CancellationToken>())
+            .Returns(new List<int> { 2022 });
+        archiveRepo.CountDeclarationsAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<CancellationToken>())
+            .Returns(0);
+
+        var exportRepo = Substitute.For<ISoB2ExportRepository>();
+        exportRepo
+            .GetDeclarationsForExportAsync(Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<CancellationToken>())
+            .Returns(Array.Empty<SoB2DeclarationBlock>());
+        var exportHandler = new ExportSoB2QueryHandler(
+            exportRepo, new InMemoryDailyHeaderRepo(), Substitute.For<ISoB2Exporter>());
+
+        // The writer runs the content callback against a stream, as the real one does on disk.
+        var target = new MemoryStream();
+        var writer = Substitute.For<IAnnualArchiveWriter>();
+        writer.WriteExcelAsync(2022, Arg.Any<Func<Stream, CancellationToken, Task>>(), Arg.Any<CancellationToken>())
+            .Returns(async c =>
+            {
+                await c.ArgAt<Func<Stream, CancellationToken, Task>>(1)(target, CancellationToken.None);
+                return "/archive/2022/file.xlsx";
+            });
+        writer.VerifyExcel("/archive/2022/file.xlsx", 0).Returns(true);
+
+        // The streaming exporter drains the day sequence, which is what triggers the loads.
+        var streamingExporter = Substitute.For<ISoB2StreamingExporter>();
+        streamingExporter
+            .ExportAsync(Arg.Any<IAsyncEnumerable<SoB2DayBlock>>(), Arg.Any<Stream>(), Arg.Any<CancellationToken>())
+            .Returns(async c =>
+            {
+                await foreach (var _ in c.ArgAt<IAsyncEnumerable<SoB2DayBlock>>(0))
+                {
+                }
+            });
+
+        var sut = new AnnualArchiveJobHandler(
+            archiveRepo, writer, exportHandler, streamingExporter,
+            new FixedClock(new DateTimeOffset(2026, 6, 6, 0, 0, 0, TimeSpan.Zero)),
+            new CountingUow());
+
+        var results = await sut.HandleAsync(CancellationToken.None);
+
+        results.Should().ContainSingle().Which.Success.Should().BeTrue();
+        await streamingExporter.Received(1).ExportAsync(
+            Arg.Any<IAsyncEnumerable<SoB2DayBlock>>(), target, Arg.Any<CancellationToken>());
+        await exportRepo.Received(12).GetDeclarationsForExportAsync(
+            Arg.Any<DateOnly>(), Arg.Any<DateOnly>(), Arg.Any<CancellationToken>());
+        await exportRepo.Received(1).GetDeclarationsForExportAsync(
+            new DateOnly(2022, 2, 1), new DateOnly(2022, 2, 28), Arg.Any<CancellationToken>());
+        await exportRepo.Received(1).GetDeclarationsForExportAsync(
+            new DateOnly(2022, 12, 1), new DateOnly(2022, 12, 31), Arg.Any<CancellationToken>());
     }
 
     // -----------------------------------------------------------------------
@@ -227,7 +293,8 @@ public sealed class AnnualArchiveJobTests
             .Returns(new List<int>());
         var clock = new FixedClock(new DateTimeOffset(2025, 12, 31, 17, 30, 0, TimeSpan.Zero));
         var sut = new AnnualArchiveJobHandler(
-            archiveRepo, Substitute.For<IAnnualArchiveWriter>(), BuildExportHandler(), clock, new CountingUow());
+            archiveRepo, Substitute.For<IAnnualArchiveWriter>(), BuildExportHandler(),
+            Substitute.For<ISoB2StreamingExporter>(), clock, new CountingUow());
 
         await sut.HandleAsync(CancellationToken.None);
 

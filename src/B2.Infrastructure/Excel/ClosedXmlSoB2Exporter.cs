@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Reflection;
 using B2.Application.Abstractions;
 using B2.Application.Common;
 using B2.Application.Export;
@@ -34,23 +33,19 @@ public sealed class ClosedXmlSoB2Exporter : ISoB2Exporter
     private static readonly XLColor DuplicateText = XLColor.FromArgb(0x9C, 0x00, 0x06);
     private static readonly XLColor DuplicateFill = XLColor.FromArgb(0xFF, 0xC7, 0xCE);
 
-    private readonly string? _onDiskTemplatePath;
+    private readonly SoB2Template _template;
 
     /// <param name="dataDirectory">
     /// ProgramData root. If <c>{dataDirectory}/templates/Mẫu sổ B2.xlsx</c> exists it
     /// overrides the embedded template (lets the unit re-skin the export without a redeploy).
     /// </param>
-    public ClosedXmlSoB2Exporter(string dataDirectory)
-    {
-        var candidate = Path.Combine(dataDirectory, "templates", "Mẫu sổ B2.xlsx");
-        _onDiskTemplatePath = File.Exists(candidate) ? candidate : null;
-    }
+    public ClosedXmlSoB2Exporter(string dataDirectory) => _template = new SoB2Template(dataDirectory);
 
     public byte[] Export(SoB2ExportData data)
     {
         ArgumentNullException.ThrowIfNull(data);
 
-        using var template = OpenTemplate();
+        using var template = _template.Open();
         using var workbook = new XLWorkbook(template);
         var ws = workbook.Worksheet(1);
 
@@ -231,22 +226,5 @@ public sealed class ClosedXmlSoB2Exporter : ISoB2Exporter
     {
         range.Style.Border.OutsideBorder = XLBorderStyleValues.Thin;
         range.Style.Border.InsideBorder = XLBorderStyleValues.Thin;
-    }
-
-    private Stream OpenTemplate()
-    {
-        if (_onDiskTemplatePath is not null)
-        {
-            return File.OpenRead(_onDiskTemplatePath);
-        }
-
-        var assembly = typeof(ClosedXmlSoB2Exporter).Assembly;
-        var resourceName = Array.Find(
-            assembly.GetManifestResourceNames(),
-            n => n.EndsWith("MauSoB2.xlsx", StringComparison.Ordinal))
-            ?? throw new InvalidOperationException("Embedded Sổ B2 template 'MauSoB2.xlsx' was not found.");
-
-        return assembly.GetManifestResourceStream(resourceName)
-            ?? throw new InvalidOperationException("Embedded Sổ B2 template stream could not be opened.");
     }
 }

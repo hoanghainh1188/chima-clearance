@@ -6,6 +6,18 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 
+### Fixed
+
+#### Annual archive streams to disk — #167, ADR-0012
+
+- The FR-021 annual archive built the whole year as a ClosedXML workbook in memory and then
+  re-opened it in ClosedXML to verify. It now loads one month at a time, writes the Sổ B2 sheet
+  row by row with the OpenXML SDK straight into the archive file, and verifies by streaming the
+  rows back. Seeded year of 40 000 declarations / 60 000 vehicles: peak memory ≈ 390 MB → ≈ 71 MB,
+  25–39 s → 6–14 s. Same file name, layout, colours and read-only marking; INV-12 unchanged (live
+  data is deleted only after the file verifies with ≥ N declaration rows).
+- A re-run after a failed verification no longer fails on the read-only file the first run left.
+
 ### Security
 
 #### HTTPS on the LAN — #147, #176, ADR-0010
