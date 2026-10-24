@@ -8,12 +8,18 @@ using B2.Application.Admin.Restore;
 using B2.Domain.Audit;
 using B2.Server.Api.Auth;
 using B2.Server.Api.Hosting;
+using Microsoft.AspNetCore.Http.Features;
 
 namespace B2.Server.Api.Endpoints;
 
 public static class AdminEndpoints
 {
     private const int MaxPageSize = 200;
+
+    // ADR-0011 — a restore upload may be a few hundred MB; Kestrel's 30 MB body default and the
+    // 128 MB multipart default would reject it. Raised for /restore only.
+    private const long MaxSnapshotUploadBytes = 2L * 1024 * 1024 * 1024;
+    private const int FileBufferBytes = 81_920;
 
     public static void MapAdminEndpoints(this IEndpointRouteBuilder app)
     {
@@ -66,7 +72,22 @@ public static class AdminEndpoints
                 CancellationToken ct) =>
             {
                 var keys = secrets.GetOrCreate();
-                var bytes = await backups.CreateSnapshotAsync(keys.InstallPassword, keys.RecoveryCode, ct);
+
+                // ADR-0011: stream to a self-deleting temp file, not RAM, and only answer 200
+                // once the whole container is written (a mid-stream failure must not reach the
+                // client as a truncated 200 body).
+                var output = CreateTempFile("b2-backup");
+                try
+                {
+                    await backups.CreateSnapshotAsync(keys.InstallPassword, keys.RecoveryCode, output, ct);
+                    output.Position = 0;
+                }
+                catch
+                {
+                    await output.DisposeAsync();
+                    throw;
+                }
+
                 var fileName = string.Create(CultureInfo.InvariantCulture, $"b2-{clock.UtcNow:yyyyMMdd-HHmm}.bak");
                 audit.Set(new AuditEnvelope(
                     http.User.GetB2UserId(),
@@ -74,9 +95,9 @@ public static class AdminEndpoints
                     "BackupSnapshot",
                     Guid.NewGuid(),
                     null,
-                    JsonSerializer.Serialize(new { fileName, bytes.Length }),
+                    JsonSerializer.Serialize(new { fileName, output.Length }),
                     null));
-                return Results.File(bytes, "application/octet-stream", fileName);
+                return Results.File(output, "application/octet-stream", fileName);
             });
 
         // F-15 — restore from an uploaded snapshot (password OR recovery code). With neither,
@@ -97,6 +118,7 @@ public static class AdminEndpoints
                     return Results.BadRequest(new { code = "INVALID_REQUEST" });
                 }
 
+                AllowLargeSnapshotUpload(http);
                 var form = await http.Request.ReadFormAsync(ct);
                 var file = form.Files["file"];
                 if (file is null || file.Length == 0)
@@ -115,21 +137,42 @@ public static class AdminEndpoints
                     secret = secrets.GetOrCreate().InstallPassword;
                 }
 
-                byte[] container;
-                await using (var stream = file.OpenReadStream())
-                using (var buffer = new MemoryStream())
+                // The form reader spools the upload to disk above 64 KiB; decrypt streams from it.
+                await using (var container = file.OpenReadStream())
                 {
-                    await stream.CopyToAsync(buffer, ct);
-                    container = buffer.ToArray();
+                    await handler.HandleAsync(container, secret, http.User.GetB2UserId(), file.FileName, ct);
                 }
-
-                handler.Handle(container, secret, http.User.GetB2UserId(), file.FileName);
 
                 // Bug #173: the restarter flushes this 200 first, then restarts the host.
                 restarter.RequestRestart();
 
                 return Results.Ok(new { restartRequired = true });
             });
+    }
+
+    private static FileStream CreateTempFile(string prefix) =>
+        new(
+            Path.Combine(Path.GetTempPath(), $"{prefix}-{Guid.NewGuid():N}.tmp"),
+            FileMode.CreateNew,
+            FileAccess.ReadWrite,
+            FileShare.None,
+            FileBufferBytes,
+            FileOptions.Asynchronous | FileOptions.DeleteOnClose);
+
+    private static void AllowLargeSnapshotUpload(HttpContext http)
+    {
+        var bodySize = http.Features.Get<IHttpMaxRequestBodySizeFeature>();
+        if (bodySize is { IsReadOnly: false })
+        {
+            bodySize.MaxRequestBodySize = MaxSnapshotUploadBytes;
+        }
+
+        if (http.Features.Get<IFormFeature>()?.Form is null)
+        {
+            http.Features.Set<IFormFeature>(new FormFeature(
+                http.Request,
+                new FormOptions { MultipartBodyLengthLimit = MaxSnapshotUploadBytes }));
+        }
     }
 
     private static string? NullIfWhitespace(string? s) => string.IsNullOrWhiteSpace(s) ? null : s;

@@ -14,10 +14,13 @@ namespace B2.Desktop.ViewModels;
 /// Wireframe § 6.10 — Sao lưu & khôi phục (F-15, Admin). On-demand encrypted snapshot
 /// (download via Save As) and restore (pick a .bak → typed-"RESTORE" confirmation +
 /// backup secret → upload). Continuous (Litestream) status is a placeholder until T-S5-08.
+/// Snapshots are streamed through a temp file / straight from disk, never held in memory
+/// (ADR-0011): a few-hundred-MB database must not cost the gate PC that much RAM.
 /// </summary>
 public sealed partial class BackupViewModel : ObservableObject
 {
     private const string ConfirmWord = "RESTORE";
+    private const int FileBufferBytes = 81_920;
 
     private static readonly string[] BakExtensions = { ".bak" };
 
@@ -29,8 +32,7 @@ public sealed partial class BackupViewModel : ObservableObject
     private readonly IB2Api _api;
     private readonly IToastService _toast;
 
-    private byte[]? _selectedFileBytes;
-    private string? _selectedFileName;
+    private FileResult? _selectedFile;
 
     public BackupViewModel(IB2Api api, IToastService toast)
     {
@@ -60,7 +62,7 @@ public sealed partial class BackupViewModel : ObservableObject
 
     private bool CanRestore =>
         IsRestoreConfirmVisible
-        && _selectedFileBytes is not null
+        && _selectedFile is not null
         && string.Equals(RestoreConfirmText, ConfirmWord, StringComparison.Ordinal);
 
     [RelayCommand]
@@ -81,11 +83,18 @@ public sealed partial class BackupViewModel : ObservableObject
                 return;
             }
 
-            var bytes = await response.Content.ReadAsByteArrayAsync().ConfigureAwait(true);
             var fileName = response.Content.Headers.ContentDisposition?.FileName?.Trim('"') ?? "b2-backup.bak";
 
-            using var stream = new MemoryStream(bytes);
-            var result = await FileSaver.Default.SaveAsync(fileName, stream, CancellationToken.None).ConfigureAwait(true);
+            // Download to a self-deleting temp file first: the Save-As dialog can stay open for
+            // a while, and the server would drop a response the client stops reading.
+            using var download = CreateTempFile();
+            using (var body = await response.Content.ReadAsStreamAsync().ConfigureAwait(true))
+            {
+                await body.CopyToAsync(download).ConfigureAwait(true);
+            }
+
+            download.Position = 0;
+            var result = await FileSaver.Default.SaveAsync(fileName, download, CancellationToken.None).ConfigureAwait(true);
             if (!result.IsSuccessful)
             {
                 await _toast.ShowAsync(AppResources.Backup_Toast_BackupCancelled, ToastSeverity.Warning).ConfigureAwait(true);
@@ -124,11 +133,7 @@ public sealed partial class BackupViewModel : ObservableObject
             return;
         }
 
-        using var stream = await picked.OpenReadAsync().ConfigureAwait(true);
-        using var buffer = new MemoryStream();
-        await stream.CopyToAsync(buffer).ConfigureAwait(true);
-        _selectedFileBytes = buffer.ToArray();
-        _selectedFileName = picked.FileName;
+        _selectedFile = picked;
 
         SelectedFileLabel = string.Format(CultureInfo.CurrentCulture, SelectedFileFormat, picked.FileName);
         RestoreConfirmText = string.Empty;
@@ -140,7 +145,7 @@ public sealed partial class BackupViewModel : ObservableObject
     [RelayCommand(CanExecute = nameof(CanRestore))]
     private async Task RestoreAsync()
     {
-        if (IsBusy || _selectedFileBytes is null)
+        if (IsBusy || _selectedFile is null)
         {
             return;
         }
@@ -148,7 +153,8 @@ public sealed partial class BackupViewModel : ObservableObject
         IsBusy = true;
         try
         {
-            var part = new ByteArrayPart(_selectedFileBytes, _selectedFileName ?? "snapshot.bak", "application/octet-stream");
+            using var file = await _selectedFile.OpenReadAsync().ConfigureAwait(true);
+            var part = new StreamPart(file, _selectedFile.FileName, "application/octet-stream");
             using var response = await _api.RestoreAsync(part, RestorePassword).ConfigureAwait(true);
             if (!response.IsSuccessStatusCode)
             {
@@ -172,14 +178,22 @@ public sealed partial class BackupViewModel : ObservableObject
     [RelayCommand]
     private void CancelRestore()
     {
-        _selectedFileBytes = null;
-        _selectedFileName = null;
+        _selectedFile = null;
         SelectedFileLabel = null;
         RestoreConfirmText = string.Empty;
         RestorePassword = string.Empty;
         IsRestoreConfirmVisible = false;
         RestoreCommand.NotifyCanExecuteChanged();
     }
+
+    private static FileStream CreateTempFile() =>
+        new(
+            Path.Combine(Path.GetTempPath(), $"b2-download-{Guid.NewGuid():N}.tmp"),
+            FileMode.CreateNew,
+            FileAccess.ReadWrite,
+            FileShare.None,
+            FileBufferBytes,
+            FileOptions.Asynchronous | FileOptions.DeleteOnClose);
 
     private async Task ShowErrorAsync(int statusCode) =>
         await _toast.ShowAsync(string.Format(CultureInfo.CurrentCulture, ErrorFormat, statusCode), ToastSeverity.Error).ConfigureAwait(true);

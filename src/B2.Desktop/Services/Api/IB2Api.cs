@@ -213,7 +213,8 @@ public interface IB2Api
         [Query] int pageSize,
         CancellationToken cancellationToken = default);
 
-    /// <summary>F-15 — downloads a fresh encrypted snapshot (raw .bak response).</summary>
+    /// <summary>F-15 — downloads a fresh encrypted snapshot (raw .bak response). Read the
+    /// body as a stream; never buffer it (ADR-0011).</summary>
     [Post("/api/admin/backup-now")]
     Task<HttpResponseMessage> BackupNowAsync(CancellationToken cancellationToken = default);
 
@@ -222,7 +223,7 @@ public interface IB2Api
     [Multipart]
     [Post("/api/admin/restore")]
     Task<HttpResponseMessage> RestoreAsync(
-        [AliasAs("file")] ByteArrayPart file,
+        [AliasAs("file")] StreamPart file,
         [AliasAs("password")] string password,
         CancellationToken cancellationToken = default);
 }

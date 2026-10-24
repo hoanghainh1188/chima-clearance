@@ -1,6 +1,3 @@
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json;
 using B2.Application.Abstractions;
 using B2.Domain;
 using Microsoft.Data.Sqlite;
@@ -11,78 +8,66 @@ namespace B2.Infrastructure.Backup;
 /// F-15 / FR-026 encrypted snapshot codec. A random 32-byte data key (DK) encrypts the
 /// SQLite bytes with AES-256-GCM; DK is wrapped twice (PBKDF2-SHA256 → AES-256-GCM) under
 /// the install password and the recovery code, so either secret decrypts the snapshot.
+/// New snapshots use the chunked v2 container (<see cref="SnapshotContainerV2"/>, ADR-0011);
+/// restore also accepts the legacy v1 JSON container, detected by its leading <c>{</c>.
 /// </summary>
 public sealed class BackupSnapshotService : IBackupSnapshotService
 {
-    private const int KeyBytes = 32;
-    private const int SaltBytes = 16;
-    private const int NonceBytes = 12;
-    private const int TagBytes = 16;
-    private const int Pbkdf2Iterations = 100_000;
-    private const int ContainerVersion = 1;
-
-    private static readonly JsonSerializerOptions JsonOptions = new() { WriteIndented = false };
+    private const int CopyBufferBytes = 81_920;
 
     private readonly string _dbPath;
 
     public BackupSnapshotService(string dbPath) => _dbPath = dbPath;
 
-    public async Task<byte[]> CreateSnapshotAsync(string installPassword, string recoveryCode, CancellationToken cancellationToken)
+    public async Task CreateSnapshotAsync(string installPassword, string recoveryCode, Stream destination, CancellationToken cancellationToken)
     {
+        ArgumentNullException.ThrowIfNull(destination);
         if (string.IsNullOrEmpty(installPassword) || string.IsNullOrEmpty(recoveryCode))
         {
             throw new DomainException("BACKUP_SECRET_MISSING", "Install password and recovery code are both required.", 400);
         }
 
-        var dbBytes = await SnapshotDatabaseAsync(cancellationToken);
-        var dataKey = RandomNumberGenerator.GetBytes(KeyBytes);
+        var tempPath = await SnapshotDatabaseAsync(cancellationToken);
         try
         {
-            var payload = Encrypt(dataKey, dbBytes);
-            var container = new SnapshotContainer(
-                ContainerVersion,
-                new[]
-                {
-                    WrapKey(dataKey, installPassword),
-                    WrapKey(dataKey, recoveryCode),
-                },
-                payload);
-            return JsonSerializer.SerializeToUtf8Bytes(container, JsonOptions);
+            await using var source = new FileStream(
+                tempPath,
+                FileMode.Open,
+                FileAccess.Read,
+                FileShare.Read,
+                CopyBufferBytes,
+                FileOptions.Asynchronous | FileOptions.SequentialScan);
+            await SnapshotContainerV2.WriteAsync(source, destination, installPassword, recoveryCode, cancellationToken);
         }
         finally
         {
-            CryptographicOperations.ZeroMemory(dataKey);
+            File.Delete(tempPath);
         }
     }
 
-    public byte[] DecryptSnapshot(byte[] container, string secret)
+    public async Task DecryptSnapshotAsync(Stream container, string secret, Stream destination, CancellationToken cancellationToken)
     {
         ArgumentNullException.ThrowIfNull(container);
-        var model = JsonSerializer.Deserialize<SnapshotContainer>(container, JsonOptions)
-            ?? throw new DomainException("BACKUP_CORRUPT", "Snapshot container could not be read.", 400);
+        ArgumentNullException.ThrowIfNull(destination);
 
-        foreach (var wrap in model.Wraps)
+        var magic = new byte[SnapshotContainerV2.MagicBytes];
+        var read = await container.ReadAtLeastAsync(magic, magic.Length, throwOnEndOfStream: false, cancellationToken);
+        if (read == magic.Length && magic.AsSpan().SequenceEqual(SnapshotContainerV2.Magic))
         {
-            var dataKey = TryUnwrap(wrap, secret);
-            if (dataKey is null)
-            {
-                continue;
-            }
-
-            try
-            {
-                return Decrypt(dataKey, model.Payload);
-            }
-            finally
-            {
-                CryptographicOperations.ZeroMemory(dataKey);
-            }
+            await SnapshotContainerV2.DecryptAsync(container, secret, destination, cancellationToken);
         }
-
-        throw new DomainException("BACKUP_INVALID_SECRET", "Neither the password nor the recovery code can decrypt this snapshot.", 400);
+        else if (read > 0 && magic[0] == (byte)'{')
+        {
+            await SnapshotContainerV1.DecryptAsync(magic.AsMemory(0, read), container, secret, destination, cancellationToken);
+        }
+        else
+        {
+            throw SnapshotErrors.Corrupt("The file is not a B2 snapshot.");
+        }
     }
 
-    private async Task<byte[]> SnapshotDatabaseAsync(CancellationToken cancellationToken)
+    /// <summary>Copies the live DB with the SQLite online-backup API to a temp file; returns its path.</summary>
+    private async Task<string> SnapshotDatabaseAsync(CancellationToken cancellationToken)
     {
         if (!File.Exists(_dbPath))
         {
@@ -94,92 +79,18 @@ public sealed class BackupSnapshotService : IBackupSnapshotService
         {
             // Pooling=False on both ends so the connections fully close on dispose and
             // release the temp-file handle before we read it (a pooled connection keeps the
-            // OS file lock, which would fail the ReadAllBytes below on Windows).
-            await using (var source = new SqliteConnection($"Data Source={_dbPath};Pooling=False"))
-            {
-                await source.OpenAsync(cancellationToken);
-                await using var destination = new SqliteConnection($"Data Source={tempPath};Pooling=False");
-                await destination.OpenAsync(cancellationToken);
-                source.BackupDatabase(destination);
-            }
-
-            return await File.ReadAllBytesAsync(tempPath, cancellationToken);
+            // OS file lock, which would fail the read below on Windows).
+            await using var source = new SqliteConnection($"Data Source={_dbPath};Pooling=False");
+            await source.OpenAsync(cancellationToken);
+            await using var destination = new SqliteConnection($"Data Source={tempPath};Pooling=False");
+            await destination.OpenAsync(cancellationToken);
+            source.BackupDatabase(destination);
+            return tempPath;
         }
-        finally
+        catch
         {
-            if (File.Exists(tempPath))
-            {
-                File.Delete(tempPath);
-            }
+            File.Delete(tempPath);
+            throw;
         }
     }
-
-    private static WrapBlob WrapKey(byte[] dataKey, string secret)
-    {
-        var salt = RandomNumberGenerator.GetBytes(SaltBytes);
-        var kek = DeriveKek(secret, salt);
-        try
-        {
-            var sealed_ = Encrypt(kek, dataKey);
-            return new WrapBlob(
-                Convert.ToBase64String(salt),
-                sealed_.Nonce,
-                sealed_.Ciphertext,
-                sealed_.Tag);
-        }
-        finally
-        {
-            CryptographicOperations.ZeroMemory(kek);
-        }
-    }
-
-    private static byte[]? TryUnwrap(WrapBlob wrap, string secret)
-    {
-        var kek = DeriveKek(secret, Convert.FromBase64String(wrap.Salt));
-        try
-        {
-            return Decrypt(kek, new PayloadBlob(wrap.Nonce, wrap.WrappedKey, wrap.Tag));
-        }
-        catch (CryptographicException)
-        {
-            return null;
-        }
-        finally
-        {
-            CryptographicOperations.ZeroMemory(kek);
-        }
-    }
-
-    private static byte[] DeriveKek(string secret, byte[] salt) =>
-        Rfc2898DeriveBytes.Pbkdf2(Encoding.UTF8.GetBytes(secret), salt, Pbkdf2Iterations, HashAlgorithmName.SHA256, KeyBytes);
-
-    private static PayloadBlob Encrypt(byte[] key, byte[] plaintext)
-    {
-        var nonce = RandomNumberGenerator.GetBytes(NonceBytes);
-        var ciphertext = new byte[plaintext.Length];
-        var tag = new byte[TagBytes];
-        using var gcm = new AesGcm(key, TagBytes);
-        gcm.Encrypt(nonce, plaintext, ciphertext, tag);
-        return new PayloadBlob(
-            Convert.ToBase64String(nonce),
-            Convert.ToBase64String(ciphertext),
-            Convert.ToBase64String(tag));
-    }
-
-    private static byte[] Decrypt(byte[] key, PayloadBlob blob)
-    {
-        var nonce = Convert.FromBase64String(blob.Nonce);
-        var ciphertext = Convert.FromBase64String(blob.Ciphertext);
-        var tag = Convert.FromBase64String(blob.Tag);
-        var plaintext = new byte[ciphertext.Length];
-        using var gcm = new AesGcm(key, TagBytes);
-        gcm.Decrypt(nonce, ciphertext, tag, plaintext);
-        return plaintext;
-    }
-
-    private sealed record WrapBlob(string Salt, string Nonce, string WrappedKey, string Tag);
-
-    private sealed record PayloadBlob(string Nonce, string Ciphertext, string Tag);
-
-    private sealed record SnapshotContainer(int Version, IReadOnlyList<WrapBlob> Wraps, PayloadBlob Payload);
 }

@@ -15,10 +15,9 @@ namespace B2.Server.Api.Tests.Admin;
 
 public sealed class RestoreEndpointTests
 {
-
     [Fact]
     [Trait("Feature", "F-15")]
-    public void Should_stage_then_apply_pending_restore()
+    public async Task Should_stage_then_apply_pending_restore()
     {
         var dir = Path.Combine(Path.GetTempPath(), $"b2-restore-svc-{Guid.NewGuid():N}");
         Directory.CreateDirectory(dir);
@@ -32,7 +31,7 @@ public sealed class RestoreEndpointTests
             var service = new DatabaseRestoreService(dbPath);
             service.ApplyPending().Should().BeNull("nothing staged yet");
 
-            service.Stage(restored, new RestoreStagingMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, "snapshot.bak"));
+            await service.StageBytesAsync(restored, new RestoreStagingMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, "snapshot.bak"));
             File.Exists(dbPath + ".restore-pending").Should().BeTrue();
 
             service.ApplyPending().Should().NotBeNull();
@@ -50,7 +49,7 @@ public sealed class RestoreEndpointTests
 
     [Fact]
     [Trait("Feature", "F-15")]
-    public void Should_support_commit_and_rollback_on_pending_restore()
+    public async Task Should_support_commit_and_rollback_on_pending_restore()
     {
         var dir = Path.Combine(Path.GetTempPath(), $"b2-restore-rb-{Guid.NewGuid():N}");
         Directory.CreateDirectory(dir);
@@ -62,7 +61,7 @@ public sealed class RestoreEndpointTests
             File.WriteAllBytes(dbPath, originalBytes);
 
             var service = new DatabaseRestoreService(dbPath);
-            service.Stage(restoredBytes, new RestoreStagingMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, "snap.bak"));
+            await service.StageBytesAsync(restoredBytes, new RestoreStagingMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, "snap.bak"));
 
             // Apply pending
             service.ApplyPending();
@@ -75,7 +74,7 @@ public sealed class RestoreEndpointTests
             File.Exists(dbPath + ".pre-restore").Should().BeFalse("backup moved back to original");
 
             // Test commit
-            service.Stage(restoredBytes, new RestoreStagingMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, "snap2.bak"));
+            await service.StageBytesAsync(restoredBytes, new RestoreStagingMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, "snap2.bak"));
             service.ApplyPending();
             File.Exists(dbPath + ".pre-restore").Should().BeTrue();
             service.CommitPending();
