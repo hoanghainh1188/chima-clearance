@@ -8,5 +8,6 @@ public interface IUserRepository
     Task<User?> GetByIdAsync(Guid id, CancellationToken cancellationToken);
     Task<bool> UsernameExistsAsync(string username, CancellationToken cancellationToken);
     Task AddAsync(User user, CancellationToken cancellationToken);
+    Task<int> CountActiveAdminsAsync(CancellationToken cancellationToken);
     Task<(IReadOnlyList<User> Items, int Total)> ListAsync(int page, int pageSize, CancellationToken cancellationToken);
 }

@@ -3,6 +3,7 @@ using System.Text;
 using System.Text.Json;
 using B2.Application.Abstractions;
 using B2.Domain;
+using B2.Infrastructure.IO;
 
 namespace B2.Infrastructure.Backup;
 
@@ -107,11 +108,11 @@ public sealed class BackupSecretsStore : IBackupSecretsStore
         {
             var sealedBytes = ProtectedData.Protect(
                 Encoding.UTF8.GetBytes(json), optionalEntropy: null, scope: DataProtectionScope.LocalMachine);
-            File.WriteAllBytes(_sealedPath, sealedBytes);
+            AtomicFile.WriteAllBytes(_sealedPath, sealedBytes);
         }
         else
         {
-            File.WriteAllText(_devPath, json);
+            AtomicFile.WriteAllText(_devPath, json);
         }
 
         return secrets;

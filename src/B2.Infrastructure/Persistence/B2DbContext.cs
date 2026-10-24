@@ -4,6 +4,7 @@ using B2.Domain.Declarations;
 using B2.Domain.MasterData;
 using B2.Domain.Users;
 using B2.Application.Abstractions;
+using System.Security.Cryptography;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.ChangeTracking;
 
@@ -21,7 +22,25 @@ public sealed class B2DbContext : DbContext, IUnitOfWork
         CancellationToken cancellationToken = default)
     {
         await FixMisclassifiedNewRowsAsync(cancellationToken).ConfigureAwait(false);
+        BumpRowVersions();
         return await base.SaveChangesAsync(acceptAllChangesOnSuccess, cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// #178: SQLite has no auto-updating rowversion, so a never-changing client token made the
+    /// optimistic-concurrency <c>WHERE "RowVersion" = @original</c> always match. Give every
+    /// modified row a fresh token; EF compares against the original value it loaded, so a
+    /// writer holding a stale copy now gets <see cref="DbUpdateConcurrencyException"/>.
+    /// </summary>
+    private void BumpRowVersions()
+    {
+        foreach (var entry in ChangeTracker.Entries())
+        {
+            if (entry.State == EntityState.Modified && entry.Entity is Declaration or Vehicle)
+            {
+                entry.Property(nameof(Declaration.RowVersion)).CurrentValue = RandomNumberGenerator.GetBytes(8);
+            }
+        }
     }
 
     /// <summary>
@@ -162,7 +181,7 @@ public sealed class B2DbContext : DbContext, IUnitOfWork
             e.Property(x => x.TrailerOrContainerNumber).HasMaxLength(20);
             e.Property(x => x.Note).HasMaxLength(500);
             // Persist client 8-byte token; omit concurrency here — SQLite + computed PlateLast4 caused spurious UPDATEs on sibling inserts.
-            e.Property(x => x.RowVersion).IsRequired().ValueGeneratedNever();
+            e.Property(x => x.RowVersion).IsRequired().IsConcurrencyToken().ValueGeneratedNever();
         });
 
         modelBuilder.Entity<DailyHeader>(e =>
