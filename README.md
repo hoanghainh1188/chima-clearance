@@ -17,7 +17,8 @@ clients. SQLite + Litestream for persistence and continuous backup.
 >    (spec.md, plan.md, research.md, data-model.md, contracts/openapi.yaml, tasks.md, analyze-report.md)
 > 7. [`.specify/memory/constitution.md`](./.specify/memory/constitution.md) — non-negotiable rules (v1.1.0)
 > 8. [`docs/adr/`](./docs/adr/) — Architecture Decision Records (ADR-0001..0006 locked;
->    ADR-0007 evaluates a Go-backend port — Proposed, not adopted)
+>    ADR-0007 evaluated a Go-backend port — rejected, stack stays .NET; ADR-0008 dev-only
+>    PDF export tool for the operator docs; ADR-0009 per-install initial Admin password)
 
 ---
 
@@ -46,7 +47,7 @@ chima-clearance/
 │   ├── B2.Desktop.Tests/           # ViewModel unit + accessibility AC.
 │   └── B2.Performance.Tests/       # NBomber scenarios; nightly on the spec VM.
 ├── docs/
-│   ├── adr/                        # ADR-0001..0006 (see § 9 of impl plan) + ADR-0007 (Go-port eval).
+│   ├── adr/                        # ADR-0001..0006 (see § 9 of impl plan) + ADR-0007 (Go-port eval) + ADR-0008 (docs PDF tool) + ADR-0009 (initial Admin password).
 │   ├── huong-dan-cai-dat.md        # Vietnamese step-by-step install guide (gate operators).
 │   ├── runbook.md                  # Vietnamese operator runbook (S6 deliverable).
 │   ├── prompts.md                  # Spec Kit prompts (per-skill directives).
@@ -112,13 +113,18 @@ Phase 1 ships in 6 × 2-week sprints (S0..S6) per
 | **S6** | Hardening (F-17 simple v1 + a11y + FR-021 archive + runbook + installer + UAT) | 🔄 in progress — `T-S6-01..11` done, **`T-S6-12` (on-site UAT) is the only task left**. **F-17** sticky plate–trailer suggestions (#59); **a11y** audit + `AxeRunner` static analysis, FR-021 `AnnualArchiveJob`, Vietnamese `docs/runbook.md` (#61); installer + UAT template (#63); UAT-blocking Desktop fixes (#64, #65). Then two post-`v1.0.0` rounds: **#103** self-contained offline deployment — Velopack dropped for a plain `B2Clearance.exe install\|uninstall` CLI + `deploy/install.ps1`, after `ADR-0007` evaluated and **rejected** a Go backend port (stack stays .NET); **#112** FR-021 archive data-loss + FR-022 un-exit race + KVGS lock + installer upgrade path. `docs/uat-001-b2-clearance.md` is the sign-off sheet for the remaining task and is still an unfilled template. |
 
 Released builds: **`v1.0.0`** (2026-06-07) → **`v1.1.0`** (2026-07-19) →
-**`v1.1.1`** (2026-07-26) → **`v1.2.0`** (2026-08-02) → **`v1.2.1`** (2026-09-27,
-current). `v1.2.0` re-checks the implementation against the unit's own documents —
-several rules the code enforced had no basis in them, and the exit-gate PC had never
-been deployable (see `CHANGELOG.md`). `v1.2.1` fixes clean installs (v1.1.0 to v1.2.0 fail
-at service registration) and ships the Vietnamese install guide
-(`docs/huong-dan-cai-dat.md`) inside the zip. **`v1.2.1` is the build to run `T-S6-12`
-with**; Phase-1 GA is gated on that sign-off, not on another feature.
+**`v1.1.1`** (2026-07-26) → **`v1.2.0`** (2026-08-02) → **`v1.2.1`** (2026-09-27) →
+**`v1.2.2`** (2026-09-27) → **`v1.3.0`** (2026-10-02, current). `v1.2.0` re-checks the implementation against the
+unit's own documents — several rules the code enforced had no basis in them, and the
+exit-gate PC had never been deployable (see `CHANGELOG.md`). `v1.2.1` fixes clean installs
+(v1.1.0 to v1.2.0 fail at service registration) and ships the Vietnamese install guide
+(`docs/huong-dan-cai-dat.md`) inside the zip. `v1.2.2` locks `C:\ProgramData\B2` to SYSTEM +
+Administrators (keys were readable by every local user) and adds the single-PC layout to the
+guide. `v1.3.0` replaces the shared initial Admin password with one generated per install
+(F-01, ADR-0009), turns continuous backup on by default, and fixes the pre-UAT findings of the
+requirements-fit audit (`docs/danh-gia-phu-hop-yeu-cau.md`). **`v1.3.0` is the build to run
+`T-S6-12` with**; Phase-1 GA is gated on that sign-off and on the unit's answers listed in the
+audit, not on another feature.
 
 ---
 

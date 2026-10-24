@@ -95,6 +95,17 @@ public sealed class User
         MustChangePassword = mustChange;
     }
 
+    /// <summary>
+    /// Clears failed-login tracking and any active lock. Used when a new initial password is
+    /// provisioned (F-01), so LAN guesses against the old one cannot keep the account locked.
+    /// </summary>
+    public void ResetLockout()
+    {
+        FailedLoginCount = 0;
+        FailedLoginWindowStartedAt = null;
+        LockedUntil = null;
+    }
+
     public void Deactivate() => IsActive = false;
 
     public void Activate() => IsActive = true;

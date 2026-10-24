@@ -117,8 +117,17 @@ dotnet run --project src/B2.Server.Service -- --console
 dotnet build src/B2.Desktop -t:Run -f net8.0-windows10.0.19041.0
 ```
 
-Default credentials (S0 seed): `admin` / `Change-Me-Now-1!` — forced password change
-on first login (FR-017).
+Initial credentials (F-01, ADR-0009): there is no shared default password. On a dev
+machine, stage one before the first start (non-Windows dev file, applied once and deleted):
+
+```bash
+DATA="$HOME/Library/Application Support/B2"   # macOS; Linux: ~/.local/share/B2
+mkdir -p "$DATA/keys"
+echo '{"Password":"Dev-Admin-Pass-2x"}' > "$DATA/keys/admin-bootstrap.dev.json"
+```
+
+Then log in as `admin` / `Dev-Admin-Pass-2x` — forced password change on first login
+(FR-017). Production installs get a random password from `B2Clearance.exe install`.
 
 ### 4.3 Smoke walk
 

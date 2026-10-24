@@ -137,6 +137,10 @@ public static class B2ApiHost
 
             throw;
         }
+
+        // F-01: after migrations (0004 retires the shared seed hash), apply the installer's
+        // per-install initial Admin password, if one is pending.
+        await AdminBootstrapStartup.RunAsync(app.Services, app.Logger, cancellationToken);
     }
 
     public static void MapPipeline(WebApplication app)

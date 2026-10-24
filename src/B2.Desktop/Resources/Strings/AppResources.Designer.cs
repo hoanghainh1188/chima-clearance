@@ -85,6 +85,10 @@ public static class AppResources
     public static string Entry_TrailerPlaceholder => ResourceManager.GetString(nameof(Entry_TrailerPlaceholder), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Entry_NotePlaceholder => ResourceManager.GetString(nameof(Entry_NotePlaceholder), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Exit_Error_MarkExit => ResourceManager.GetString(nameof(Exit_Error_MarkExit), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Common_Error_ServerUnreachable => ResourceManager.GetString(nameof(Common_Error_ServerUnreachable), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Entry_Error_DuplicateNumber => ResourceManager.GetString(nameof(Entry_Error_DuplicateNumber), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Exit_Error_AlreadyExited => ResourceManager.GetString(nameof(Exit_Error_AlreadyExited), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Exit_Error_DeclarationCancelled => ResourceManager.GetString(nameof(Exit_Error_DeclarationCancelled), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Exit_Error_NoMatch_Format => ResourceManager.GetString(nameof(Exit_Error_NoMatch_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Exit_Error_Search => ResourceManager.GetString(nameof(Exit_Error_Search), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Exit_SessionFooter => ResourceManager.GetString(nameof(Exit_SessionFooter), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;

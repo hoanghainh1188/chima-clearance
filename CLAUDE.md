@@ -21,7 +21,9 @@ do not infer requirements from existing code alone:
 5. `specs/05-ui-wireframes.md` — wireframes § 6, design tokens § 2-3 (binding for any UI change)
 6. `.specify/memory/constitution.md` (v1.1.0) — **highest authority; non-negotiable**
 7. `docs/adr/ADR-0001..0006` — locked architectural decisions
-   (`ADR-0007` evaluates a Go-backend port — **Proposed, not adopted**; stack stays .NET)
+   (`ADR-0007` evaluated a Go-backend port — **rejected**, stack stays .NET;
+   `ADR-0008` dev-only PDF export tool for the operator docs;
+   `ADR-0009` per-install initial Admin password)
 
 When Spec Kit artifacts (`specs/001-b2-clearance/{spec,plan,tasks}.md`) conflict
 with the hand-written `specs/0X-*.md`, follow the Spec Kit artifacts.
@@ -86,6 +88,10 @@ analyzers only fire on the Windows CI runner. When editing Desktop `.cs`:
   field MUST implement `IDisposable` and dispose it.
 - **CHARSET** — new `.cs`/`.xaml.cs` files MUST be UTF-8 **without BOM**. Strip a
   stray BOM: `perl -i -pe 'BEGIN{$f=1} s/^\xef\xbb\xbf// if $f; $f=0' <file>`.
+
+`B2.Installer` (`net8.0-windows`, no MAUI) **does** build on macOS — run its analyzers
+locally before pushing:
+`dotnet build src/B2.Installer/B2.Installer.csproj -c Release -p:EnableWindowsTargeting=true /p:TreatWarningsAsErrors=true`
 
 ### CI workflow conventions (`.github/workflows/ci.yml`)
 

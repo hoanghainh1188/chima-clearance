@@ -1007,7 +1007,7 @@ Alt+1 … Alt+8 — Chuyển nhanh giữa các tab
     <value>Nhập "RESTORE" để xác nhận:</value>
   </data>
   <data name="Backup_Restore_PasswordLabel" xml:space="preserve">
-    <value>Mật khẩu sao lưu (hoặc mã khôi phục):</value>
+    <value>Mã phục hồi (để trống nếu khôi phục trên chính máy cổng vào):</value>
   </data>
   <data name="Backup_Restore_Confirm" xml:space="preserve">
     <value>Khôi phục</value>
@@ -1029,5 +1029,17 @@ Alt+1 … Alt+8 — Chuyển nhanh giữa các tab
   </data>
   <data name="Backup_Error_Network" xml:space="preserve">
     <value>Mất kết nối máy chủ</value>
+  </data>
+  <data name="Common_Error_ServerUnreachable" xml:space="preserve">
+    <value>Không kết nối được máy chủ ở cổng vào. Kiểm tra mạng rồi thử lại.</value>
+  </data>
+  <data name="Entry_Error_DuplicateNumber" xml:space="preserve">
+    <value>Số tờ khai này đã có trong sổ (ở một tờ khai chưa hủy). Kiểm tra lại số trước khi lưu.</value>
+  </data>
+  <data name="Exit_Error_AlreadyExited" xml:space="preserve">
+    <value>Xe này đã được đánh dấu ra ở máy khác. Tìm lại để xem trạng thái mới nhất.</value>
+  </data>
+  <data name="Exit_Error_DeclarationCancelled" xml:space="preserve">
+    <value>Tờ khai của xe này đã bị hủy, không đánh dấu ra được.</value>
   </data>
 </root>

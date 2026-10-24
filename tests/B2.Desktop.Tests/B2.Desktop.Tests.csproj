@@ -33,6 +33,7 @@
     <Compile Include="../../src/B2.Desktop/Services/ApiEndpointSource.cs" Link="Linked/ApiEndpointSource.cs" />
     <Compile Include="../../src/B2.Desktop/Services/Api/IAuthTokenStore.cs" Link="Linked/IAuthTokenStore.cs" />
     <Compile Include="../../src/B2.Desktop/Services/Api/AuthTokenStore.cs" Link="Linked/AuthTokenStore.cs" />
+    <Compile Include="../../src/B2.Desktop/Services/Api/ApiErrorCode.cs" Link="Linked/ApiErrorCode.cs" />
   </ItemGroup>
 
 </Project>

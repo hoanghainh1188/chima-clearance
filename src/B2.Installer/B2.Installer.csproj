@@ -23,6 +23,13 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- F-01: compile the pure-BCL generator + rules from B2.Application directly (linked, not a
+         project reference) so the installer stays standalone and uses the exact tested code. -->
+    <Compile Include="..\B2.Application\Common\InitialPasswordGenerator.cs" Link="Shared\InitialPasswordGenerator.cs" />
+    <Compile Include="..\B2.Application\Common\PasswordRules.cs" Link="Shared\PasswordRules.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
     <!-- F-13 / T-S5-05: ship the Sổ B2 export template so the installer lays it down
          at C:\ProgramData\B2\templates\. At runtime the export also embeds this template
          in B2.Infrastructure, so the on-disk copy is an optional override. -->

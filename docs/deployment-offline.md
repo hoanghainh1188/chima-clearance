@@ -65,7 +65,8 @@ prereqs/
 `install.ps1` sẽ tự động: cài VC++ + WebView2 (im lặng) → chép chương trình vào
 `C:\Program Files\B2Clearance` → gọi `B2Clearance.exe install` (tạo thư mục dữ liệu, chứng
 chỉ TLS localhost, đăng ký Windows Service tự khởi động, mở firewall TCP 5000, **sinh + hiển
-thị MÃ PHỤC HỒI**) → tạo shortcut desktop → khởi động dịch vụ.
+thị MÃ PHỤC HỒI** và **mật khẩu Admin ban đầu** sinh ngẫu nhiên cho riêng lần cài này — ADR-0009) →
+tạo shortcut desktop → khởi động dịch vụ.
 
 > 📋 **Ghi lại MÃ PHỤC HỒI** hiển thị trên màn hình (và file `B2-Recovery-Code.txt` trên
 > Desktop) vào phong bì dán kín — dùng để giải mã backup khi quên mật khẩu cài đặt (FR-026).
@@ -213,6 +214,15 @@ giờ cho dữ liệu thật. App desktop không build được trên Mac.
   bạch hoàn toàn** (dễ kiểm toán an ninh trên máy khoá cứng).
 - Logic bảo mật đã kiểm thử (mã phục hồi, DPAPI-seal, self-signed cert, đăng ký service) được
   **giữ nguyên** trong `B2Clearance.exe` — chỉ bóc lớp Velopack bọc ngoài.
+
+## Quyền truy cập thư mục dữ liệu
+
+`B2Clearance.exe install` đặt quyền cho `C:\ProgramData\B2` (và mọi thứ bên trong): **chỉ SYSTEM
+(tài khoản chạy dịch vụ) và nhóm Administrators**, không kế thừa quyền từ `C:\ProgramData`.
+Lý do: mọi secret trong `keys\` (khoá ký JWT, secrets sao lưu, `server.pfx`) được niêm phong DPAPI
+phạm vi *LocalMachine* — **bất kỳ** tài khoản nào trên máy mở niêm phong được, nên chỉ quyền thư
+mục mới ngăn được người dùng Windows thường. Chạy lại `install.ps1` (nâng cấp) áp lại quyền này cho
+cả bản cài cũ. Ứng dụng Desktop không đọc thư mục này (log riêng ở `%LOCALAPPDATA%\B2\logs\`).
 
 ## Ghi chú xác minh
 

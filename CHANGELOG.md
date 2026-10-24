@@ -6,7 +6,111 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 
+Nothing pending.
+
+## [1.3.0] — 2026-10-02 — per-install Admin password; automatic backup; pre-UAT fixes from the requirements audit
+
+**Upgrade every entry-gate PC with `.\install.ps1`** — not by copying files. The installer issues
+the per-install initial Admin password that migration `0004` relies on: if `admin` never changed
+the shared seed password, the old password stops working and the new one is shown on screen
+(copy it before pressing Enter; `B2Clearance.exe reset-initial-admin` re-issues it). An Admin who
+already chose a password keeps it. Exit-gate PCs: re-run `.\install.ps1 -ClientOnly -ServerUrl …`.
+After upgrading, **Sức khỏe → Tổng quan** should show Litestream ✅ running.
+
+Use v1.3.0 for new installs, upgrades and the `T-S6-12` UAT. The requirements-fit audit
+(`docs/danh-gia-phu-hop-yeu-cau.md`) lists what is still open and the questions for the unit.
+
+### Security
+
+#### Per-install initial Admin password — `F-01`, ADR-0009
+
+- Every install seeded `admin` with the **same** password (`Change-Me-Now-1!`), reachable from
+  the LAN (`0.0.0.0:5000`) until the first login and written in the repository.
+  `B2Clearance.exe install` now generates a random password per install (4 groups of 4, no
+  ambiguous characters), DPAPI-seals it to `keys\admin-bootstrap.dpapi` and shows it **on screen
+  only**, next to the recovery code. The service applies it on start (after migrations) with
+  `MustChangePassword = true`, clears any lockout, audits the change and deletes the file.
+- Migration `0004_RetireSharedAdminSeedHash` replaces the shared seed hash with an unusable
+  placeholder wherever it is untouched.
+- A password a person chose is never replaced: `keys\admin-password.state` turns `rotated` the
+  moment `admin` changes its password and never goes back, even if another Admin later resets
+  the account (found in security review). Upgrades issue a new password only while the Admin
+  never chose one.
+- New `B2Clearance.exe reset-initial-admin` re-issues the password if it is lost before the first
+  login; refused once rotated. Installer console output is now UTF-8.
+- Docs: install guide (new initial-password step), runbook § 2, quickstart (dev staging),
+  FR-017, ADR-0004 bullet superseded, UAT steps 2/U3/U4.
+
 ### Added
+
+#### `tools/docs-pdf/` — export the operator docs to PDF (ADR-0008)
+
+- `build_docs_pdf.py` renders `huong-dan-cai-dat.md`, `runbook.md` and `deployment-offline.md`
+  with markdown-it-py (pinned in `requirements.txt`) and prints A4 PDFs with the local Chrome,
+  Chromium or Edge. Output in `tools/docs-pdf/out/`, git-ignored. No password is injected: with
+  F-01 each install shows its own initial Admin password, so the PDFs carry no credential.
+
+### Fixed
+
+#### Backups: continuous backup on by default; same-PC restore needs no envelope — `F-15` (audit D1, D2)
+
+- **Continuous backup never ran.** Litestream only started with an explicit
+  `B2:Litestream` config that the installer never wrote, while the runbook promised "every
+  60 s". On Windows it is now on by default (`{data}\litestream.exe`, replica
+  `{data}\backup\replica`); config can still disable it or add USB/LAN replicas
+  (`appsettings.Production.json`, documented in runbook § 3). The local replica shares the
+  disk, so weekly manual backups remain in the runbook.
+- **Restore depended on the recovery-code envelope even on the same PC.** The install password
+  is sealed on the entry-gate PC and never shown; with no secret supplied the restore endpoint
+  now uses that sealed password, and the Desktop no longer requires the field (label says to
+  leave it blank on the same PC). The envelope is only needed on a replaced PC.
+- Runbook § 4 told operators to type "KHÔI PHỤC"; the screen requires `RESTORE`.
+
+#### Exit-gate search skips cancelled declarations; Entry/Exit say what went wrong — `F-07`, `F-05`, `F-08` (audit S1, F1)
+
+- **Cancelled declarations showed up in the exit-gate search** (FR-023): their vehicles could be
+  selected and then failed with 409 when marked exited. The suffix search now excludes them.
+- **Every Entry/Exit failure showed one generic message** ("…kiểm tra kết nối hoặc quyền"), so a
+  duplicate declaration number (409 `DECLARATION_NUMBER_DUPLICATE`) or a vehicle already marked
+  exited at the other PC (FR-024 `VEHICLE_ALREADY_EXITED`) looked like a network problem. The
+  Desktop now reads the server's error `code` (`ApiErrorCode`) and shows a specific Vietnamese
+  message; a real network failure says the entry-gate server is unreachable.
+
+#### Sổ B2 Excel export: no template leftovers, duplicate numbers flagged again — `F-13` (audit X1)
+
+- Every export carried the template's sample value **1358** in P1 (the legacy "Tìm xe" box).
+  P1 is now cleared, keeping its styling.
+- The template's duplicate-number rule on cột C was split across its sample rows, so deleting
+  them shrank it to C1 and **exported duplicates were never flagged red** (business rules cột C).
+  One duplicate rule now covers every exported row of cột C, in the template's colours.
+
+## [1.2.2] — 2026-09-27 — data directory locked to SYSTEM + Administrators; single-PC install guide
+
+Upgrade **every** installed entry-gate PC with `.\install.ps1`: re-running it applies the new
+permissions on `C:\ProgramData\B2`. Use v1.2.2 for new installs and the `T-S6-12` UAT.
+
+### Security
+
+#### Data directory readable by every local Windows user
+
+- `C:\ProgramData\B2` inherited `C:\ProgramData`'s ACL, so any local account could read `keys\`.
+  Every secret there is DPAPI-sealed with **LocalMachine** scope, which any local account may
+  unseal — the JWT signing key (forge an Admin token), the backup secrets (decrypt backups) and
+  `server.pfx` — and could read `db\b2.db` directly. `B2Clearance.exe install` now sets a
+  protected DACL on the data root: SYSTEM + Administrators, full control, inherited by all
+  children; re-running `install.ps1` fixes existing installs. Operators need an elevated
+  PowerShell (or a UAC prompt in Explorer) to read service logs; runbook and install guide say so.
+
+### Added
+
+#### ADR-0008 — dev-only tool to export the operator docs to PDF
+
+- Records the decision to keep a Python (markdown-it-py) + headless Chromium script under
+  `tools/docs-pdf/` that renders `huong-dan-cai-dat.md`, `runbook.md` and `deployment-offline.md`
+  to PDF, injecting the initial admin password only into the confidential install-guide edition.
+  Developer-only: not in the solution, CI, release or zip; PDFs never committed. The tool lands in
+  a follow-up PR after this ADR is merged (Constitution II). CLAUDE.md/README also stop calling
+  ADR-0007 "Proposed" — it was accepted as "keep .NET".
 
 #### Docs — install rehearsal on a Windows VM for Mac developers
 
@@ -1149,7 +1253,9 @@ seeded admin bootstrap, and FR-017 force-rotate-password.
   applied during their respective sprints (M2 + M5 + M7 in S1; M3 + M4 + M6 in
   S3..S5). None block this release.
 
-[Unreleased]: https://example.invalid/chima-clearance/compare/v1.2.1...HEAD
+[Unreleased]: https://example.invalid/chima-clearance/compare/v1.3.0...HEAD
+[1.3.0]: https://example.invalid/chima-clearance/compare/v1.2.2...v1.3.0
+[1.2.2]: https://example.invalid/chima-clearance/compare/v1.2.1...v1.2.2
 [1.2.1]: https://example.invalid/chima-clearance/compare/v1.2.0...v1.2.1
 [1.2.0]: https://example.invalid/chima-clearance/compare/v1.1.1...v1.2.0
 [1.1.1]: https://example.invalid/chima-clearance/compare/v1.1.0...v1.1.1

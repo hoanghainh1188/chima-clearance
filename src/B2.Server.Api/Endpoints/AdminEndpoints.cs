@@ -79,13 +79,16 @@ public static class AdminEndpoints
                 return Results.File(bytes, "application/octet-stream", fileName);
             });
 
-        // F-15 — restore from an uploaded snapshot (password OR recovery code). The staged
-        // DB is applied on the next startup; outside tests we trigger that restart now.
+        // F-15 — restore from an uploaded snapshot (password OR recovery code). With neither,
+        // use this PC's own sealed install password: restoring on the entry-gate PC itself
+        // must not depend on the recovery-code envelope (that is for a replaced PC). The
+        // staged DB is applied on the next startup; outside tests we trigger that restart now.
         g.MapPost(
             "/restore",
             async (
                 HttpContext http,
                 RestoreCommandHandler handler,
+                IBackupSecretsStore secrets,
                 IHostApplicationLifetime lifetime,
                 IHostEnvironment env,
                 CancellationToken ct) =>
@@ -110,7 +113,7 @@ public static class AdminEndpoints
 
                 if (string.IsNullOrEmpty(secret))
                 {
-                    return Results.BadRequest(new { code = "SECRET_REQUIRED" });
+                    secret = secrets.GetOrCreate().InstallPassword;
                 }
 
                 byte[] container;

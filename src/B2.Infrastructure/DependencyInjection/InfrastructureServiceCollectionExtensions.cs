@@ -52,6 +52,8 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IBackupSnapshotService>(_ => new BackupSnapshotService(Path.Combine(dataDirectory, "db", "b2.db")));
         services.AddSingleton<IDatabaseRestoreService>(_ => new DatabaseRestoreService(Path.Combine(dataDirectory, "db", "b2.db")));
         services.AddSingleton<IBackupSecretsStore>(_ => new BackupSecretsStore(dataDirectory));
+        services.AddSingleton<IAdminBootstrapStore>(sp => new AdminBootstrapStore(
+            dataDirectory, sp.GetRequiredService<ILogger<AdminBootstrapStore>>()));
         services.AddSingleton<ISoB2Exporter>(_ => new ClosedXmlSoB2Exporter(dataDirectory));
 
         if (enableBackgroundJobs)
@@ -97,31 +99,17 @@ public static class InfrastructureServiceCollectionExtensions
     }
 
     /// <summary>
-    /// F-15 / T-S5-08 — binds <c>B2:Litestream</c> and registers the continuous-backup
-    /// supervisor as a hosted service. Disabled by default; no-ops without the binary.
+    /// F-15 / T-S5-08 — binds <c>B2:Litestream</c> (production defaults on Windows, see
+    /// <see cref="LitestreamOptions.FromConfiguration"/>) and registers the continuous-backup
+    /// supervisor as a hosted service. No-ops without the binary (dev / CI).
     /// </summary>
     public static IServiceCollection AddB2Litestream(
         this IServiceCollection services,
         IConfiguration configuration,
         string dataDirectory)
     {
-        var section = configuration.GetSection("B2:Litestream");
-        var dbPath = section["DbPath"];
-        var options = new LitestreamOptions
-        {
-            Enabled = bool.TryParse(section["Enabled"], out var enabled) && enabled,
-            ExecutablePath = section["ExecutablePath"] ?? string.Empty,
-            DbPath = string.IsNullOrWhiteSpace(dbPath) ? Path.Combine(dataDirectory, "db", "b2.db") : dbPath,
-        };
-
-        foreach (var child in section.GetSection("Replicas").GetChildren())
-        {
-            var path = child["Path"];
-            if (!string.IsNullOrWhiteSpace(path))
-            {
-                options.Replicas.Add(new LitestreamReplica(child["Name"] ?? string.Empty, path));
-            }
-        }
+        var options = LitestreamOptions.FromConfiguration(
+            configuration.GetSection("B2:Litestream"), dataDirectory, OperatingSystem.IsWindows());
 
         services.AddSingleton(options);
         services.AddSingleton(sp => new LitestreamSupervisor(

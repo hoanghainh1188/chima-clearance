@@ -37,7 +37,9 @@ lại máy chủ, nó sẽ tự chạy mà không cần can thiệp.
 ### Kiểm tra log dịch vụ
 
 Dịch vụ ghi log ra file theo ngày tại `C:\ProgramData\B2\logs\b2-yyyyMMdd.log`
-(cũng xem được trong ứng dụng: **Sức khỏe → Nhật ký hệ thống**, mục 5). Log của ứng dụng
+(cũng xem được trong ứng dụng: **Sức khỏe → Nhật ký hệ thống**, mục 5). Thư mục
+`C:\ProgramData\B2` chỉ **Administrator** đọc được (chứa khoá và cơ sở dữ liệu) — chạy lệnh dưới
+trong PowerShell **Run as administrator**; mở bằng File Explorer thì Windows sẽ hỏi xác nhận. Log của ứng dụng
 Desktop nằm trên từng máy tại `%LOCALAPPDATA%\B2\logs\`.
 
 ```powershell
@@ -51,9 +53,20 @@ Get-ChildItem C:\ProgramData\B2\logs\b2-*.log |
 
 ## 2. Admin quên mật khẩu
 
-> ⚠️ **v1 chưa có công cụ tự đặt lại mật khẩu Admin.** Lệnh
-> `B2.Server.Service.exe --reset-admin-password` từng được mô tả ở đây **chưa được xây dựng**
-> — đừng chạy lệnh này.
+> ⚠️ Lệnh `B2.Server.Service.exe --reset-admin-password` từng được mô tả ở đây **không tồn
+> tại** — đừng chạy lệnh này.
+
+**Chưa đăng nhập lần nào** (mất mật khẩu ban đầu hiện lúc cài): trên máy cổng vào, PowerShell
+**Run as administrator**:
+
+```powershell
+& "C:\Program Files\B2Clearance\B2Clearance.exe" reset-initial-admin
+```
+
+Lệnh hiện mật khẩu ban đầu mới và khởi động lại dịch vụ. Lệnh **từ chối** nếu admin đã từng tự
+đổi mật khẩu — khi đó làm theo các bước dưới.
+
+**Đã từng đổi mật khẩu rồi quên:**
 
 1. Nếu còn một tài khoản Admin khác đăng nhập được: vào **Quản trị → Người dùng**, chọn tài
    khoản Admin bị quên mật khẩu → **Đặt lại mật khẩu** (xem mục 6, Lỗi 3).
@@ -88,11 +101,34 @@ Start-Service -Name "B2ClearanceService"
 > File `.db` sao lưu bằng phương pháp B **không được mã hoá**. Lưu trữ ở nơi
 > an toàn và xóa ngay sau khi không cần thiết.
 
-### Lịch sao lưu tự động
+### Sao lưu tự động (liên tục)
 
-Litestream sao lưu liên tục mỗi 60 giây sang USB và thư mục mạng LAN (nếu đã
-cấu hình). Không cần làm thủ công hàng ngày — chỉ dùng phương pháp A trước
-mỗi lần cập nhật phần mềm hoặc thay đổi hệ thống.
+Trên máy cổng vào, dịch vụ B2 **tự bật** sao lưu liên tục (Litestream) ngay sau khi cài: mọi
+thay đổi được chép sang `C:\ProgramData\B2\backup\replica` trong vài giây. Kiểm tra ở
+**Sức khỏe → Tổng quan**, dòng "Trạng thái Litestream" phải là ✅ Đang chạy.
+
+> ⚠️ Bản sao này nằm **trên cùng ổ đĩa** với dữ liệu: nó cứu được khi dữ liệu bị lỗi hoặc xóa
+> nhầm, **không** cứu được khi hỏng ổ cứng/mất máy. Vì vậy vẫn phải sao lưu thủ công
+> (phương pháp A) **hằng tuần** và cất file sang USB, hoặc nhờ IT thêm đích USB/LAN như dưới.
+
+**Thêm đích sao lưu USB hoặc thư mục mạng** (làm một lần, cần quyền Administrator): tạo file
+`C:\Program Files\B2Clearance\appsettings.Production.json` với nội dung (thay đường dẫn cho đúng):
+
+```json
+{
+  "B2": {
+    "Litestream": {
+      "Replicas": [
+        { "Name": "local", "Path": "C:\\ProgramData\\B2\\backup\\replica" },
+        { "Name": "usb",   "Path": "E:\\B2-Backup" }
+      ]
+    }
+  }
+}
+```
+
+Giữ dòng `local`, thêm các dòng khác; lưu file rồi khởi động lại dịch vụ (mục 1). File này
+được giữ nguyên khi nâng cấp. Muốn tắt hẳn sao lưu liên tục: `"Enabled": false`.
 
 ---
 
@@ -107,8 +143,11 @@ mỗi lần cập nhật phần mềm hoặc thay đổi hệ thống.
 1. Thông báo cho tất cả người dùng đang online dừng thao tác.
 2. Vào **Quản trị → Sao lưu & Khôi phục** → phần **Khôi phục**.
 3. Nhấn **Chọn file** và chỉ đến file `.bak.zip`.
-4. Nhập mật khẩu cài đặt hoặc mã phục hồi.
-5. Gõ lại xác nhận "**KHÔI PHỤC**" vào ô xác nhận.
+4. Ô **Mã phục hồi**:
+   - Khôi phục **trên chính máy cổng vào** đã tạo bản sao lưu: **để trống** — hệ thống tự dùng
+     khóa lưu sẵn trên máy.
+   - Khôi phục trên **máy khác / máy cài lại**: nhập **mã phục hồi** trong phong bì niêm phong.
+5. Gõ chính xác `RESTORE` (chữ in hoa) vào ô xác nhận.
 6. Nhấn **Xác nhận khôi phục**.
 7. Dịch vụ sẽ tự khởi động lại sau khi khôi phục xong (~30 giây).
 

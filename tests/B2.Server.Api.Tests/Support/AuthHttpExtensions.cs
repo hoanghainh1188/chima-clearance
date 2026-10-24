@@ -8,8 +8,14 @@ namespace B2.Server.Api.Tests.Support;
 
 public static class AuthHttpExtensions
 {
-    /// <summary>Initial admin password seeded by migration <c>0001_BaselineSchema</c>.</summary>
-    public const string SeedAdminPassword = "Change-Me-Now-1!";
+    /// <summary>
+    /// F-01: per-install initial Admin password, staged by <see cref="B2ApiFactory"/> the way the
+    /// installer does. The shared seed password of <c>0001_BaselineSchema</c> no longer logs in.
+    /// </summary>
+    public const string InitialAdminPassword = "Test-Initial-Admin-7k";
+
+    /// <summary>The password every install shared before F-01 (retired by migration 0004).</summary>
+    public const string RetiredSharedSeedPassword = "Change-Me-Now-1!";
 
     /// <summary>Stable admin password used by tests after bootstrap (FR-017 forced rotation).</summary>
     public const string BootstrappedAdminPassword = "Test-Admin-Pass-1!";
@@ -26,11 +32,11 @@ public static class AuthHttpExtensions
     {
         var first = await client.PostAsJsonAsync(
             "/api/auth/login",
-            new LoginRequest("admin", SeedAdminPassword),
+            new LoginRequest("admin", InitialAdminPassword),
             TestJson.Options);
         if (first.StatusCode == HttpStatusCode.Unauthorized)
         {
-            // Same DB reused in one test: admin already rotated off the seed password (FR-017).
+            // Same DB reused in one test: admin already rotated off the initial password (FR-017).
             first = await client.PostAsJsonAsync(
                 "/api/auth/login",
                 new LoginRequest("admin", BootstrappedAdminPassword),
@@ -47,7 +53,7 @@ public static class AuthHttpExtensions
         client.SetBearer(firstBody.AccessToken);
         var change = await client.PostAsJsonAsync(
             "/api/auth/change-password",
-            new ChangePasswordRequest(SeedAdminPassword, BootstrappedAdminPassword),
+            new ChangePasswordRequest(InitialAdminPassword, BootstrappedAdminPassword),
             TestJson.Options);
         change.EnsureSuccessStatusCode();
         client.DefaultRequestHeaders.Authorization = null;
