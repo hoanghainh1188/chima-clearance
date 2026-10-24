@@ -8,6 +8,9 @@ namespace B2.Desktop.Services.Popups;
 /// </summary>
 public partial class InfoPopup : Popup
 {
+    // #188: ignore the second click of a double-click (see ConfirmPopup).
+    private bool _closing;
+
     public InfoPopup(string title, string message, string close)
     {
         InitializeComponent();
@@ -18,6 +21,13 @@ public partial class InfoPopup : Popup
 
     private async void OnCloseClicked(object? sender, EventArgs e)
     {
+        if (_closing)
+        {
+            return;
+        }
+
+        _closing = true;
+        CloseButton.IsEnabled = false;
         await CloseAsync().ConfigureAwait(true);
     }
 }

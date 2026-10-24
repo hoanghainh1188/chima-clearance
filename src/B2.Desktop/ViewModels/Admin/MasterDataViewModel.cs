@@ -56,8 +56,8 @@ public partial class MasterDataViewModel : ObservableObject
         ErrorMessage = null;
         try
         {
-            var p = await _api.ListProcessorsAsync(includeInactive: true, page: 1, pageSize: 500).ConfigureAwait(false);
-            var y = await _api.ListYardsAsync(includeInactive: true, page: 1, pageSize: 500).ConfigureAwait(false);
+            var p = await _api.ListProcessorsAsync(includeInactive: true, page: 1, pageSize: 500).ConfigureAwait(true);
+            var y = await _api.ListYardsAsync(includeInactive: true, page: 1, pageSize: 500).ConfigureAwait(true);
             Processors = p.Items;
             Yards = y.Items;
         }
@@ -84,7 +84,7 @@ public partial class MasterDataViewModel : ObservableObject
             AppResources.MasterData_AddProcessorTitle,
             AppResources.MasterData_ProcessorNamePrompt,
             initialValue: string.Empty,
-            maxLength: 200).ConfigureAwait(false);
+            maxLength: 200).ConfigureAwait(true);
         if (string.IsNullOrWhiteSpace(name))
         {
             return;
@@ -92,8 +92,8 @@ public partial class MasterDataViewModel : ObservableObject
 
         try
         {
-            await _api.CreateProcessorAsync(new ProcessorWriteRequest(name.Trim(), null)).ConfigureAwait(false);
-            await LoadAsync().ConfigureAwait(false);
+            await _api.CreateProcessorAsync(new ProcessorWriteRequest(name.Trim(), null)).ConfigureAwait(true);
+            await LoadAsync().ConfigureAwait(true);
         }
         catch (Exception)
         {
@@ -119,7 +119,7 @@ public partial class MasterDataViewModel : ObservableObject
             AppResources.MasterData_EditProcessorTitle,
             AppResources.MasterData_ProcessorNamePrompt,
             initialValue: dto.FullName,
-            maxLength: 200).ConfigureAwait(false);
+            maxLength: 200).ConfigureAwait(true);
         if (string.IsNullOrWhiteSpace(name))
         {
             return;
@@ -127,8 +127,8 @@ public partial class MasterDataViewModel : ObservableObject
 
         try
         {
-            await _api.UpdateProcessorAsync(dto.Id, new ProcessorWriteRequest(name.Trim(), null)).ConfigureAwait(false);
-            await LoadAsync().ConfigureAwait(false);
+            await _api.UpdateProcessorAsync(dto.Id, new ProcessorWriteRequest(name.Trim(), null)).ConfigureAwait(true);
+            await LoadAsync().ConfigureAwait(true);
         }
         catch (Exception)
         {
@@ -157,7 +157,7 @@ public partial class MasterDataViewModel : ObservableObject
                 AppResources.MasterData_DeactivateTitle,
                 AppResources.MasterData_DeactivateProcessorMessage,
                 AppResources.Common_Yes,
-                AppResources.Common_No).ConfigureAwait(false);
+                AppResources.Common_No).ConfigureAwait(true);
             if (!confirm)
             {
                 return;
@@ -168,14 +168,14 @@ public partial class MasterDataViewModel : ObservableObject
         {
             if (activate)
             {
-                await _api.UpdateProcessorAsync(dto.Id, new ProcessorWriteRequest(dto.FullName, true)).ConfigureAwait(false);
+                await _api.UpdateProcessorAsync(dto.Id, new ProcessorWriteRequest(dto.FullName, true)).ConfigureAwait(true);
             }
             else
             {
-                await _api.DeleteProcessorAsync(dto.Id).ConfigureAwait(false);
+                await _api.DeleteProcessorAsync(dto.Id).ConfigureAwait(true);
             }
 
-            await LoadAsync().ConfigureAwait(false);
+            await LoadAsync().ConfigureAwait(true);
         }
         catch (ApiException)
         {
@@ -200,7 +200,7 @@ public partial class MasterDataViewModel : ObservableObject
             AppResources.MasterData_AddYardTitle,
             AppResources.MasterData_YardCodePrompt,
             initialValue: string.Empty,
-            maxLength: 32).ConfigureAwait(false);
+            maxLength: 32).ConfigureAwait(true);
         if (string.IsNullOrWhiteSpace(code))
         {
             return;
@@ -210,7 +210,7 @@ public partial class MasterDataViewModel : ObservableObject
             AppResources.MasterData_AddYardTitle,
             AppResources.MasterData_YardNamePrompt,
             initialValue: string.Empty,
-            maxLength: 200).ConfigureAwait(false);
+            maxLength: 200).ConfigureAwait(true);
         if (string.IsNullOrWhiteSpace(name))
         {
             return;
@@ -218,8 +218,8 @@ public partial class MasterDataViewModel : ObservableObject
 
         try
         {
-            await _api.CreateYardAsync(new YardWriteRequest(code.Trim(), name.Trim(), null)).ConfigureAwait(false);
-            await LoadAsync().ConfigureAwait(false);
+            await _api.CreateYardAsync(new YardWriteRequest(code.Trim(), name.Trim(), null)).ConfigureAwait(true);
+            await LoadAsync().ConfigureAwait(true);
         }
         catch (Exception)
         {
@@ -245,7 +245,7 @@ public partial class MasterDataViewModel : ObservableObject
             AppResources.MasterData_EditYardTitle,
             AppResources.MasterData_YardCodePrompt,
             initialValue: dto.Code,
-            maxLength: 32).ConfigureAwait(false);
+            maxLength: 32).ConfigureAwait(true);
         if (string.IsNullOrWhiteSpace(code))
         {
             return;
@@ -255,7 +255,7 @@ public partial class MasterDataViewModel : ObservableObject
             AppResources.MasterData_EditYardTitle,
             AppResources.MasterData_YardNamePrompt,
             initialValue: dto.Name,
-            maxLength: 200).ConfigureAwait(false);
+            maxLength: 200).ConfigureAwait(true);
         if (string.IsNullOrWhiteSpace(name))
         {
             return;
@@ -263,8 +263,8 @@ public partial class MasterDataViewModel : ObservableObject
 
         try
         {
-            await _api.UpdateYardAsync(dto.Id, new YardWriteRequest(code.Trim(), name.Trim(), null)).ConfigureAwait(false);
-            await LoadAsync().ConfigureAwait(false);
+            await _api.UpdateYardAsync(dto.Id, new YardWriteRequest(code.Trim(), name.Trim(), null)).ConfigureAwait(true);
+            await LoadAsync().ConfigureAwait(true);
         }
         catch (Exception)
         {
@@ -293,7 +293,7 @@ public partial class MasterDataViewModel : ObservableObject
                 AppResources.MasterData_DeactivateTitle,
                 AppResources.MasterData_DeactivateYardMessage,
                 AppResources.Common_Yes,
-                AppResources.Common_No).ConfigureAwait(false);
+                AppResources.Common_No).ConfigureAwait(true);
             if (!confirm)
             {
                 return;
@@ -304,14 +304,14 @@ public partial class MasterDataViewModel : ObservableObject
         {
             if (activate)
             {
-                await _api.UpdateYardAsync(dto.Id, new YardWriteRequest(dto.Code, dto.Name, true)).ConfigureAwait(false);
+                await _api.UpdateYardAsync(dto.Id, new YardWriteRequest(dto.Code, dto.Name, true)).ConfigureAwait(true);
             }
             else
             {
-                await _api.DeleteYardAsync(dto.Id).ConfigureAwait(false);
+                await _api.DeleteYardAsync(dto.Id).ConfigureAwait(true);
             }
 
-            await LoadAsync().ConfigureAwait(false);
+            await LoadAsync().ConfigureAwait(true);
         }
         catch (ApiException)
         {

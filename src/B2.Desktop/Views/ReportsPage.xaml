@@ -49,6 +49,8 @@
            TextColor="{StaticResource ColorError}"
            IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
 
+    <!-- #194: the report tables are short aggregates rendered with BindableLayout; a
+         CollectionView inside this ScrollView loses virtualisation and can loop on measure. -->
     <ScrollView Grid.Row="3">
       <VerticalStackLayout Spacing="{StaticResource SpacingM}">
 
@@ -75,16 +77,16 @@
                     Command="{Binding SortProcessorCommand}"
                     CommandParameter="total" />
           </Grid>
-          <CollectionView ItemsSource="{Binding Processors}" SelectionMode="None">
-            <CollectionView.ItemTemplate>
+          <VerticalStackLayout BindableLayout.ItemsSource="{Binding Processors}">
+            <BindableLayout.ItemTemplate>
               <DataTemplate x:DataType="r:ProcessorReportItemDto">
                 <Grid ColumnDefinitions="*,Auto" Padding="0,2">
                   <Label Grid.Column="0" Text="{Binding ProcessorName}" />
                   <Label Grid.Column="1" Text="{Binding TotalVehicles}" />
                 </Grid>
               </DataTemplate>
-            </CollectionView.ItemTemplate>
-          </CollectionView>
+            </BindableLayout.ItemTemplate>
+          </VerticalStackLayout>
         </VerticalStackLayout>
 
         <!-- Theo bãi -->
@@ -105,8 +107,8 @@
                     Command="{Binding SortYardCommand}"
                     CommandParameter="total" />
           </Grid>
-          <CollectionView ItemsSource="{Binding Yards}" SelectionMode="None">
-            <CollectionView.ItemTemplate>
+          <VerticalStackLayout BindableLayout.ItemsSource="{Binding Yards}">
+            <BindableLayout.ItemTemplate>
               <DataTemplate x:DataType="r:YardReportItemDto">
                 <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="{StaticResource SpacingS}" Padding="0,2">
                   <Label Grid.Column="0" Text="{Binding YardCode}" FontAttributes="Bold" />
@@ -114,8 +116,8 @@
                   <Label Grid.Column="2" Text="{Binding TotalVehicles}" />
                 </Grid>
               </DataTemplate>
-            </CollectionView.ItemTemplate>
-          </CollectionView>
+            </BindableLayout.ItemTemplate>
+          </VerticalStackLayout>
         </VerticalStackLayout>
 
         <!-- Theo giờ xuất -->
@@ -136,16 +138,16 @@
                     Command="{Binding SortHourCommand}"
                     CommandParameter="count" />
           </Grid>
-          <CollectionView ItemsSource="{Binding Hours}" SelectionMode="None">
-            <CollectionView.ItemTemplate>
+          <VerticalStackLayout BindableLayout.ItemsSource="{Binding Hours}">
+            <BindableLayout.ItemTemplate>
               <DataTemplate x:DataType="r:HourReportItemDto">
                 <Grid ColumnDefinitions="*,Auto" Padding="0,2">
                   <Label Grid.Column="0" Text="{Binding BucketLabel}" />
                   <Label Grid.Column="1" Text="{Binding ExitedCount}" />
                 </Grid>
               </DataTemplate>
-            </CollectionView.ItemTemplate>
-          </CollectionView>
+            </BindableLayout.ItemTemplate>
+          </VerticalStackLayout>
         </VerticalStackLayout>
 
         <!-- Theo cán bộ -->
@@ -170,8 +172,8 @@
                     Command="{Binding SortOfficerCommand}"
                     CommandParameter="kvgs" />
           </Grid>
-          <CollectionView ItemsSource="{Binding Officers}" SelectionMode="None">
-            <CollectionView.ItemTemplate>
+          <VerticalStackLayout BindableLayout.ItemsSource="{Binding Officers}">
+            <BindableLayout.ItemTemplate>
               <DataTemplate x:DataType="r:OfficerReportItemDto">
                 <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="{StaticResource SpacingS}" Padding="0,2">
                   <Label Grid.Column="0" Text="{Binding OfficerName}" />
@@ -179,8 +181,8 @@
                   <Label Grid.Column="2" Text="{Binding DeclarationsKvgsConfirmed}" />
                 </Grid>
               </DataTemplate>
-            </CollectionView.ItemTemplate>
-          </CollectionView>
+            </BindableLayout.ItemTemplate>
+          </VerticalStackLayout>
         </VerticalStackLayout>
 
         <!-- Xe còn trong cổng -->
@@ -209,8 +211,8 @@
                     Command="{Binding SortPendingCommand}"
                     CommandParameter="hours" />
           </Grid>
-          <CollectionView ItemsSource="{Binding Pending}" SelectionMode="None">
-            <CollectionView.ItemTemplate>
+          <VerticalStackLayout BindableLayout.ItemsSource="{Binding Pending}">
+            <BindableLayout.ItemTemplate>
               <DataTemplate x:DataType="r:PendingReportItemDto">
                 <Grid ColumnDefinitions="*,Auto,Auto,Auto" ColumnSpacing="{StaticResource SpacingS}" Padding="0,2">
                   <Label Grid.Column="0" Text="{Binding DeclarationNumber}" FontAttributes="Bold" />
@@ -219,8 +221,8 @@
                   <Label Grid.Column="3" Text="{Binding HoursInside, StringFormat='{0:0.00}'}" />
                 </Grid>
               </DataTemplate>
-            </CollectionView.ItemTemplate>
-          </CollectionView>
+            </BindableLayout.ItemTemplate>
+          </VerticalStackLayout>
         </VerticalStackLayout>
 
       </VerticalStackLayout>
