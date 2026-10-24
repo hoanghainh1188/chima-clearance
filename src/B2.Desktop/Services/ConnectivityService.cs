@@ -170,8 +170,9 @@ public sealed class ConnectivityService : IDisposable, IAsyncDisposable
                     }
                 });
 
-            hub.Reconnecting += _ =>
+            hub.Reconnecting += error =>
             {
+                _logger.LogDebug(error, "FR-028 SignalR reconnecting; polling fallback active");
                 Mode = ConnectivityMode.PollingFallback;
 
                 // Not awaited: SignalR waits for this handler before its own retry begins.
