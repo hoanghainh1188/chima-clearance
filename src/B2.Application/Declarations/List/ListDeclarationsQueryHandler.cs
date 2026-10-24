@@ -1,5 +1,6 @@
 using B2.Application.Abstractions;
 using B2.Application.Common;
+using B2.Domain.Declarations;
 using B2.Shared.Contracts.Declarations;
 
 namespace B2.Application.Declarations.List;
@@ -20,7 +21,10 @@ public sealed class ListDeclarationsQueryHandler
         // Captured before reading so a write racing this query is matched again on the next poll.
         var asOf = _clock.UtcNow;
         var today = VietnamTime.BusinessDateFromUtc(asOf);
-        var from = query.FromDate ?? today;
+        // #164: "AllExited" with no explicit range is the KVGS queue — a declaration opened on an
+        // earlier day whose last vehicle left today must still show up, so drop the lower bound.
+        var isKvgsQueue = string.Equals(query.StatusFilter, nameof(DeclarationStatus.AllExited), StringComparison.OrdinalIgnoreCase);
+        var from = query.FromDate ?? (isKvgsQueue ? DateOnly.MinValue : today);
         var to = query.ToDate ?? today;
         var page = query.Page <= 0 ? 1 : query.Page;
         var pageSize = query.PageSize <= 0 ? 50 : query.PageSize;

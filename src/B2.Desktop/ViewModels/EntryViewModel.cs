@@ -186,7 +186,7 @@ public partial class EntryViewModel : ObservableObject, IDisposable
             var companyTask = _api.SuggestVehiclePairAsync(plateNormalized, "company", ct);
             var goodsTask = _api.SuggestVehiclePairAsync(plateNormalized, "goods", ct);
 
-            await Task.WhenAll(trailerTask, companyTask, goodsTask).ConfigureAwait(false);
+            await Task.WhenAll(trailerTask, companyTask, goodsTask).ConfigureAwait(true);
             sw.Stop();
 
             if (ct.IsCancellationRequested)
@@ -290,10 +290,10 @@ public partial class EntryViewModel : ObservableObject, IDisposable
     private void SwitchDeclaration() => ResetEntireForm();
 
     [RelayCommand]
-    private async Task SaveAsync() => await SubmitAsync(saveAndContinue: false).ConfigureAwait(false);
+    private async Task SaveAsync() => await SubmitAsync(saveAndContinue: false).ConfigureAwait(true);
 
     [RelayCommand]
-    private async Task SaveAndContinueAsync() => await SubmitAsync(saveAndContinue: true).ConfigureAwait(false);
+    private async Task SaveAndContinueAsync() => await SubmitAsync(saveAndContinue: true).ConfigureAwait(true);
 
     [RelayCommand]
     private void Cancel()
@@ -328,9 +328,9 @@ public partial class EntryViewModel : ObservableObject, IDisposable
                         existingId,
                         new VehicleAddRequest(plate, NullIfWhiteSpace(TrailerOrContainerNumber), NullIfWhiteSpace(VehicleNote)),
                         key)
-                    .ConfigureAwait(false);
+                    .ConfigureAwait(true);
                 ClearVehicleFields();
-                await _toast.ShowAsync(AppResources.Entry_Toast_VehicleAdded, ToastSeverity.Success).ConfigureAwait(false);
+                await _toast.ShowAsync(AppResources.Entry_Toast_VehicleAdded, ToastSeverity.Success).ConfigureAwait(true);
             }
             catch (ApiException)
             {
@@ -373,7 +373,7 @@ public partial class EntryViewModel : ObservableObject, IDisposable
         try
         {
             var idem = Guid.NewGuid().ToString("N");
-            var dto = await _api.CreateDeclarationAsync(request, idem).ConfigureAwait(false);
+            var dto = await _api.CreateDeclarationAsync(request, idem).ConfigureAwait(true);
             if (saveAndContinue)
             {
                 IsAddChildMode = true;
@@ -390,7 +390,7 @@ public partial class EntryViewModel : ObservableObject, IDisposable
                 ResetEntireForm();
             }
 
-            await _toast.ShowAsync(AppResources.Entry_Toast_Saved, ToastSeverity.Success).ConfigureAwait(false);
+            await _toast.ShowAsync(AppResources.Entry_Toast_Saved, ToastSeverity.Success).ConfigureAwait(true);
         }
         catch (ApiException ex)
         {

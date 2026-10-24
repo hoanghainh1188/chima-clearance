@@ -658,9 +658,28 @@ public sealed class MainShellPage : ContentPage, IToastPresenter
 
         // Stay on the UI thread: Shell navigation off it throws on WinUI.
         await _connectivity.StopAsync().ConfigureAwait(true);
+        DisposeTabs();
         _auth.Clear();
         _session.Clear();
         await _navigator.NavigateToLoginAsync().ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// #153: tab ViewModels subscribe to the singleton connectivity / session services. The next
+    /// login builds a fresh shell, so release this one's tabs — otherwise every shift change
+    /// leaves another set of ViewModels reacting to SignalR pushes and timers.
+    /// </summary>
+    private void DisposeTabs()
+    {
+        _contentHost.Content = null;
+        _active = null;
+        foreach (var tab in _tabs)
+        {
+            (tab.View.BindingContext as IDisposable)?.Dispose();
+            tab.View.BindingContext = null;
+        }
+
+        _tabs.Clear();
     }
 
     /// <summary>

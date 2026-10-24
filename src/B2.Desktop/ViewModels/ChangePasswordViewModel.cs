@@ -75,7 +75,7 @@ public partial class ChangePasswordViewModel : ObservableObject
             CurrentPassword = string.Empty;
             NewPassword = string.Empty;
             ConfirmPassword = string.Empty;
-            await _navigator.NavigateToLoginAsync().ConfigureAwait(false);
+            await _navigator.NavigateToLoginAsync().ConfigureAwait(true);
         }
         catch (ApiException ex) when (ex.StatusCode == HttpStatusCode.BadRequest)
         {
@@ -108,7 +108,7 @@ public partial class ChangePasswordViewModel : ObservableObject
         var page = Application.Current?.MainPage;
         if (page is not null)
         {
-            await page.Navigation.PopModalAsync().ConfigureAwait(false);
+            await page.Navigation.PopModalAsync().ConfigureAwait(true);
         }
     }
 }
