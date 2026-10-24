@@ -7,5 +7,36 @@ namespace B2.Desktop.Services.Api;
 /// </summary>
 public sealed class AuthTokenStore : IAuthTokenStore
 {
-    public string? AccessToken { get; set; }
+    private readonly object _gate = new();
+    private string? _accessToken;
+    private string? _refreshToken;
+
+    public string? AccessToken
+    {
+        get { lock (_gate) return _accessToken; }
+        set { lock (_gate) _accessToken = value; }
+    }
+
+    public string? RefreshToken
+    {
+        get { lock (_gate) return _refreshToken; }
+        set { lock (_gate) _refreshToken = value; }
+    }
+
+    public event EventHandler? SessionExpired;
+
+    public void Clear()
+    {
+        lock (_gate)
+        {
+            _accessToken = null;
+            _refreshToken = null;
+        }
+    }
+
+    public void ExpireSession()
+    {
+        Clear();
+        SessionExpired?.Invoke(this, EventArgs.Empty);
+    }
 }

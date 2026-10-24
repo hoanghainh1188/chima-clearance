@@ -12,4 +12,16 @@ namespace B2.Desktop.Services.Api;
 public interface IAuthTokenStore
 {
     string? AccessToken { get; set; }
+    string? RefreshToken { get; set; }
+
+    /// <summary>
+    /// Raised (on a background thread) when the refresh token is rejected, so the shell can
+    /// send the user back to login instead of failing every request with 401 (Bug #152).
+    /// </summary>
+    event EventHandler? SessionExpired;
+
+    void Clear();
+
+    /// <summary>Clears both tokens and raises <see cref="SessionExpired"/>.</summary>
+    void ExpireSession();
 }

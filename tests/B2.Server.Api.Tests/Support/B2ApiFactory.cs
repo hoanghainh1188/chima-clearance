@@ -1,7 +1,10 @@
 using B2.Server.Api;
+using B2.Server.Api.Hosting;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace B2.Server.Api.Tests.Support;
@@ -21,6 +24,11 @@ public sealed class B2ApiFactory : WebApplicationFactory<Program>, IAsyncDisposa
     /// <summary>Temp data directory backing this factory (keys\, db\, logs\).</summary>
     public string DataDirectory => _dataDirectory;
 
+    /// <summary>
+    /// Replaces the real post-restore restarter, which would stop the in-process test host.
+    /// </summary>
+    public RecordingServiceRestarter Restarter { get; } = new();
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         Directory.CreateDirectory(_dataDirectory);
@@ -30,6 +38,7 @@ public sealed class B2ApiFactory : WebApplicationFactory<Program>, IAsyncDisposa
         }
 
         builder.UseEnvironment("Testing");
+        builder.ConfigureTestServices(services => services.AddSingleton<IServiceRestarter>(Restarter));
         builder.ConfigureAppConfiguration(
             (_, config) => config.AddInMemoryCollection(
                 new Dictionary<string, string?> { ["B2:DataDirectory"] = _dataDirectory }));

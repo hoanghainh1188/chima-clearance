@@ -47,6 +47,10 @@ public static class B2ApiHost
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<IAuditContext, HttpAuditContext>();
 
+        // F-15 / Bug #173 — post-restore restart. TryAdd so the Windows Service host can
+        // register WindowsServiceRestarter first.
+        builder.Services.TryAddSingleton<IServiceRestarter, HostShutdownRestarter>();
+
         // F-18 log buffer. TryAdd so the Windows Service can register the Serilog-connected
         // instance first (Program.cs) and win; the standalone API / tests get this default.
         builder.Services.TryAddSingleton<InMemoryLogReader>();
@@ -116,11 +120,26 @@ public static class B2ApiHost
     public static async Task InitializeDatabaseAsync(WebApplication app, CancellationToken cancellationToken = default)
     {
         // F-15: apply any staged restore before EF opens the DB (no mid-run file swap).
-        var restoreMetadata = app.Services.GetRequiredService<IDatabaseRestoreService>().ApplyPending();
-        await app.Services.EnsureDatabaseAsync(cancellationToken);
-        if (restoreMetadata is not null)
+        var restoreService = app.Services.GetRequiredService<IDatabaseRestoreService>();
+        var restoreMetadata = restoreService.ApplyPending();
+        try
         {
-            await RestoreAuditPersistence.PersistAfterApplyAsync(app.Services, restoreMetadata, cancellationToken);
+            await app.Services.EnsureDatabaseAsync(cancellationToken);
+            if (restoreMetadata is not null)
+            {
+                await RestoreAuditPersistence.PersistAfterApplyAsync(app.Services, restoreMetadata, cancellationToken);
+            }
+
+            restoreService.CommitPending();
+        }
+        catch
+        {
+            if (restoreMetadata is not null)
+            {
+                restoreService.RollbackPending();
+            }
+
+            throw;
         }
 
         // F-01: after migrations (0004 retires the shared seed hash), apply the installer's

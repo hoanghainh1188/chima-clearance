@@ -7,7 +7,7 @@ using B2.Application.Admin.LogViewer;
 using B2.Application.Admin.Restore;
 using B2.Domain.Audit;
 using B2.Server.Api.Auth;
-using Microsoft.Extensions.Hosting;
+using B2.Server.Api.Hosting;
 
 namespace B2.Server.Api.Endpoints;
 
@@ -89,8 +89,7 @@ public static class AdminEndpoints
                 HttpContext http,
                 RestoreCommandHandler handler,
                 IBackupSecretsStore secrets,
-                IHostApplicationLifetime lifetime,
-                IHostEnvironment env,
+                IServiceRestarter restarter,
                 CancellationToken ct) =>
             {
                 if (!http.Request.HasFormContentType)
@@ -126,10 +125,8 @@ public static class AdminEndpoints
 
                 handler.Handle(container, secret, http.User.GetB2UserId(), file.FileName);
 
-                if (!env.IsEnvironment("Testing"))
-                {
-                    lifetime.StopApplication();
-                }
+                // Bug #173: the restarter flushes this 200 first, then restarts the host.
+                restarter.RequestRestart();
 
                 return Results.Ok(new { restartRequired = true });
             });

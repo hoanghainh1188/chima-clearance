@@ -68,10 +68,7 @@ public sealed class DatabaseRestoreService : IDatabaseRestoreService
             if (File.Exists(_dbPath))
             {
                 File.Replace(_pendingPath, _dbPath, preRestoreBackup, ignoreMetadataErrors: true);
-                if (File.Exists(preRestoreBackup))
-                {
-                    File.Delete(preRestoreBackup);
-                }
+                // Bug #138 fix: Keep preRestoreBackup until EnsureDatabaseAsync succeeds.
             }
             else
             {
@@ -89,12 +86,42 @@ public sealed class DatabaseRestoreService : IDatabaseRestoreService
         }
         catch
         {
-            if (File.Exists(preRestoreBackup) && !File.Exists(_dbPath))
+            RollbackPending();
+            throw;
+        }
+    }
+
+    public void CommitPending()
+    {
+        var preRestoreBackup = _dbPath + ".pre-restore";
+        if (File.Exists(preRestoreBackup))
+        {
+            try
             {
-                File.Move(preRestoreBackup, _dbPath);
+                File.Delete(preRestoreBackup);
+            }
+            catch
+            {
+                // Non-fatal if OS holds a temporary lock
+            }
+        }
+    }
+
+    public void RollbackPending()
+    {
+        var preRestoreBackup = _dbPath + ".pre-restore";
+        if (File.Exists(preRestoreBackup))
+        {
+            SqliteConnection.ClearAllPools();
+            foreach (var sidecar in new[] { _dbPath + "-wal", _dbPath + "-shm" })
+            {
+                if (File.Exists(sidecar))
+                {
+                    File.Delete(sidecar);
+                }
             }
 
-            throw;
+            File.Move(preRestoreBackup, _dbPath, overwrite: true);
         }
     }
 

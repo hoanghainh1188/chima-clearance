@@ -39,6 +39,48 @@ public sealed class RestoreEndpointTests
             File.ReadAllBytes(dbPath).Should().Equal(restored);
             File.Exists(dbPath + ".restore-pending").Should().BeFalse("pending file consumed");
             File.Exists(dbPath + "-wal").Should().BeFalse("stale WAL sidecar removed");
+            service.CommitPending();
+            File.Exists(dbPath + ".pre-restore").Should().BeFalse("pre-restore removed after commit");
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    [Fact]
+    [Trait("Feature", "F-15")]
+    public void Should_support_commit_and_rollback_on_pending_restore()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), $"b2-restore-rb-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(dir);
+        var dbPath = Path.Combine(dir, "b2.db");
+        try
+        {
+            var originalBytes = "ORIGINAL-DATABASE"u8.ToArray();
+            var restoredBytes = "RESTORED-DATABASE"u8.ToArray();
+            File.WriteAllBytes(dbPath, originalBytes);
+
+            var service = new DatabaseRestoreService(dbPath);
+            service.Stage(restoredBytes, new RestoreStagingMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, "snap.bak"));
+
+            // Apply pending
+            service.ApplyPending();
+            File.ReadAllBytes(dbPath).Should().Equal(restoredBytes);
+            File.Exists(dbPath + ".pre-restore").Should().BeTrue("backup kept before commit/rollback");
+
+            // Rollback test
+            service.RollbackPending();
+            File.ReadAllBytes(dbPath).Should().Equal(originalBytes, "rolled back to original db");
+            File.Exists(dbPath + ".pre-restore").Should().BeFalse("backup moved back to original");
+
+            // Test commit
+            service.Stage(restoredBytes, new RestoreStagingMetadata(Guid.NewGuid(), DateTimeOffset.UtcNow, "snap2.bak"));
+            service.ApplyPending();
+            File.Exists(dbPath + ".pre-restore").Should().BeTrue();
+            service.CommitPending();
+            File.Exists(dbPath + ".pre-restore").Should().BeFalse("commit removes pre-restore backup");
+            File.ReadAllBytes(dbPath).Should().Equal(restoredBytes);
         }
         finally
         {
@@ -98,6 +140,7 @@ public sealed class RestoreEndpointTests
 
         await RestoreAuditPersistence.PersistAfterApplyAsync(factory.Services, metadata);
         await factory.Services.EnsureDatabaseAsync();
+        restoreService.CommitPending();
 
         using var scope = factory.Services.CreateAsyncScope();
         var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
