@@ -31,7 +31,9 @@ public sealed class RefreshCommandHandler
 
     public async Task<LoginResponse> HandleAsync(RefreshRequest request, CancellationToken cancellationToken)
     {
-        var userId = await _refreshTokens.GetActiveUserIdAsync(request.RefreshToken, cancellationToken);
+        // #149: consume (revoke) the presented token atomically up front, so a duplicate request
+        // racing this one cannot also pass validation and mint a second token chain.
+        var userId = await _refreshTokens.TryConsumeAsync(request.RefreshToken, cancellationToken);
         if (userId is null)
         {
             throw new DomainException("REFRESH_INVALID", "Refresh token is invalid or expired.", 401);
@@ -44,7 +46,6 @@ public sealed class RefreshCommandHandler
         }
 
         user.EnsureNotLocked(_clock.UtcNow);
-        await _refreshTokens.RevokeAsync(request.RefreshToken, cancellationToken);
 
         var access = _jwt.CreateAccessToken(user.Id, user.Role, user.MustChangePassword, _clock.UtcNow, out var exp);
         var refresh = _jwt.CreateRefreshToken();

@@ -75,7 +75,14 @@ public sealed class LitestreamSupervisor : IHostedService, IDisposable
                 {
                     UseShellExecute = false,
                     CreateNoWindow = true,
+                    // #151: Litestream logs (including the reason it died) go to stderr/stdout;
+                    // forward them so /api/admin/logs and the log files show why replication stopped.
+                    RedirectStandardError = true,
+                    RedirectStandardOutput = true,
                 };
+
+                // #170: release the previous child's OS handles before starting the next one.
+                _process?.Dispose();
                 _process = Process.Start(startInfo);
                 if (_process is null)
                 {
@@ -83,6 +90,10 @@ public sealed class LitestreamSupervisor : IHostedService, IDisposable
                 }
                 else
                 {
+                    _process.ErrorDataReceived += OnLitestreamOutput;
+                    _process.OutputDataReceived += OnLitestreamOutput;
+                    _process.BeginErrorReadLine();
+                    _process.BeginOutputReadLine();
                     await _process.WaitForExitAsync(cancellationToken).ConfigureAwait(false);
                     _logger.LogWarning("Litestream exited (code {Code}); restarting.", _process.ExitCode);
                 }
@@ -104,6 +115,14 @@ public sealed class LitestreamSupervisor : IHostedService, IDisposable
             {
                 break;
             }
+        }
+    }
+
+    private void OnLitestreamOutput(object sender, DataReceivedEventArgs e)
+    {
+        if (!string.IsNullOrWhiteSpace(e.Data))
+        {
+            _logger.LogInformation("Litestream: {Line}", e.Data);
         }
     }
 

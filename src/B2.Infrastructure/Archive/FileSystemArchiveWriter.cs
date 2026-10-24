@@ -45,19 +45,24 @@ public sealed class FileSystemArchiveWriter : IAnnualArchiveWriter
             // Temporarily clear ReadOnly so ClosedXML's stream-based open works on some systems.
             var attrs = File.GetAttributes(filePath);
             File.SetAttributes(filePath, attrs & ~FileAttributes.ReadOnly);
-
-            using var wb = new XLWorkbook(filePath);
-            File.SetAttributes(filePath, attrs); // restore read-only
-
-            var ws = wb.Worksheets.FirstOrDefault();
-            if (ws is null)
+            try
             {
-                return false;
-            }
+                using var wb = new XLWorkbook(filePath);
+                var ws = wb.Worksheets.FirstOrDefault();
+                if (ws is null)
+                {
+                    return false;
+                }
 
-            // FR-021 / INV-12: only delete live data once the archive actually contains
-            // at least the number of declarations we exported. A truncated file must fail.
-            return CountDeclarationRows(ws) >= minimumRows;
+                // FR-021 / INV-12: only delete live data once the archive actually contains
+                // at least the number of declarations we exported. A truncated file must fail.
+                return CountDeclarationRows(ws) >= minimumRows;
+            }
+            finally
+            {
+                // #145: restore read-only even when the workbook fails to open.
+                File.SetAttributes(filePath, attrs);
+            }
         }
         catch
         {

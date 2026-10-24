@@ -1,7 +1,9 @@
 using System.Net;
 using System.Net.Http.Json;
+using B2.Application.Abstractions;
 using B2.Application.Admin.Health;
 using B2.Infrastructure.Diagnostics;
+using B2.Infrastructure.Persistence;
 using B2.Server.Api.Tests.Support;
 using B2.Shared.Contracts.Admin;
 using FluentAssertions;
@@ -86,6 +88,36 @@ public sealed class HealthLogsEndpointTests
         report.FreeDiskBytes.Should().BeGreaterThan(0);
         // The CI/dev disk has > 1 GB free, so no warning is expected here.
         report.DiskSpaceWarning.Should().BeFalse();
+    }
+
+    [Fact]
+    [Trait("Issue", "177")]
+    public async Task Database_size_includes_the_wal_and_shm_files()
+    {
+        await using var factory = new B2ApiFactory();
+        _ = factory.CreateClient();
+        var dir = Path.Combine(Path.GetTempPath(), $"b2-health-{Guid.NewGuid():N}");
+        Directory.CreateDirectory(dir);
+        try
+        {
+            var dbPath = Path.Combine(dir, "b2.db");
+            await File.WriteAllBytesAsync(dbPath, new byte[1000]);
+            await File.WriteAllBytesAsync(dbPath + "-wal", new byte[300]);
+            await File.WriteAllBytesAsync(dbPath + "-shm", new byte[20]);
+            await using var scope = factory.Services.CreateAsyncScope();
+            var probe = new SystemHealthProbe(
+                scope.ServiceProvider.GetRequiredService<B2DbContext>(),
+                scope.ServiceProvider.GetRequiredService<IClock>(),
+                dbPath);
+
+            var snapshot = await probe.ReadAsync(CancellationToken.None);
+
+            snapshot.DbFileBytes.Should().Be(1320);
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
     }
 
     [Theory]

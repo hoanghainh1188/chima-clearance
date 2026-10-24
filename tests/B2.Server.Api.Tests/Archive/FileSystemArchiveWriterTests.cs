@@ -68,6 +68,29 @@ public sealed class FileSystemArchiveWriterTests
         }
     }
 
+    [Fact]
+    [Trait("Issue", "145")]
+    public void Verification_failure_keeps_the_archive_read_only()
+    {
+        var dir = CreateTempDir();
+        try
+        {
+            Directory.CreateDirectory(dir);
+            var path = Path.Combine(dir, "corrupt.xlsx");
+            File.WriteAllText(path, "not a workbook");
+            File.SetAttributes(path, FileAttributes.ReadOnly);
+
+            new FileSystemArchiveWriter(dir).VerifyExcel(path, minimumRows: 1).Should().BeFalse();
+
+            File.GetAttributes(path).HasFlag(FileAttributes.ReadOnly).Should().BeTrue(
+                "a workbook that fails to open must not leave the archive writable");
+        }
+        finally
+        {
+            DeleteDir(dir);
+        }
+    }
+
     private static string CreateTempDir() =>
         Path.Combine(Path.GetTempPath(), $"b2-archive-{Guid.NewGuid():N}");
 

@@ -92,6 +92,10 @@ public sealed class B2DbContext : DbContext, IUnitOfWork
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.HasDbFunction(typeof(SqliteFunctions).GetMethod(nameof(SqliteFunctions.JulianDay))!)
+            .HasName("julianday")
+            .IsBuiltIn();
+
         modelBuilder.Entity<User>(e =>
         {
             e.ToTable("Users");

@@ -217,6 +217,23 @@ public sealed class AnnualArchiveJobTests
     /// Builds a real <see cref="ExportSoB2QueryHandler"/> wired to empty in-memory
     /// repositories so the archive handler can call it without throwing.
     /// </summary>
+    [Fact]
+    [Trait("Issue", "144")]
+    public async Task Should_compute_the_cutoff_from_the_Vietnam_business_date()
+    {
+        // 2025-12-31 17:30Z is already 2026-01-01 00:30 in Vietnam (UTC+7): cutoff = 2023-01-01.
+        var archiveRepo = Substitute.For<IAnnualArchiveRepository>();
+        archiveRepo.GetYearsOlderThanAsync(Arg.Any<DateOnly>(), Arg.Any<CancellationToken>())
+            .Returns(new List<int>());
+        var clock = new FixedClock(new DateTimeOffset(2025, 12, 31, 17, 30, 0, TimeSpan.Zero));
+        var sut = new AnnualArchiveJobHandler(
+            archiveRepo, Substitute.For<IAnnualArchiveWriter>(), BuildExportHandler(), clock, new CountingUow());
+
+        await sut.HandleAsync(CancellationToken.None);
+
+        await archiveRepo.Received(1).GetYearsOlderThanAsync(new DateOnly(2023, 1, 1), Arg.Any<CancellationToken>());
+    }
+
     private static ExportSoB2QueryHandler BuildExportHandler()
     {
         var exportRepo = Substitute.For<ISoB2ExportRepository>();

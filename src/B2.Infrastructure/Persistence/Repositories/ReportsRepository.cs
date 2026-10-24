@@ -90,16 +90,24 @@ public sealed class ReportsRepository : IReportsRepository
         // the two ToListAsync calls and skew one tally against the other.
         await using var tx = await _db.Database.BeginTransactionAsync(cancellationToken);
 
-        var entered = await _db.Declarations.AsNoTracking()
-            .Where(d => d.BusinessDate >= fromDate && d.BusinessDate <= toDate)
-            .Where(d => includeCancelled || d.Status != DeclarationStatus.Cancelled)
-            .Join(
-                _db.Users.AsNoTracking(),
-                d => d.EnteredByUserId,
-                u => u.Id,
-                (d, u) => new { Declaration = d, User = u })
-            .GroupBy(x => new { x.User.Id, x.User.FullName })
-            .Select(g => new { OfficerUserId = g.Key.Id, g.Key.FullName, VehiclesEntered = g.Sum(x => x.Declaration.Vehicles.Count) })
+        // #157: credit each vehicle to the officer who entered *that vehicle* (AddVehicle may be
+        // done by someone other than the declaration's creator), on the Vietnam day it entered
+        // (same rule as the daily total, #146). julianday() normalises stored offsets to UTC.
+        var (startUtc, _) = VietnamTime.BusinessDayUtcBounds(fromDate);
+        var (_, endUtc) = VietnamTime.BusinessDayUtcBounds(toDate);
+        var includeCancelledFlag = includeCancelled ? 1 : 0;
+        var entered = await _db.Database
+            .SqlQuery<OfficerEntryCount>(
+                $"""
+                 SELECT u."Id" AS "OfficerUserId", u."FullName" AS "FullName", COUNT(*) AS "VehiclesEntered"
+                 FROM "Vehicles" AS v
+                 INNER JOIN "Declarations" AS d ON d."Id" = v."DeclarationId"
+                 INNER JOIN "Users" AS u ON u."Id" = v."EnteredByUserId"
+                 WHERE ({includeCancelledFlag} = 1 OR d."Status" <> 'Cancelled')
+                   AND julianday(v."EntryTime") >= julianday({startUtc})
+                   AND julianday(v."EntryTime") < julianday({endUtc})
+                 GROUP BY u."Id", u."FullName"
+                 """)
             .ToListAsync(cancellationToken);
 
         var kvgs = await _db.Declarations.AsNoTracking()
@@ -186,5 +194,14 @@ public sealed class ReportsRepository : IReportsRepository
         var start = new DateTimeOffset(local.Year, local.Month, local.Day, local.Hour, startMinute, 0, local.Offset);
         var end = start.AddMinutes(bucketMinutes);
         return $"{start:HH:mm}-{end:HH:mm}";
+    }
+
+    private sealed class OfficerEntryCount
+    {
+        public Guid OfficerUserId { get; set; }
+
+        public string FullName { get; set; } = string.Empty;
+
+        public int VehiclesEntered { get; set; }
     }
 }

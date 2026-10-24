@@ -164,4 +164,43 @@ public sealed class ReportsEndpointsTests
         supervisorRow.VehiclesEntered.Should().Be(0);
         supervisorRow.DeclarationsKvgsConfirmed.Should().Be(1);
     }
+
+    [Fact]
+    [Trait("Feature", "F-14")]
+    [Trait("Issue", "157")]
+    public async Task Should_by_officer_credit_each_vehicle_to_the_officer_who_entered_it()
+    {
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+        var create = await client.PostAsJsonAsync(
+            "/api/declarations",
+            new DeclarationCreateRequest(
+                [TestDeclarationNumbers.Next()], SeedIds.ProcessorId, "C1", "G1", SeedIds.YardId,
+                new VehicleAddRequest("31A20011", null, null)),
+            TestJson.Options);
+        create.EnsureSuccessStatusCode();
+        var dto = (await create.Content.ReadFromJsonAsync<DeclarationDto>(TestJson.Options))!;
+        var fromTo = dto.BusinessDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        // A second officer adds two more trucks to the admin's declaration.
+        var op = await client.LoginAsNewOperatorAsync();
+        client.SetBearer(op.AccessToken);
+        foreach (var plate in new[] { "31A20012", "31A20013" })
+        {
+            (await client.PostAsJsonAsync(
+                $"/api/declarations/{dto.Id}/vehicles",
+                new VehicleAddRequest(plate, null, null),
+                TestJson.Options)).EnsureSuccessStatusCode();
+        }
+
+        client.SetBearer((await client.LoginAsAdminAsync()).AccessToken);
+        var report = await client.GetFromJsonAsync<List<OfficerReportItemDto>>(
+            $"/api/reports/by-officer?from={fromTo}&to={fromTo}",
+            TestJson.Options);
+
+        report!.Single(x => x.OfficerUserId == admin.UserId).VehiclesEntered.Should().Be(1);
+        report!.Single(x => x.OfficerUserId == op.UserId).VehiclesEntered.Should().Be(2);
+    }
 }

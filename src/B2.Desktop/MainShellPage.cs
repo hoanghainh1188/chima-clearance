@@ -46,6 +46,8 @@ public sealed class MainShellPage : ContentPage, IToastPresenter
     private readonly IUserSettingsService _userSettings;
     private readonly UserRoleDto _role;
     private readonly ContentView _contentHost = new();
+    private static readonly TimeSpan LogoutRevokeTimeout = TimeSpan.FromSeconds(3);
+
     private readonly List<TabEntry> _tabs = new();
     private readonly Border _connectivityBadge;
     private readonly Label _connectivityLabel;
@@ -647,14 +649,20 @@ public sealed class MainShellPage : ContentPage, IToastPresenter
                 AppResources.Login_SessionExpired_Title,
                 AppResources.Login_SessionExpired_Message,
                 AppResources.Common_Close).ConfigureAwait(true);
-            await LogoutAsync().ConfigureAwait(true);
+            // The refresh already failed, so there is no live session left to revoke.
+            await LogoutAsync(revokeOnServer: false).ConfigureAwait(true);
         });
     }
 
-    private async Task LogoutAsync()
+    private async Task LogoutAsync(bool revokeOnServer = true)
     {
         _auth.SessionExpired -= OnSessionExpired;
         _connectivity.ModeChanged -= OnConnectivityModeChanged;
+
+        if (revokeOnServer)
+        {
+            await RevokeServerSessionAsync().ConfigureAwait(true);
+        }
 
         // Stay on the UI thread: Shell navigation off it throws on WinUI.
         await _connectivity.StopAsync().ConfigureAwait(true);
@@ -662,6 +670,31 @@ public sealed class MainShellPage : ContentPage, IToastPresenter
         _auth.Clear();
         _session.Clear();
         await _navigator.NavigateToLoginAsync().ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// #181: on a shared gate PC the next officer must not inherit a live 7-day refresh token, so
+    /// ask the server to revoke this user's tokens. Best effort with a short timeout: logging out
+    /// while the server is unreachable still has to clear the local session.
+    /// </summary>
+    private async Task RevokeServerSessionAsync()
+    {
+        using var timeout = new CancellationTokenSource(LogoutRevokeTimeout);
+        try
+        {
+            await _services.GetRequiredService<IB2Api>().LogoutAsync(timeout.Token).ConfigureAwait(true);
+        }
+        // Offline / server error / timeout: the local session is cleared regardless; the tokens
+        // expire on their own and are also revoked at the next password change or deactivation.
+        catch (Refit.ApiException)
+        {
+        }
+        catch (HttpRequestException)
+        {
+        }
+        catch (OperationCanceledException)
+        {
+        }
     }
 
     /// <summary>

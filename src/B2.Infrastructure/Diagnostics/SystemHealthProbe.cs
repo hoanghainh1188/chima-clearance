@@ -27,7 +27,9 @@ public sealed class SystemHealthProbe : ISystemHealthProbe
         using var process = Process.GetCurrentProcess();
         var uptimeSeconds = (long)(_clock.UtcNow - new DateTimeOffset(process.StartTime.ToUniversalTime(), TimeSpan.Zero)).TotalSeconds;
 
-        var dbBytes = File.Exists(_dbPath) ? new FileInfo(_dbPath).Length : 0L;
+        // #177: in WAL mode uncheckpointed pages live in -wal (often hundreds of MB), so the
+        // on-disk footprint is the sum of all three files.
+        var dbBytes = FileLength(_dbPath) + FileLength(_dbPath + "-wal") + FileLength(_dbPath + "-shm");
         var freeDiskBytes = FreeDiskBytes(_dbPath);
 
         var threshold = _clock.UtcNow.AddHours(-24);
@@ -59,4 +61,6 @@ public sealed class SystemHealthProbe : ISystemHealthProbe
             return 0L;
         }
     }
+
+    private static long FileLength(string path) => File.Exists(path) ? new FileInfo(path).Length : 0L;
 }

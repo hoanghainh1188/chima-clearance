@@ -13,6 +13,10 @@ public interface IB2Api
     [Post("/api/auth/login")]
     Task<LoginResponse> LoginAsync([Body] LoginRequest request, CancellationToken cancellationToken = default);
 
+    /// <summary>#181: revokes every refresh token of the signed-in user (end of shift).</summary>
+    [Post("/api/auth/logout")]
+    Task LogoutAsync(CancellationToken cancellationToken = default);
+
     [Post("/api/auth/change-password")]
     Task ChangePasswordAsync([Body] ChangePasswordRequest request, CancellationToken cancellationToken = default);
 
