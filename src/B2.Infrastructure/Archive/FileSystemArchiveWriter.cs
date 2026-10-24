@@ -47,7 +47,10 @@ public sealed class FileSystemArchiveWriter : IAnnualArchiveWriter
             File.SetAttributes(filePath, attrs & ~FileAttributes.ReadOnly);
             try
             {
-                using var wb = new XLWorkbook(filePath);
+                // Own the stream: XLWorkbook(path) leaks its file handle when the package fails to
+                // open, which keeps a corrupt archive locked (Windows) until the GC finalises it.
+                using var stream = new FileStream(filePath, FileMode.Open, FileAccess.Read, FileShare.Read);
+                using var wb = new XLWorkbook(stream);
                 var ws = wb.Worksheets.FirstOrDefault();
                 if (ws is null)
                 {
