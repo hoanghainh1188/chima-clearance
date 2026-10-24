@@ -38,7 +38,7 @@ public sealed class ServiceRestartTests
         create.EnsureSuccessStatusCode();
 
         var snapshots = factory.Services.GetRequiredService<IBackupSnapshotService>();
-        var container = await snapshots.CreateSnapshotAsync(InstallPassword, RecoveryCode, CancellationToken.None);
+        var container = await SnapshotTestHelpers.CreateAsync(snapshots, InstallPassword, RecoveryCode);
 
         using var form = new MultipartFormDataContent();
         var file = new ByteArrayContent(container);

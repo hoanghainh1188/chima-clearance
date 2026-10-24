@@ -27,6 +27,22 @@ Thumbprint, copy `b2-server.cer` to USB), then on each exit gate
 `.\install.ps1 -ClientOnly -ServerUrl <ip> -ServerCertificate <path>`. A `b2-client.json` that says
 `http://…:5000` must be changed to the bare IP.
 
+### Changed
+
+#### Streaming backup container v2 — #150, ADR-0011
+
+- `POST /api/admin/backup-now` and `POST /api/admin/restore` held the whole snapshot in RAM
+  several times over (plaintext, ciphertext, Base64 JSON) — over 2 GB for a few-hundred-MB
+  database. Snapshots now use a binary **v2 container** of independently AES-256-GCM sealed
+  1 MiB chunks (chunk index + final flag authenticated), streamed through temp files on both
+  the server and the Desktop. Same FR-026 dual wrap (install password **or** recovery code),
+  same PBKDF2 parameters, BCL crypto only.
+- Restore fails closed on a truncated, reordered or tampered file (`BACKUP_CORRUPT`) and stages
+  nothing; restore uploads up to 2 GiB are accepted (the old 30 MB Kestrel default rejected
+  realistic databases).
+- **Compatibility**: existing v1 `.bak` files still restore. New v2 backups need a server with
+  this change to restore.
+
 ## [1.3.0] — 2026-10-02 — per-install Admin password; automatic backup; pre-UAT fixes from the requirements audit
 
 **Upgrade every entry-gate PC with `.\install.ps1`** — not by copying files. The installer issues

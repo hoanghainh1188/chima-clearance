@@ -53,10 +53,10 @@ public sealed class BackupRestoreEndpointTests
         var seeded = await SeedDeclarationsAsync(client, 5);
 
         var service = factory.Services.GetRequiredService<IBackupSnapshotService>();
-        var container = await service.CreateSnapshotAsync(InstallPassword, RecoveryCode, CancellationToken.None);
+        var container = await SnapshotTestHelpers.CreateAsync(service, InstallPassword, RecoveryCode);
 
-        var fromPassword = service.DecryptSnapshot(container, InstallPassword);
-        var fromRecovery = service.DecryptSnapshot(container, RecoveryCode);
+        var fromPassword = await SnapshotTestHelpers.DecryptAsync(service, container, InstallPassword);
+        var fromRecovery = await SnapshotTestHelpers.DecryptAsync(service, container, RecoveryCode);
 
         // FR-026: either secret yields the identical decrypted database.
         fromPassword.Should().StartWith(SqliteMagic);
@@ -85,10 +85,10 @@ public sealed class BackupRestoreEndpointTests
         await SeedDeclarationsAsync(client, 1);
 
         var service = factory.Services.GetRequiredService<IBackupSnapshotService>();
-        var container = await service.CreateSnapshotAsync(InstallPassword, RecoveryCode, CancellationToken.None);
+        var container = await SnapshotTestHelpers.CreateAsync(service, InstallPassword, RecoveryCode);
 
-        var act = () => service.DecryptSnapshot(container, "not-the-right-secret");
-        act.Should().Throw<DomainException>().Which.Code.Should().Be("BACKUP_INVALID_SECRET");
+        var act = () => SnapshotTestHelpers.DecryptAsync(service, container, "not-the-right-secret");
+        (await act.Should().ThrowAsync<DomainException>()).Which.Code.Should().Be("BACKUP_INVALID_SECRET");
     }
 
     [Fact]
