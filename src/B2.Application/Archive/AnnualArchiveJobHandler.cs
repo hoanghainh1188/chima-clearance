@@ -11,7 +11,7 @@ namespace B2.Application.Archive;
 /// Algorithm per data-model.md § 6.2:
 ///   1. Compute cutoff = today − 3 years.
 ///   2. Enumerate all calendar years that have data older than cutoff.
-///   3. For each year: export → write → verify → delete (only if verified).
+///   3. For each year: stream export to disk → verify → delete (only if verified).
 /// </summary>
 public sealed class AnnualArchiveJobHandler
 {
@@ -20,6 +20,7 @@ public sealed class AnnualArchiveJobHandler
     private readonly IAnnualArchiveRepository _archiveRepo;
     private readonly IAnnualArchiveWriter _writer;
     private readonly ExportSoB2QueryHandler _exportHandler;
+    private readonly ISoB2StreamingExporter _streamingExporter;
     private readonly IClock _clock;
     private readonly IUnitOfWork _uow;
 
@@ -27,12 +28,14 @@ public sealed class AnnualArchiveJobHandler
         IAnnualArchiveRepository archiveRepo,
         IAnnualArchiveWriter writer,
         ExportSoB2QueryHandler exportHandler,
+        ISoB2StreamingExporter streamingExporter,
         IClock clock,
         IUnitOfWork uow)
     {
         _archiveRepo = archiveRepo;
         _writer = writer;
         _exportHandler = exportHandler;
+        _streamingExporter = streamingExporter;
         _clock = clock;
         _uow = uow;
     }
@@ -60,8 +63,13 @@ public sealed class AnnualArchiveJobHandler
 
             try
             {
-                var excelBytes = await _exportHandler.HandleAsync(from, to, ct);
-                var filePath = await _writer.WriteExcelAsync(year, excelBytes, ct);
+                // #167: stream month-by-month straight to disk — a full year never sits in
+                // memory as a workbook DOM, and verification below re-reads it the same way.
+                var filePath = await _writer.WriteExcelAsync(
+                    year,
+                    (stream, token) => _streamingExporter.ExportAsync(
+                        _exportHandler.StreamDaysAsync(from, to, token), stream, token),
+                    ct);
                 var verified = _writer.VerifyExcel(filePath, count);
 
                 if (verified)

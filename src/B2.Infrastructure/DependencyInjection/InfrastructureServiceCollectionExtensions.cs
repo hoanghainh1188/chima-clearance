@@ -55,6 +55,7 @@ public static class InfrastructureServiceCollectionExtensions
         services.AddSingleton<IAdminBootstrapStore>(sp => new AdminBootstrapStore(
             dataDirectory, sp.GetRequiredService<ILogger<AdminBootstrapStore>>()));
         services.AddSingleton<ISoB2Exporter>(_ => new ClosedXmlSoB2Exporter(dataDirectory));
+        services.AddSingleton<ISoB2StreamingExporter>(_ => new OpenXmlStreamingSoB2Exporter(dataDirectory));
 
         if (enableBackgroundJobs)
         {

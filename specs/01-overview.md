@@ -126,7 +126,7 @@ AI agents implementing this system **must** read all 4 files before generating c
 | Database | **SQLite** with `journal_mode=WAL` | 3.45+ | Zero-config, < 1 MB, sufficient for 5 users |
 | Continuous backup | **Litestream** | 0.3+ | Replicates WAL to USB / LAN folder |
 | Auth | **JWT (RS256)** + **BCrypt.Net-Next** | latest | No external IdP; offline-safe |
-| Excel I/O | **ClosedXML** | latest | Template-based fill, preserves colors/format |
+| Excel I/O | **ClosedXML** (+ its own dependency **DocumentFormat.OpenXml**, used directly for the streamed annual archive — ADR-0011) | latest | Template-based fill, preserves colors/format |
 | Validation | **FluentValidation** | latest | Server-side validation |
 | Logging | **Serilog** + rolling file sink | latest | Local log files, viewable in-app |
 | HTTP client | **Refit** | latest | Typed API client for the desktop app |

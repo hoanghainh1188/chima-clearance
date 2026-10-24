@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using B2.Application.Abstractions;
 
 namespace B2.Application.Export;
@@ -25,6 +26,37 @@ public sealed class ExportSoB2QueryHandler
     }
 
     public async Task<byte[]> HandleAsync(DateOnly fromDate, DateOnly toDate, CancellationToken cancellationToken)
+    {
+        var days = await LoadDaysAsync(fromDate, toDate, cancellationToken);
+        return _exporter.Export(new SoB2ExportData(fromDate, toDate, days));
+    }
+
+    /// <summary>
+    /// The same day blocks as <see cref="HandleAsync"/>, loaded one calendar month at a time so
+    /// a full-year archive (FR-021) never holds more than a month of rows in memory (#167).
+    /// Days never straddle a month, so the concatenation equals a single-range load.
+    /// </summary>
+    public async IAsyncEnumerable<SoB2DayBlock> StreamDaysAsync(
+        DateOnly fromDate,
+        DateOnly toDate,
+        [EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var monthStart = fromDate;
+        while (monthStart <= toDate)
+        {
+            var nextMonth = new DateOnly(monthStart.Year, monthStart.Month, 1).AddMonths(1);
+            var monthEnd = nextMonth.AddDays(-1) < toDate ? nextMonth.AddDays(-1) : toDate;
+
+            foreach (var day in await LoadDaysAsync(monthStart, monthEnd, cancellationToken))
+            {
+                yield return day;
+            }
+
+            monthStart = nextMonth;
+        }
+    }
+
+    private async Task<List<SoB2DayBlock>> LoadDaysAsync(DateOnly fromDate, DateOnly toDate, CancellationToken cancellationToken)
     {
         var declarations = await _exportRepository.GetDeclarationsForExportAsync(fromDate, toDate, cancellationToken);
         var headers = await _dailyHeaders.GetByDateRangeAsync(fromDate, toDate, cancellationToken);
@@ -54,6 +86,6 @@ public sealed class ExportSoB2QueryHandler
             days.Add(new SoB2DayBlock(date, header?.OnDutyOfficerName, header?.TotalVehicles, dayDeclarations));
         }
 
-        return _exporter.Export(new SoB2ExportData(fromDate, toDate, days));
+        return days;
     }
 }
