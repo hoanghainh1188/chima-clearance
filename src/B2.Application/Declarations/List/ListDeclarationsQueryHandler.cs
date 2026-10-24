@@ -17,7 +17,9 @@ public sealed class ListDeclarationsQueryHandler
 
     public async Task<PagedDeclarationsResponse> HandleAsync(ListDeclarationsQuery query, CancellationToken cancellationToken)
     {
-        var today = VietnamTime.BusinessDateFromUtc(_clock.UtcNow);
+        // Captured before reading so a write racing this query is matched again on the next poll.
+        var asOf = _clock.UtcNow;
+        var today = VietnamTime.BusinessDateFromUtc(asOf);
         var from = query.FromDate ?? today;
         var to = query.ToDate ?? today;
         var page = query.Page <= 0 ? 1 : query.Page;
@@ -62,6 +64,6 @@ public sealed class ListDeclarationsQueryHandler
                 r.DeclarationNumberCount))
             .ToList();
 
-        return new PagedDeclarationsResponse(dtos, total, page, pageSize);
+        return new PagedDeclarationsResponse(dtos, total, page, pageSize, asOf);
     }
 }

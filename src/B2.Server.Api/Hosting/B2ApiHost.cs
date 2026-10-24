@@ -47,6 +47,10 @@ public static class B2ApiHost
         builder.Services.AddHttpContextAccessor();
         builder.Services.AddScoped<IAuditContext, HttpAuditContext>();
 
+        // F-15 / Bug #173 — post-restore restart. TryAdd so the Windows Service host can
+        // register WindowsServiceRestarter first.
+        builder.Services.TryAddSingleton<IServiceRestarter, HostShutdownRestarter>();
+
         // F-18 log buffer. TryAdd so the Windows Service can register the Serilog-connected
         // instance first (Program.cs) and win; the standalone API / tests get this default.
         builder.Services.TryAddSingleton<InMemoryLogReader>();

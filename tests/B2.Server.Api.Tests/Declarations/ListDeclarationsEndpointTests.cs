@@ -202,6 +202,68 @@ public sealed class ListDeclarationsEndpointTests
 
     [Fact]
     [Trait("Feature", "F-10")]
+    [Trait("Requirement", "FR-028")]
+    public async Task Should_stop_reporting_an_exit_once_the_watermark_passes_as_of()
+    {
+        // Bug #163: the desktop advanced its watermark to max(EnteredAt), but an exit also
+        // matches `since`, so every 3 s poll saw "a change" and reloaded the grid forever.
+        // The server's AsOfUtc is the watermark that makes a quiet poll quiet.
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+        var created = await client.PostAsJsonAsync(
+            "/api/declarations",
+            new DeclarationCreateRequest(
+                [TestDeclarationNumbers.Next()],
+                SeedIds.ProcessorId,
+                "Watermark Co",
+                "Goods",
+                SeedIds.YardId,
+                new VehicleAddRequest("30W40001", null, null)),
+            TestJson.Options);
+        created.EnsureSuccessStatusCode();
+        var dto = await created.Content.ReadFromJsonAsync<DeclarationDto>(TestJson.Options);
+
+        var full = await ProbeAsync(client, since: null);
+        full.AsOfUtc.Should().NotBeNull();
+        (await ProbeAsync(client, full.AsOfUtc)).TotalCount.Should().Be(0, "nothing changed since the full load");
+
+        Guid vehicleId;
+        using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+            vehicleId = await db.Vehicles.AsNoTracking()
+                .Where(v => v.DeclarationId == dto!.Id)
+                .Select(v => v.Id)
+                .SingleAsync();
+        }
+
+        client.DefaultRequestHeaders.Remove("Authorization");
+        var op = await client.LoginAsNewOperatorAsync();
+        client.SetBearer(op.AccessToken);
+        using (var exit = new HttpRequestMessage(HttpMethod.Post, $"/api/vehicles/{vehicleId}/exit"))
+        {
+            exit.Headers.TryAddWithoutValidation("Idempotency-Key", Guid.NewGuid().ToString("N"));
+            (await client.SendAsync(exit)).EnsureSuccessStatusCode();
+        }
+
+        var afterExit = await ProbeAsync(client, full.AsOfUtc);
+        afterExit.TotalCount.Should().Be(1, "the exit is a change since the last watermark");
+        (await ProbeAsync(client, afterExit.AsOfUtc)).TotalCount.Should().Be(0, "the exit was already seen");
+    }
+
+    private static async Task<PagedDeclarationsResponse> ProbeAsync(HttpClient client, DateTimeOffset? since)
+    {
+        var query = since is { } s ? $"&since={Uri.EscapeDataString(s.ToString("O"))}" : string.Empty;
+        var page = await client.GetFromJsonAsync<PagedDeclarationsResponse>(
+            $"/api/declarations?page=1&pageSize=1{query}",
+            TestJson.Options);
+        return page!;
+    }
+
+    [Fact]
+    [Trait("Feature", "F-10")]
     public async Task Should_accept_writes_during_polling_fallback_and_surface_in_since_delta()
     {
         // Spec.md F-10 Scenario 3 + FR-028: when SignalR has dropped and the

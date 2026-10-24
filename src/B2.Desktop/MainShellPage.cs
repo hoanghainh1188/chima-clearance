@@ -37,6 +37,7 @@ public sealed class MainShellPage : ContentPage, IToastPresenter
 
     private readonly IServiceProvider _services;
     private readonly IAuthTokenStore _auth;
+    private int _sessionExpiryHandled;
     private readonly ISessionContext _session;
     private readonly ConnectivityService _connectivity;
     private readonly IModalService _modal;
@@ -130,6 +131,7 @@ public sealed class MainShellPage : ContentPage, IToastPresenter
         _connectivity.ModeChanged += OnConnectivityModeChanged;
         UpdateConnectivityBadge(_connectivity.Mode);
         _connectivity.Start();
+        _auth.SessionExpired += OnSessionExpired;
 
         if (_tabs.Count > 0)
         {
@@ -628,10 +630,34 @@ public sealed class MainShellPage : ContentPage, IToastPresenter
         await ShowShortcutsAsync().ConfigureAwait(true);
     }
 
+    /// <summary>
+    /// Bug #152: the refresh token was rejected (expired, revoked, user deactivated), so every
+    /// further call would 401. Tell the operator why, then return to the login screen once.
+    /// </summary>
+    private void OnSessionExpired(object? sender, EventArgs e)
+    {
+        if (Interlocked.Exchange(ref _sessionExpiryHandled, 1) == 1)
+        {
+            return;
+        }
+
+        MainThread.BeginInvokeOnMainThread(async () =>
+        {
+            await DisplayAlert(
+                AppResources.Login_SessionExpired_Title,
+                AppResources.Login_SessionExpired_Message,
+                AppResources.Common_Close).ConfigureAwait(true);
+            await LogoutAsync().ConfigureAwait(true);
+        });
+    }
+
     private async Task LogoutAsync()
     {
+        _auth.SessionExpired -= OnSessionExpired;
         _connectivity.ModeChanged -= OnConnectivityModeChanged;
-        await _connectivity.StopAsync().ConfigureAwait(false);
+
+        // Stay on the UI thread: Shell navigation off it throws on WinUI.
+        await _connectivity.StopAsync().ConfigureAwait(true);
         _auth.Clear();
         _session.Clear();
         await _navigator.NavigateToLoginAsync().ConfigureAwait(false);

@@ -1,6 +1,8 @@
 using System.Net;
 using System.Net.Http.Headers;
 using System.Net.Http.Json;
+using System.Text.Json;
+using System.Text.Json.Serialization;
 using B2.Shared.Contracts.Auth;
 
 namespace B2.Desktop.Services.Api;
@@ -15,7 +17,18 @@ namespace B2.Desktop.Services.Api;
 /// </summary>
 public sealed class AuthTokenHandler : DelegatingHandler
 {
+    private const string RefreshPath = "/api/auth/refresh";
+
     private static readonly SemaphoreSlim RefreshLock = new(1, 1);
+
+    // Same shape as MauiProgram's Refit serializer: the server writes enums (Role) as strings,
+    // so the default options throw while reading LoginResponse — after the server has already
+    // rotated (revoked) the refresh token we sent.
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true,
+        Converters = { new JsonStringEnumConverter() },
+    };
     private readonly IAuthTokenStore _tokens;
 
     public AuthTokenHandler(IAuthTokenStore tokens) => _tokens = tokens;
@@ -42,7 +55,7 @@ public sealed class AuthTokenHandler : DelegatingHandler
             return response;
         }
 
-        var refreshed = await TryRefreshTokenAsync(refreshToken, cancellationToken).ConfigureAwait(false);
+        var refreshed = await TryRefreshTokenAsync(request.RequestUri, refreshToken, cancellationToken).ConfigureAwait(false);
         if (!refreshed || string.IsNullOrEmpty(_tokens.AccessToken))
         {
             return response;
@@ -59,36 +72,51 @@ public sealed class AuthTokenHandler : DelegatingHandler
     {
         var path = uri?.AbsolutePath ?? string.Empty;
         return path.Contains("/api/auth/login", StringComparison.OrdinalIgnoreCase) ||
-               path.Contains("/api/auth/refresh", StringComparison.OrdinalIgnoreCase);
+               path.Contains(RefreshPath, StringComparison.OrdinalIgnoreCase);
     }
 
-    private async Task<bool> TryRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken)
+    private async Task<bool> TryRefreshTokenAsync(Uri? originalUri, string refreshToken, CancellationToken cancellationToken)
     {
         await RefreshLock.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
-            // If another thread already refreshed the token while we waited, succeed immediately
-            if (_tokens.RefreshToken != refreshToken && !string.IsNullOrEmpty(_tokens.AccessToken))
+            // Another request already rotated (or gave up on) this refresh token while we waited:
+            // reuse its outcome instead of replaying a token the server has revoked.
+            if (!string.Equals(_tokens.RefreshToken, refreshToken, StringComparison.Ordinal))
             {
-                return true;
+                return !string.IsNullOrEmpty(_tokens.AccessToken);
             }
 
-            using var refreshRequest = new HttpRequestMessage(HttpMethod.Post, "/api/auth/refresh")
+            // HttpClient resolves BaseAddress BEFORE the handler chain runs, so a request created
+            // in here must already be absolute (a relative "/api/auth/refresh" never left the PC).
+            if (originalUri is not { IsAbsoluteUri: true })
             {
-                Content = JsonContent.Create(new RefreshRequest(refreshToken))
-            };
-
-            var refreshResponse = await base.SendAsync(refreshRequest, cancellationToken).ConfigureAwait(false);
-            if (!refreshResponse.IsSuccessStatusCode)
-            {
-                _tokens.Clear();
                 return false;
             }
 
-            var content = await refreshResponse.Content.ReadFromJsonAsync<LoginResponse>(cancellationToken: cancellationToken).ConfigureAwait(false);
+            using var refreshRequest = new HttpRequestMessage(HttpMethod.Post, new Uri(originalUri, RefreshPath))
+            {
+                Content = JsonContent.Create(new RefreshRequest(refreshToken)),
+            };
+
+            using var refreshResponse = await base.SendAsync(refreshRequest, cancellationToken).ConfigureAwait(false);
+            if (!refreshResponse.IsSuccessStatusCode)
+            {
+                if (refreshResponse.StatusCode is HttpStatusCode.Unauthorized or HttpStatusCode.Forbidden)
+                {
+                    // Refresh token expired / revoked / user deactivated: only a new login helps.
+                    _tokens.ExpireSession();
+                }
+
+                return false;
+            }
+
+            var content = await refreshResponse.Content
+                .ReadFromJsonAsync<LoginResponse>(JsonOptions, cancellationToken)
+                .ConfigureAwait(false);
             if (content is null || string.IsNullOrEmpty(content.AccessToken))
             {
-                _tokens.Clear();
+                _tokens.ExpireSession();
                 return false;
             }
 
@@ -96,8 +124,10 @@ public sealed class AuthTokenHandler : DelegatingHandler
             _tokens.RefreshToken = content.RefreshToken;
             return true;
         }
-        catch
+        catch (Exception ex) when (ex is HttpRequestException or JsonException or NotSupportedException
+                                   || (ex is TaskCanceledException && !cancellationToken.IsCancellationRequested))
         {
+            // Transport failure or timeout: keep the tokens so the next request can retry.
             return false;
         }
         finally

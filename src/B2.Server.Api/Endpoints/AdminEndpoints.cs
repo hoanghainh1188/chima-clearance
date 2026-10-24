@@ -7,7 +7,7 @@ using B2.Application.Admin.LogViewer;
 using B2.Application.Admin.Restore;
 using B2.Domain.Audit;
 using B2.Server.Api.Auth;
-using Microsoft.Extensions.Hosting;
+using B2.Server.Api.Hosting;
 
 namespace B2.Server.Api.Endpoints;
 
@@ -89,8 +89,7 @@ public static class AdminEndpoints
                 HttpContext http,
                 RestoreCommandHandler handler,
                 IBackupSecretsStore secrets,
-                IHostApplicationLifetime lifetime,
-                IHostEnvironment env,
+                IServiceRestarter restarter,
                 CancellationToken ct) =>
             {
                 if (!http.Request.HasFormContentType)
@@ -126,35 +125,8 @@ public static class AdminEndpoints
 
                 handler.Handle(container, secret, http.User.GetB2UserId(), file.FileName);
 
-                if (!env.IsEnvironment("Testing"))
-                {
-                    // Bug #173 fix: Flush HTTP 200 response to client first before shutting down,
-                    // and spawn a background helper so Windows Service is automatically restarted.
-                    _ = Task.Run(
-                        async () =>
-                        {
-                            await Task.Delay(1000, CancellationToken.None);
-                            if (OperatingSystem.IsWindows())
-                            {
-                                try
-                                {
-                                    var psi = new System.Diagnostics.ProcessStartInfo("cmd.exe", "/c ping 127.0.0.1 -n 3 > nul & sc.exe start B2ClearanceService")
-                                    {
-                                        CreateNoWindow = true,
-                                        UseShellExecute = false,
-                                    };
-                                    System.Diagnostics.Process.Start(psi);
-                                }
-                                catch
-                                {
-                                    // Best-effort restart helper
-                                }
-                            }
-
-                            lifetime.StopApplication();
-                        },
-                        CancellationToken.None);
-                }
+                // Bug #173: the restarter flushes this 200 first, then restarts the host.
+                restarter.RequestRestart();
 
                 return Results.Ok(new { restartRequired = true });
             });

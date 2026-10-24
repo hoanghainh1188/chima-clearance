@@ -34,6 +34,14 @@
     <Compile Include="../../src/B2.Desktop/Services/Api/IAuthTokenStore.cs" Link="Linked/IAuthTokenStore.cs" />
     <Compile Include="../../src/B2.Desktop/Services/Api/AuthTokenStore.cs" Link="Linked/AuthTokenStore.cs" />
     <Compile Include="../../src/B2.Desktop/Services/Api/ApiErrorCode.cs" Link="Linked/ApiErrorCode.cs" />
+    <Compile Include="../../src/B2.Desktop/Services/Api/AuthTokenHandler.cs" Link="Linked/AuthTokenHandler.cs" />
+    <Compile Include="../../src/B2.Desktop/Services/LedgerDeltaPolicy.cs" Link="Linked/LedgerDeltaPolicy.cs" />
+    <Compile Include="../../src/B2.Desktop/Services/ConnectivityMode.cs" Link="Linked/ConnectivityMode.cs" />
+    <Compile Include="../../src/B2.Desktop/Services/ConnectivityPolicy.cs" Link="Linked/ConnectivityPolicy.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\B2.Shared.Contracts\B2.Shared.Contracts.csproj" />
   </ItemGroup>
 
 </Project>

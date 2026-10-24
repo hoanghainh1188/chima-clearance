@@ -173,6 +173,9 @@ public sealed class ConnectivityService : IDisposable, IAsyncDisposable
             hub.Reconnecting += _ =>
             {
                 Mode = ConnectivityMode.PollingFallback;
+
+                // Not awaited: SignalR waits for this handler before its own retry begins.
+                _ = StartPollingIfNeededAsync(ct);
                 return Task.CompletedTask;
             };
 
@@ -213,25 +216,32 @@ public sealed class ConnectivityService : IDisposable, IAsyncDisposable
     private async Task StartPollingIfNeededAsync(CancellationToken ct)
     {
         var httpOk = await TryPingHealthAsync(ct).ConfigureAwait(false);
-        Mode = httpOk ? ConnectivityMode.PollingFallback : ConnectivityMode.Offline;
-        if (!httpOk)
-        {
-            return;
-        }
-
-        PeriodicTimer? timer;
         lock (_gate)
         {
-            if (_pollTimer is not null)
+            // Reconnected may have fired during the ping; it already set Online.
+            if (_hub?.State == HubConnectionState.Connected)
+            {
+                return;
+            }
+        }
+
+        Mode = httpOk ? ConnectivityMode.PollingFallback : ConnectivityMode.Offline;
+
+        // Bug #137: start the timer even when HTTP is down too — it is the only thing that
+        // brings the client back once the server is reachable again.
+        PeriodicTimer timer;
+        lock (_gate)
+        {
+            if (_pollTimer is not null || _disposed || ct.IsCancellationRequested)
             {
                 return;
             }
 
-            _pollTimer = new PeriodicTimer(TimeSpan.FromSeconds(3));
-            timer = _pollTimer;
+            timer = new PeriodicTimer(ConnectivityPolicy.PollInterval);
+            _pollTimer = timer;
         }
 
-        _ = PollLoopAsync(timer!, ct);
+        _ = PollLoopAsync(timer, ct);
     }
 
     private async Task PollLoopAsync(PeriodicTimer timer, CancellationToken ct)
@@ -246,44 +256,56 @@ public sealed class ConnectivityService : IDisposable, IAsyncDisposable
                     hub = _hub;
                 }
 
+                var hubConnected = hub?.State == HubConnectionState.Connected;
+                var healthOk = hubConnected || await TryPingHealthAsync(ct).ConfigureAwait(false);
+                var tick = ConnectivityPolicy.Decide(
+                    hubConnected,
+                    hub?.State == HubConnectionState.Disconnected,
+                    healthOk);
+
+                if (tick.TryRestartHub && hub is not null)
+                {
+                    await TryRestartHubAsync(hub, ct).ConfigureAwait(false);
+                }
+
+                // Re-read the state: a restart, or the hub's own Reconnected during the awaits
+                // above, must win over a stale yellow/red decision (no tick would follow).
                 if (hub?.State == HubConnectionState.Connected)
                 {
+                    tick = ConnectivityPolicy.Decide(hubConnected: true, hubDisconnected: false, healthOk: true);
+                }
+
+                Mode = tick.Mode;
+                if (tick.StopPolling)
+                {
                     StopPollingTimer();
-                    Mode = ConnectivityMode.Online;
                     break;
                 }
 
-                var ok = await TryPingHealthAsync(ct).ConfigureAwait(false);
-                Mode = ok ? ConnectivityMode.PollingFallback : ConnectivityMode.Offline;
-                if (ok)
+                if (tick.SuggestRefresh)
                 {
-                    // Bug #137: When server HTTP is reachable but hub was Closed/Disconnected,
-                    // attempt to restart the SignalR connection to restore real-time events.
-                    if (hub is not null && hub.State == HubConnectionState.Disconnected)
-                    {
-                        try
-                        {
-                            await hub.StartAsync(ct).ConfigureAwait(false);
-                            if (hub.State == HubConnectionState.Connected)
-                            {
-                                StopPollingTimer();
-                                Mode = ConnectivityMode.Online;
-                                break;
-                            }
-                        }
-                        catch (Exception ex)
-                        {
-                            _logger.LogDebug(ex, "SignalR reconnect attempt failed during polling fallback");
-                        }
-                    }
-
                     MainThread.BeginInvokeOnMainThread(() => SuggestedListRefresh?.Invoke());
                 }
             }
         }
         catch (OperationCanceledException)
         {
-            // Expected on shutdown.
+            // Expected on shutdown / logout.
+        }
+    }
+
+    /// <summary>Bug #137: bring SignalR back after <c>Closed</c> or a failed first start.</summary>
+    private async Task TryRestartHubAsync(HubConnection hub, CancellationToken ct)
+    {
+        using var attempt = CancellationTokenSource.CreateLinkedTokenSource(ct);
+        attempt.CancelAfter(ConnectivityPolicy.HubStartTimeout);
+        try
+        {
+            await hub.StartAsync(attempt.Token).ConfigureAwait(false);
+        }
+        catch (Exception ex) when (!ct.IsCancellationRequested)
+        {
+            _logger.LogDebug(ex, "FR-028 SignalR restart attempt failed; staying on polling fallback");
         }
     }
 

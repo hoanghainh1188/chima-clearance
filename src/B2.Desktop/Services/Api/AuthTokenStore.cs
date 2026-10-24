@@ -23,6 +23,8 @@ public sealed class AuthTokenStore : IAuthTokenStore
         set { lock (_gate) _refreshToken = value; }
     }
 
+    public event EventHandler? SessionExpired;
+
     public void Clear()
     {
         lock (_gate)
@@ -30,5 +32,11 @@ public sealed class AuthTokenStore : IAuthTokenStore
             _accessToken = null;
             _refreshToken = null;
         }
+    }
+
+    public void ExpireSession()
+    {
+        Clear();
+        SessionExpired?.Invoke(this, EventArgs.Empty);
     }
 }

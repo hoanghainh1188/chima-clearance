@@ -623,4 +623,10 @@ Alt+1 … Alt+8 — Chuyển nhanh giữa các tab
   <data name="Exit_Error_DeclarationCancelled" xml:space="preserve">
     <value>Tờ khai của xe này đã bị hủy, không đánh dấu ra được.</value>
   </data>
+  <data name="Login_SessionExpired_Title" xml:space="preserve">
+    <value>Phiên đăng nhập đã hết hạn</value>
+  </data>
+  <data name="Login_SessionExpired_Message" xml:space="preserve">
+    <value>Vui lòng đăng nhập lại để tiếp tục làm việc.</value>
+  </data>
 </root>

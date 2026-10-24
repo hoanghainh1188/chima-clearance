@@ -371,7 +371,7 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
 
     private void OnSuggestedRefresh()
     {
-        MainThread.BeginInvokeOnMainThread(async () => await LoadAsync(useSince: true).ConfigureAwait(true));
+        MainThread.BeginInvokeOnMainThread(async () => await PollForChangesAsync().ConfigureAwait(true));
     }
 
     private void OnLedgerPush(Guid declarationId)
@@ -379,7 +379,7 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
         MainThread.BeginInvokeOnMainThread(async () =>
         {
             _ = declarationId;
-            await LoadAsync(useSince: false).ConfigureAwait(true);
+            await LoadAsync().ConfigureAwait(true);
         });
     }
 
@@ -422,17 +422,17 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
 
         _filterEventsEnabled = true;
         Page = 1;
-        await LoadAsync(useSince: false).ConfigureAwait(true);
+        await LoadAsync().ConfigureAwait(true);
     }
 
     [RelayCommand]
-    private Task RefreshAsync() => LoadAsync(useSince: false);
+    private Task RefreshAsync() => LoadAsync();
 
     [RelayCommand]
     private async Task SearchFromFilterAsync()
     {
         Page = 1;
-        await LoadAsync(useSince: false).ConfigureAwait(true);
+        await LoadAsync().ConfigureAwait(true);
     }
 
     [RelayCommand]
@@ -446,7 +446,7 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
         SelectedYard = YardPickerSource.Count > 0 ? YardPickerSource[0] : null;
         _filterEventsEnabled = true;
         Page = 1;
-        await LoadAsync(useSince: false).ConfigureAwait(true);
+        await LoadAsync().ConfigureAwait(true);
     }
 
     [RelayCommand]
@@ -458,7 +458,7 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
         }
 
         Page++;
-        await LoadAsync(useSince: false).ConfigureAwait(true);
+        await LoadAsync().ConfigureAwait(true);
     }
 
     [RelayCommand]
@@ -470,7 +470,7 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
         }
 
         Page--;
-        await LoadAsync(useSince: false).ConfigureAwait(true);
+        await LoadAsync().ConfigureAwait(true);
     }
 
     [RelayCommand]
@@ -536,7 +536,7 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
         }
 
         Page = 1;
-        await LoadAsync(useSince: false).ConfigureAwait(true);
+        await LoadAsync().ConfigureAwait(true);
     }
 
     private void RebuildYardPickerSource()
@@ -763,7 +763,56 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
         item.OfficerName = previous;
     }
 
-    private async Task LoadAsync(bool useSince)
+    /// <summary>
+    /// FR-028 polling fallback (≈3 s): probe for changes since the watermark and reload the
+    /// current page only when something changed. Never touches the grid otherwise (Bug #163).
+    /// </summary>
+    private async Task PollForChangesAsync()
+    {
+        if (IsLoading)
+        {
+            return;
+        }
+
+        try
+        {
+            var q = BuildQuery();
+            var probe = await _api.ListDeclarationsAsync(
+                    1,
+                    LedgerDeltaPolicy.ProbePageSize,
+                    q.status,
+                    _sinceWatermark.ToString("O", CultureInfo.InvariantCulture),
+                    q.from,
+                    q.to,
+                    q.plate,
+                    q.yardIds,
+                    q.includeCancelled ? true : null)
+                .ConfigureAwait(true);
+
+            if (!LedgerDeltaPolicy.HasChanges(probe))
+            {
+                _sinceWatermark = LedgerDeltaPolicy.NextWatermark(_sinceWatermark, probe);
+                return;
+            }
+
+            // LoadAsync advances the watermark from the full response.
+            await LoadAsync().ConfigureAwait(true);
+        }
+        catch (ApiException)
+        {
+            // Best-effort: keep the rows on screen; the next tick or a manual refresh retries.
+        }
+        catch (HttpRequestException)
+        {
+            // The connectivity banner already reports the LAN state.
+        }
+        catch (TaskCanceledException)
+        {
+            // HttpClient timeout on a flaky LAN — this runs from an async-void UI callback.
+        }
+    }
+
+    private async Task LoadAsync()
     {
         if (IsLoading)
         {
@@ -776,18 +825,12 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
         NotifyViewStates();
         try
         {
-            string? sinceParam = null;
-            if (useSince)
-            {
-                sinceParam = _sinceWatermark.ToString("O", CultureInfo.InvariantCulture);
-            }
-
             var q = BuildQuery();
             var response = await _api.ListDeclarationsAsync(
                     Page,
                     PageSize,
                     q.status,
-                    sinceParam,
+                    null,
                     q.from,
                     q.to,
                     q.plate,
@@ -809,30 +852,9 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
             catch (ApiException) { /* officer-name overlay is best-effort */ }
             catch (HttpRequestException) { }
 
-            if (useSince)
-            {
-                // FR-028 / Bug #163: polling fallback queries delta since watermark.
-                // If nothing changed, do not wipe out the active ledger view.
-                if (response.Items.Count == 0)
-                {
-                    return;
-                }
-
-                // New or updated records detected: update watermark and trigger full page refresh
-                // so ordinal numbering and date headers remain intact.
-                _sinceWatermark = response.Items.Max(x => x.EnteredAt);
-                IsLoading = false;
-                await LoadAsync(useSince: false).ConfigureAwait(true);
-                return;
-            }
-
             DisplayItems.Clear();
             RebuildDisplayItems(response.Items, Page, PageSize, _officerByDate, DisplayItems);
-
-            if (response.Items.Count > 0)
-            {
-                _sinceWatermark = response.Items.Max(x => x.EnteredAt);
-            }
+            _sinceWatermark = LedgerDeltaPolicy.NextWatermark(_sinceWatermark, response);
 
             NotifyViewStates();
         }
