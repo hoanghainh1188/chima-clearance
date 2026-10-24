@@ -44,7 +44,9 @@ public sealed class OpenXmlStreamingSoB2ExporterTests
                 var a = actualSheet.Cell(row, column);
                 var at = $"{e.Address}";
 
-                a.Value.ToString(CultureInfo.InvariantCulture).Should().Be(e.Value.ToString(CultureInfo.InvariantCulture), at);
+                // ClosedXML keeps Environment.NewLine (CR-LF on Windows) in cột C; the stream
+                // writes Excel's LF. Same line break on screen.
+                Normalize(a).Should().Be(Normalize(e), at);
                 if (e.GetString().Length > 0)
                 {
                     // ClosedXML stores "" as an empty text cell; the stream leaves it blank.
@@ -110,4 +112,7 @@ public sealed class OpenXmlStreamingSoB2ExporterTests
 
         errors.Should().BeEmpty();
     }
+
+    private static string Normalize(IXLCell cell) =>
+        cell.Value.ToString(CultureInfo.InvariantCulture).Replace("\r\n", "\n", StringComparison.Ordinal);
 }

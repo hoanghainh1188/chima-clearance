@@ -78,7 +78,9 @@ internal sealed class SheetRowWriter
                 multipleNumbers = numbers.Count > 1;
                 values[1] = _stt;
                 values[2] = declaration.ProcessorName;
-                values[3] = string.Join(Environment.NewLine, numbers);
+                // Excel's own in-cell break (Alt+Enter) is LF. A CR would not survive the XML
+                // round trip anyway: an unescaped CR-LF in an inline string reads back as LF.
+                values[3] = string.Join('\n', numbers);
                 values[4] = declaration.CompanyName;
                 values[7] = declaration.GoodsName;
                 values[8] = declaration.YardName;
