@@ -89,13 +89,188 @@
     <value>Tài khoản tạm khóa 15 phút.</value>
   </data>
   <data name="Users_PageTitle" xml:space="preserve">
-    <value>Quản trị — Người dùng</value>
+    <value>Quản trị &gt; Người dùng</value>
   </data>
   <data name="Users_Loading" xml:space="preserve">
     <value>Đang tải…</value>
   </data>
   <data name="Users_Error_Load" xml:space="preserve">
     <value>Không tải được danh sách (kiểm tra kết nối tới máy chủ).</value>
+  </data>
+  <data name="Users_Add" xml:space="preserve">
+    <value>+ Thêm người dùng</value>
+  </data>
+  <data name="Users_Filter_Label" xml:space="preserve">
+    <value>Lọc:</value>
+  </data>
+  <data name="Users_Filter_Hint" xml:space="preserve">
+    <value>Lọc theo trạng thái</value>
+  </data>
+  <data name="Users_Filter_All" xml:space="preserve">
+    <value>Tất cả</value>
+  </data>
+  <data name="Users_Filter_Active" xml:space="preserve">
+    <value>Đang hoạt động</value>
+  </data>
+  <data name="Users_Filter_Inactive" xml:space="preserve">
+    <value>Đã vô hiệu hóa</value>
+  </data>
+  <data name="Users_Search_Placeholder" xml:space="preserve">
+    <value>🔍 Tìm theo tên</value>
+  </data>
+  <data name="Users_Col_Username" xml:space="preserve">
+    <value>Username</value>
+  </data>
+  <data name="Users_Col_FullName" xml:space="preserve">
+    <value>Họ tên</value>
+  </data>
+  <data name="Users_Col_Role" xml:space="preserve">
+    <value>Vai trò</value>
+  </data>
+  <data name="Users_Col_Status" xml:space="preserve">
+    <value>Trạng thái</value>
+  </data>
+  <data name="Users_Col_Actions" xml:space="preserve">
+    <value>Thao tác</value>
+  </data>
+  <data name="Users_Role_Admin" xml:space="preserve">
+    <value>Admin</value>
+  </data>
+  <data name="Users_Role_Operator" xml:space="preserve">
+    <value>Operator</value>
+  </data>
+  <data name="Users_Role_Supervisor" xml:space="preserve">
+    <value>Supervisor</value>
+  </data>
+  <data name="Users_Status_Active" xml:space="preserve">
+    <value>✅ Đang hoạt động</value>
+  </data>
+  <data name="Users_Status_Inactive" xml:space="preserve">
+    <value>❌ Đã vô hiệu hóa</value>
+  </data>
+  <data name="Users_Action_Edit" xml:space="preserve">
+    <value>✏️ Sửa</value>
+  </data>
+  <data name="Users_Action_ResetPassword" xml:space="preserve">
+    <value>🔑 Reset mật khẩu</value>
+  </data>
+  <data name="Users_Action_Deactivate" xml:space="preserve">
+    <value>🚫 Vô hiệu hóa</value>
+  </data>
+  <data name="Users_Action_Reactivate" xml:space="preserve">
+    <value>✅ Kích hoạt lại</value>
+  </data>
+  <data name="Users_Empty_Icon" xml:space="preserve">
+    <value>👥</value>
+  </data>
+  <data name="Users_Empty_Heading" xml:space="preserve">
+    <value>Không có người dùng phù hợp</value>
+  </data>
+  <data name="Users_Summary_Format" xml:space="preserve">
+    <value>{0} người dùng ({1} đang hoạt động)</value>
+  </data>
+  <data name="Users_LastUpdated_Format" xml:space="preserve">
+    <value>Tải thành công lần cuối lúc {0}</value>
+  </data>
+  <data name="Users_Dialog_CreateTitle" xml:space="preserve">
+    <value>Thêm người dùng</value>
+  </data>
+  <data name="Users_Dialog_EditTitle" xml:space="preserve">
+    <value>Sửa người dùng</value>
+  </data>
+  <data name="Users_Dialog_CloseGlyph" xml:space="preserve">
+    <value>×</value>
+  </data>
+  <data name="Users_Dialog_UsernameLabel" xml:space="preserve">
+    <value>Username *</value>
+  </data>
+  <data name="Users_Dialog_FullNameLabel" xml:space="preserve">
+    <value>Họ và tên *</value>
+  </data>
+  <data name="Users_Dialog_RoleLabel" xml:space="preserve">
+    <value>Vai trò *</value>
+  </data>
+  <data name="Users_Dialog_PasswordLabel" xml:space="preserve">
+    <value>Mật khẩu tạm thời *</value>
+  </data>
+  <data name="Users_Dialog_Generate" xml:space="preserve">
+    <value>Sinh</value>
+  </data>
+  <data name="Users_Dialog_GenerateHint" xml:space="preserve">
+    <value>Sinh mật khẩu tạm thời ngẫu nhiên</value>
+  </data>
+  <data name="Users_Dialog_PasswordRules" xml:space="preserve">
+    <value>(≥10 ký tự, 3/4 nhóm)</value>
+  </data>
+  <data name="Users_Dialog_MustChangeWarning" xml:space="preserve">
+    <value>⚠️ Người dùng phải đổi MK khi đăng nhập lần đầu</value>
+  </data>
+  <data name="Users_Dialog_CreateSubmit" xml:space="preserve">
+    <value>Tạo người dùng</value>
+  </data>
+  <data name="Users_Error_UsernameInvalid" xml:space="preserve">
+    <value>Username phải bắt đầu bằng chữ thường, dài 3–50 ký tự, chỉ gồm a–z, 0–9 và dấu gạch dưới.</value>
+  </data>
+  <data name="Users_Error_FullNameRequired" xml:space="preserve">
+    <value>Vui lòng nhập họ và tên.</value>
+  </data>
+  <data name="Users_Error_RoleRequired" xml:space="preserve">
+    <value>Vui lòng chọn vai trò.</value>
+  </data>
+  <data name="Users_Error_PasswordWeak" xml:space="preserve">
+    <value>Mật khẩu tạm thời cần ít nhất 10 ký tự và 3/4 nhóm: chữ hoa, chữ thường, chữ số, ký tự đặc biệt.</value>
+  </data>
+  <data name="Users_Error_UsernameTaken" xml:space="preserve">
+    <value>Username đã tồn tại. Vui lòng chọn username khác.</value>
+  </data>
+  <data name="Users_Error_CannotDeactivateSelf" xml:space="preserve">
+    <value>Không thể tự vô hiệu hóa tài khoản đang đăng nhập.</value>
+  </data>
+  <data name="Users_Error_LastAdminLockout" xml:space="preserve">
+    <value>Không thể vô hiệu hóa hoặc hạ quyền Admin cuối cùng đang hoạt động.</value>
+  </data>
+  <data name="Users_Error_Validation" xml:space="preserve">
+    <value>Dữ liệu không hợp lệ. Vui lòng kiểm tra lại các trường.</value>
+  </data>
+  <data name="Users_Error_Save" xml:space="preserve">
+    <value>Không lưu được thay đổi. Vui lòng thử lại.</value>
+  </data>
+  <data name="Users_Toast_Updated_Format" xml:space="preserve">
+    <value>Đã cập nhật người dùng {0}</value>
+  </data>
+  <data name="Users_Toast_Deactivated_Format" xml:space="preserve">
+    <value>Đã vô hiệu hóa {0}</value>
+  </data>
+  <data name="Users_Toast_Reactivated_Format" xml:space="preserve">
+    <value>Đã kích hoạt lại {0}</value>
+  </data>
+  <data name="Users_Deactivate_ConfirmTitle" xml:space="preserve">
+    <value>Vô hiệu hóa người dùng</value>
+  </data>
+  <data name="Users_Deactivate_ConfirmMessage_Format" xml:space="preserve">
+    <value>Vô hiệu hóa {0}? Người dùng sẽ không đăng nhập được nữa. Lịch sử không bị xóa.</value>
+  </data>
+  <data name="Users_ResetPassword_ConfirmTitle" xml:space="preserve">
+    <value>Reset mật khẩu</value>
+  </data>
+  <data name="Users_ResetPassword_ConfirmMessage_Format" xml:space="preserve">
+    <value>Đặt mật khẩu tạm thời mới cho {0}? Mật khẩu hiện tại sẽ không dùng được nữa.</value>
+  </data>
+  <data name="Users_ResetPassword_ConfirmAccept" xml:space="preserve">
+    <value>Reset mật khẩu</value>
+  </data>
+  <data name="Users_ResetPassword_DoneTitle" xml:space="preserve">
+    <value>Đã reset mật khẩu</value>
+  </data>
+  <data name="Users_Create_DoneTitle" xml:space="preserve">
+    <value>Đã tạo người dùng</value>
+  </data>
+  <data name="Users_TemporaryPassword_Message_Format" xml:space="preserve">
+    <value>Mật khẩu tạm thời của {0}:
+
+{1}
+
+Ghi lại và giao cho người dùng. Người dùng phải đổi mật khẩu khi đăng nhập lần đầu.</value>
   </data>
   <data name="ChangePassword_PageTitle" xml:space="preserve">
     <value>Đổi mật khẩu</value>

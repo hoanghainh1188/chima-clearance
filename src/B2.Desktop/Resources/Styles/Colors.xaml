@@ -9,6 +9,7 @@
   <Color x:Key="ColorOnSurfaceMuted">#5A5A66</Color>
   <Color x:Key="ColorError">#B3261E</Color>
   <Color x:Key="ColorErrorBg">#FDECEC</Color>
+  <Color x:Key="ColorSuccess">#1B5E20</Color>
   <Color x:Key="ColorBorder">#D6D6DD</Color>
   <Color x:Key="ColorWarning">#8C5000</Color>
   <Color x:Key="ColorWarningBanner">#FFF4E5</Color>

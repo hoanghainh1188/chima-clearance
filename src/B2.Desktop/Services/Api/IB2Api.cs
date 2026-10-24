@@ -22,6 +22,15 @@ public interface IB2Api
     [Post("/api/users")]
     Task<UserDto> CreateUserAsync([Body] UserCreateRequest request, CancellationToken cancellationToken = default);
 
+    [Put("/api/users/{id}")]
+    Task<UserDto> UpdateUserAsync(Guid id, [Body] UserUpdateRequest request, CancellationToken cancellationToken = default);
+
+    [Post("/api/users/{id}/reset-password")]
+    Task ResetUserPasswordAsync(
+        Guid id,
+        [Body] PasswordResetRequest request,
+        CancellationToken cancellationToken = default);
+
     [Get("/api/master/processors")]
     Task<ProcessorListResponse> ListProcessorsAsync(
         [Query] bool includeInactive,

@@ -38,6 +38,10 @@
     <Compile Include="../../src/B2.Desktop/Services/LedgerDeltaPolicy.cs" Link="Linked/LedgerDeltaPolicy.cs" />
     <Compile Include="../../src/B2.Desktop/Services/ConnectivityMode.cs" Link="Linked/ConnectivityMode.cs" />
     <Compile Include="../../src/B2.Desktop/Services/ConnectivityPolicy.cs" Link="Linked/ConnectivityPolicy.cs" />
+    <Compile Include="../../src/B2.Desktop/Services/Users/UserStatusFilter.cs" Link="Linked/UserStatusFilter.cs" />
+    <Compile Include="../../src/B2.Desktop/Services/Users/UserListFilter.cs" Link="Linked/UserListFilter.cs" />
+    <Compile Include="../../src/B2.Desktop/Services/Users/TemporaryPassword.cs" Link="Linked/TemporaryPassword.cs" />
+    <Compile Include="../../src/B2.Desktop/ViewModels/Admin/UserRow.cs" Link="Linked/UserRow.cs" />
   </ItemGroup>
 
   <ItemGroup>
