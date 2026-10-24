@@ -23,7 +23,8 @@ do not infer requirements from existing code alone:
 7. `docs/adr/ADR-0001..0006` — locked architectural decisions
    (`ADR-0007` evaluated a Go-backend port — **rejected**, stack stays .NET;
    `ADR-0008` dev-only PDF export tool for the operator docs;
-   `ADR-0009` per-install initial Admin password)
+   `ADR-0009` per-install initial Admin password;
+   `ADR-0010` LAN TLS certificate + client trust via the OS store)
 
 When Spec Kit artifacts (`specs/001-b2-clearance/{spec,plan,tasks}.md`) conflict
 with the hand-written `specs/0X-*.md`, follow the Spec Kit artifacts.
@@ -59,7 +60,7 @@ dotnet test B2.NoMaui.slnf --filter "FullyQualifiedName~ListDeclarationsEndpoint
 dotnet test B2.NoMaui.slnf --filter "DisplayName~officer name"
 
 # Run the dev server in console mode (hosts the API + SignalR in-process)
-dotnet run --project src/B2.Server.Service -- --console   # https://localhost:5001
+ASPNETCORE_ENVIRONMENT=Development dotnet run --project src/B2.Server.Service -- --console   # https://localhost:5001 (dev cert)
 
 # EF Core migrations (Infrastructure = model project, Server.Service = startup)
 dotnet ef migrations add <Name> -p src/B2.Infrastructure -s src/B2.Server.Service
@@ -164,6 +165,13 @@ FR-026 recovery code; DPAPI-sealed secrets; Litestream supervisor), `Auth/`
   `.cursor/automation-memory/bug-finding.md`).
 - POST `/api/declarations` and POST `/api/vehicles/{id}/exit` are idempotent via
   an `Idempotency-Key` header (Desktop sends a fresh `Guid` per submit).
+
+### Transport security (#147, ADR-0010)
+
+The service is **HTTPS-only** on `https://0.0.0.0:5001` (`KestrelHttpsSetup`): it loads the
+installer-issued `{dataDir}/keys/server.pfx` and refuses plain `http://` on non-loopback
+addresses. Desktop trust is the OS store (`b2-server.cer` imported into LocalMachine\Root by
+`install.ps1 -ServerCertificate`), not a validation callback — do not add one.
 
 ### Realtime + tri-state connectivity (FR-028)
 

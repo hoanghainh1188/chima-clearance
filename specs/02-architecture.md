@@ -113,8 +113,10 @@ flowchart LR
 |------|-------|
 | Service identity | `LocalSystem` (so it runs without a logged-in user — required by C6) |
 | Service recovery | First / Second / Subsequent failure → Restart Service after 30 s |
-| Listen address | `https://0.0.0.0:5001` with self-signed cert installed to LocalMachine/Root by installer |
-| Firewall rule | Inbound TCP 5001 allowed only on the LAN profile, blocked on Public |
+| Listen address | `https://0.0.0.0:5001` only — plain `http://` on a non-loopback address is refused at startup (#147, ADR-0010) |
+| TLS certificate | Per-install self-signed RSA-2048 leaf (CA=false), `keys\server.pfx`; SANs = `localhost`, loopback, machine hostname(s), every up LAN IPv4 at issue time (#176). Re-issued by `install` / `renew-certificate` only when names/IPs no longer match or < 30 days to expiry |
+| Client trust | Public cert exported to `C:\ProgramData\B2\b2-server.cer`; entry gate trusts it in LocalMachine\Root at issue; exit/supervisor PCs import it via `install.ps1 -ClientOnly -ServerCertificate` (operator compares Thumbprint). Desktop uses OS validation — no pinning callback |
+| Firewall rule | Inbound TCP 5001 allowed only on the Private (LAN) profile, blocked on Public |
 | Data directory | `C:\ProgramData\B2\` (subfolders: `db/`, `logs/`, `backups/`, `keys/`) |
 | Permissions on `ProgramData\B2\` | Service account: full control. Authenticated users: read-only on `logs/` |
 

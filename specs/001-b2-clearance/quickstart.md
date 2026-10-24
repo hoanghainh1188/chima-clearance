@@ -106,8 +106,11 @@ After S0: `dotnet build` and `dotnet test` (empty but green) MUST both pass.
 
 ```bash
 # In one terminal — run the Windows Service host as a console app for dev:
-dotnet run --project src/B2.Server.Service -- --console
+ASPNETCORE_ENVIRONMENT=Development dotnet run --project src/B2.Server.Service -- --console
 # Listens on https://localhost:5001 (dev cert; see `dotnet dev-certs https --trust`).
+# Outside Development the service refuses to start without {dataDir}/keys/server.pfx and
+# refuses plain http:// on a non-loopback address (#147, ADR-0010).
+# Point the Desktop at it with B2_SERVER_URL=https://localhost:5001.
 ```
 
 ### 4.2 Bring up the Desktop

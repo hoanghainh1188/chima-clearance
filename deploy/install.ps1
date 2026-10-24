@@ -7,28 +7,33 @@
     Chạy trên PC cửa khẩu (Administrator). Các bước:
       1. Cài prerequisites offline từ .\prereqs (VC++ x64, WebView2) nếu có.
       2. Chép payload self-contained vào C:\Program Files\B2Clearance.
-      3. Gọi B2Clearance.exe install: tạo thư mục dữ liệu, chứng chỉ TLS localhost,
-         đăng ký Windows Service (tự khởi động), mở firewall TCP 5000, sinh + hiển thị
-         MÃ PHỤC HỒI, rồi khởi động dịch vụ.
+      3. Gọi B2Clearance.exe install: tạo thư mục dữ liệu, chứng chỉ TLS cho tên máy + IP LAN
+         (xuất C:\ProgramData\B2\b2-server.cer cho máy cổng ra), đăng ký Windows Service
+         (tự khởi động), mở firewall TCP 5001 (HTTPS), sinh + hiển thị MÃ PHỤC HỒI, rồi khởi
+         động dịch vụ.
     Idempotent: chạy lại để nâng cấp (dừng dịch vụ, chép đè, khởi động lại). Dữ liệu tại
     C:\ProgramData\B2 luôn được giữ nguyên.
 
 .PARAMETER ServerUrl
     Địa chỉ máy chủ cho app desktop. Bỏ trống = máy này vừa là server vừa là client
     (cổng vào). Trên máy CỔNG RA, truyền địa chỉ LAN của máy cổng vào, ví dụ:
-    -ServerUrl 192.168.1.10   (tự hiểu là http://192.168.1.10:5000/)
+    -ServerUrl 192.168.1.10   (tự hiểu là https://192.168.1.10:5001/)
 
 .PARAMETER ClientOnly
     Chỉ cài app desktop, KHÔNG đăng ký Windows Service và không tạo dữ liệu/mã phục hồi.
-    Dùng cho máy cổng ra. Bắt buộc đi kèm -ServerUrl.
+    Dùng cho máy cổng ra. Bắt buộc đi kèm -ServerUrl và -ServerCertificate.
+
+.PARAMETER ServerCertificate
+    Đường dẫn tệp b2-server.cer chép từ máy cổng vào (C:\ProgramData\B2\b2-server.cer).
+    Được nhập vào LocalMachine\Root để app desktop tin chứng chỉ HTTPS của máy chủ.
 
 .EXAMPLE
     .\install.ps1
     Máy cổng vào: cài server + desktop, dùng endpoint loopback.
 
 .EXAMPLE
-    .\install.ps1 -ClientOnly -ServerUrl 192.168.1.10
-    Máy cổng ra: chỉ cài desktop, trỏ về máy cổng vào.
+    .\install.ps1 -ClientOnly -ServerUrl 192.168.1.10 -ServerCertificate E:\b2-server.cer
+    Máy cổng ra: chỉ cài desktop, trỏ về máy cổng vào, tin chứng chỉ HTTPS của máy đó.
 
 .NOTES
     Xem docs/deployment-offline.md. Thay thế trình cài Velopack cũ bằng xcopy thuần.
@@ -37,6 +42,7 @@
 param(
     [string] $InstallDir = (Join-Path $env:ProgramFiles 'B2Clearance'),
     [string] $ServerUrl,
+    [string] $ServerCertificate,
     [switch] $ClientOnly
 )
 
@@ -49,6 +55,12 @@ function Write-Step($msg) { Write-Host "==> $msg" -ForegroundColor Cyan }
 
 if ($ClientOnly -and -not $ServerUrl) {
     throw '-ClientOnly phai di kem -ServerUrl (dia chi LAN cua may cong vao).'
+}
+if ($ClientOnly -and -not $ServerCertificate) {
+    throw '-ClientOnly phai di kem -ServerCertificate (tep b2-server.cer chep tu may cong vao).'
+}
+if ($ServerCertificate -and -not (Test-Path -LiteralPath $ServerCertificate -PathType Leaf)) {
+    throw "Khong tim thay tep chung chi: $ServerCertificate"
 }
 
 # --- 1. Prerequisites (offline, im lặng, idempotent) ---------------------------------
@@ -97,8 +109,33 @@ else {
     if ($LASTEXITCODE -ne 0) { throw "B2Clearance.exe install that bai (ma $LASTEXITCODE)" }
 }
 
+# --- 3a. Tin chứng chỉ HTTPS của máy cổng vào (#147) -----------------------------------
+# Máy cổng vào: B2Clearance.exe install đã tự thêm chứng chỉ vào LocalMachine\Root.
+# Máy cổng ra: nhập b2-server.cer, gỡ chứng chỉ B2 cũ (đổi IP / cấp lại) để Root gọn.
+if ($ServerCertificate) {
+    $cert = New-Object System.Security.Cryptography.X509Certificates.X509Certificate2 (Resolve-Path -LiteralPath $ServerCertificate).Path
+    if ($cert.HasPrivateKey) { throw 'Tep chung chi khong duoc chua khoa bi mat — dung b2-server.cer, KHONG dung server.pfx.' }
+    if ($cert.Subject -notmatch 'O=B2 Clearance') { throw "Tep nay khong phai chung chi may chu B2: $($cert.Subject)" }
+    # Chỉ nhận chứng chỉ lá (CA=false) dùng cho serverAuth — một CA trong Root sẽ được tin cho MỌI tên.
+    $basic = $cert.Extensions | Where-Object { $_ -is [System.Security.Cryptography.X509Certificates.X509BasicConstraintsExtension] }
+    if (-not $basic -or $basic.CertificateAuthority) { throw 'Tep chung chi khong phai chung chi la (CA=false) cua may chu B2.' }
+    $eku = $cert.Extensions | Where-Object { $_ -is [System.Security.Cryptography.X509Certificates.X509EnhancedKeyUsageExtension] }
+    if (-not $eku -or -not ($eku.EnhancedKeyUsages | Where-Object { $_.Value -eq '1.3.6.1.5.5.7.3.1' })) {
+        throw 'Tep chung chi thieu muc dich Server Authentication.'
+    }
+    # Nhập trước, gỡ bản cũ sau: lỗi giữa chừng không để máy mất hẳn chứng chỉ B2.
+    $root = New-Object System.Security.Cryptography.X509Certificates.X509Store 'Root', 'LocalMachine'
+    $root.Open('ReadWrite')
+    try { $root.Add($cert) } finally { $root.Close() }
+    Get-ChildItem Cert:\LocalMachine\Root |
+        Where-Object { $_.Subject -match 'O=B2 Clearance' -and $_.Thumbprint -ne $cert.Thumbprint } |
+        ForEach-Object { Write-Step "Gỡ chứng chỉ B2 cũ $($_.Thumbprint)"; Remove-Item -LiteralPath $_.PSPath }
+    Write-Step "Đã tin chứng chỉ máy chủ B2 — Thumbprint $($cert.Thumbprint), hết hạn $($cert.NotAfter.ToString('yyyy-MM-dd'))"
+    Write-Host '    Doi chieu Thumbprint nay voi dong "Thumbprint" hien tren may cong vao luc cai.'
+}
+
 # --- 3b. Endpoint cho app desktop ------------------------------------------------------
-# Không có file này thì desktop dùng http://127.0.0.1:5000/ (server cùng máy).
+# Không có file này thì desktop dùng https://127.0.0.1:5001/ (server cùng máy).
 $desktopDir = Join-Path $InstallDir 'Desktop'
 if ($ServerUrl) {
     if (-not (Test-Path $desktopDir)) { throw "Khong tim thay thu muc $desktopDir de ghi cau hinh endpoint." }
@@ -132,9 +169,11 @@ else {
 }
 if ($ServerUrl) {
     Write-Host "Endpoint desktop: $ServerUrl"
-    Write-Host 'Neu app bao "Mat ket noi": kiem tra ping toi may chu va firewall TCP 5000 tren may chu.'
+    Write-Host 'Neu app bao "Mat ket noi": kiem tra ping toi may chu, firewall TCP 5001 tren may chu,'
+    Write-Host 'va Thumbprint chung chi o tren trung voi dong Thumbprint khi cai may cong vao.'
 }
 else {
-    Write-Host 'Endpoint mac dinh: http://127.0.0.1:5000/  (may nay vua la server vua la client).'
-    Write-Host 'May cong ra cai bang: .\install.ps1 -ClientOnly -ServerUrl <ip-may-cong-vao>'
+    Write-Host 'Endpoint mac dinh: https://127.0.0.1:5001/  (may nay vua la server vua la client).'
+    Write-Host 'May cong ra: chep C:\ProgramData\B2\b2-server.cer sang (USB), roi chay'
+    Write-Host '  .\install.ps1 -ClientOnly -ServerUrl <ip-may-cong-vao> -ServerCertificate <duong-dan .cer>'
 }

@@ -280,8 +280,10 @@ Smoke checklist (5 minutes) — **entry-gate machine**:
 exit-gate PC is a LAN client. A single-machine smoke test exercises none of that path, and the
 client endpoint / server binding it depends on were both broken until 2026-08-01. Run:
 
-11. `.\install.ps1 -ClientOnly -ServerUrl <entry-gate-ip>` → no service registered, no recovery
-    code, `Desktop\b2-client.json` written with that address.
+11. `.\install.ps1 -ClientOnly -ServerUrl <entry-gate-ip> -ServerCertificate <b2-server.cer>` →
+    no service registered, no recovery code, `Desktop\b2-client.json` written with that address,
+    the printed Thumbprint matches the entry gate's, and the Desktop connects over
+    `https://<entry-gate-ip>:5001/` with no certificate error (#147 / #176).
 12. Log in **as Operator** (not Admin) → 🟢 Online.
 13. Find a vehicle entered on the other PC by its 3- and 4-digit suffix.
 14. Mark both exits from here → the entry-gate screen updates within ≤ 1 s (SignalR).
