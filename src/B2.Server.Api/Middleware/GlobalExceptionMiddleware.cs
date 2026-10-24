@@ -22,6 +22,14 @@ public sealed class GlobalExceptionMiddleware(RequestDelegate next, ILogger<Glob
         {
             await WriteDomainAsync(context, dex);
         }
+        catch (DbUpdateConcurrencyException cex)
+        {
+            // #178: another writer changed the row after we loaded it — the client should reload.
+            logger.LogWarning(cex, "Optimistic concurrency conflict");
+            await WriteDomainAsync(
+                context,
+                new DomainException("CONCURRENCY_CONFLICT", "The record was changed by another user. Reload and retry.", 409));
+        }
         catch (DbUpdateException uex) when (UniqueConstraintViolation.TryTranslate(uex, out var dex))
         {
             logger.LogWarning(uex, "Unique constraint violation translated to {Code}", dex.Code);

@@ -63,6 +63,7 @@ public sealed class UserCommandHandler
         var user = await _users.GetByIdAsync(id, cancellationToken)
             ?? throw new DomainException("USER_NOT_FOUND", "User not found.", 404);
 
+        await EnsureAdminRemainsAsync(actorUserId, user, request, cancellationToken);
         var before = System.Text.Json.JsonSerializer.Serialize(new { user.FullName, user.Role, user.IsActive });
 
         if (request.FullName is not null || request.Role is not null)
@@ -95,6 +96,38 @@ public sealed class UserCommandHandler
         _audit.Set(new AuditEnvelope(actorUserId, AuditAction.Update, nameof(User), user.Id, before, after, null));
 
         return user.ToDto();
+    }
+
+    /// <summary>
+    /// #158: the admin endpoints have no recovery path short of editing the database file, so an
+    /// update may never leave the system without an active Admin — nor may an Admin deactivate
+    /// their own account.
+    /// </summary>
+    private async Task EnsureAdminRemainsAsync(
+        Guid actorUserId,
+        User user,
+        UserUpdateRequest request,
+        CancellationToken cancellationToken)
+    {
+        var deactivates = request.IsActive is false && user.IsActive;
+        if (deactivates && user.Id == actorUserId)
+        {
+            throw new DomainException("CANNOT_DEACTIVATE_SELF", "You cannot deactivate your own account.", 409);
+        }
+
+        var demotes = request.Role is { } r && RoleMapping.ToDomain(r) != Role.Admin;
+        if (user.Role != Role.Admin || !user.IsActive || !(deactivates || demotes))
+        {
+            return;
+        }
+
+        if (await _users.CountActiveAdminsAsync(cancellationToken) <= 1)
+        {
+            throw new DomainException(
+                "LAST_ADMIN_LOCKOUT",
+                "Cannot deactivate or demote the last active administrator.",
+                409);
+        }
     }
 
     public async Task ResetPasswordAsync(Guid actorUserId, Guid id, PasswordResetRequest request, CancellationToken cancellationToken)

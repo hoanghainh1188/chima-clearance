@@ -1,5 +1,6 @@
 using System.Security.Cryptography;
 using System.Text;
+using B2.Infrastructure.IO;
 using Microsoft.IdentityModel.Tokens;
 
 namespace B2.Infrastructure.Auth;
@@ -11,20 +12,35 @@ namespace B2.Infrastructure.Auth;
 public sealed class RsaJwtKeyProvider
 {
     private readonly string _keysDirectory;
-    private RsaSecurityKey? _cached;
+
+    private readonly object _gate = new();
+    private volatile RsaSecurityKey? _cached;
 
     public RsaJwtKeyProvider(string dataDirectory)
     {
         _keysDirectory = Path.Combine(dataDirectory, "keys");
     }
 
+    /// <summary>
+    /// #148: cold-start requests race in here. The lock guarantees a single load/create, so no
+    /// thread signs with a key pair the validator never sees. A failed load is not cached, so
+    /// the next call retries (unlike <c>Lazy&lt;T&gt;</c>, which would memoise the exception).
+    /// </summary>
     public RsaSecurityKey GetSigningKey()
     {
-        if (_cached is not null)
+        if (_cached is { } key)
         {
-            return _cached;
+            return key;
         }
 
+        lock (_gate)
+        {
+            return _cached ??= LoadOrCreate();
+        }
+    }
+
+    private RsaSecurityKey LoadOrCreate()
+    {
         Directory.CreateDirectory(_keysDirectory);
         var dpapiPath = Path.Combine(_keysDirectory, "jwt-rsa.key.dpapi");
         var pemDevPath = Path.Combine(_keysDirectory, "jwt-rsa.dev.pem");
@@ -39,7 +55,7 @@ public sealed class RsaJwtKeyProvider
                     Encoding.UTF8.GetBytes(pem),
                     optionalEntropy: null,
                     scope: DataProtectionScope.LocalMachine);
-                File.WriteAllBytes(dpapiPath, protectedBytes);
+                AtomicFile.WriteAllBytes(dpapiPath, protectedBytes);
             }
 
             var pemText = Encoding.UTF8.GetString(
@@ -49,22 +65,20 @@ public sealed class RsaJwtKeyProvider
                     scope: DataProtectionScope.LocalMachine));
             var rsaImport = RSA.Create();
             rsaImport.ImportFromPem(pemText);
-            _cached = new RsaSecurityKey(rsaImport);
+            return new RsaSecurityKey(rsaImport);
         }
         else
         {
             if (!File.Exists(pemDevPath))
             {
                 using var rsa = RSA.Create(2048);
-                File.WriteAllText(pemDevPath, rsa.ExportPkcs8PrivateKeyPem());
+                AtomicFile.WriteAllText(pemDevPath, rsa.ExportPkcs8PrivateKeyPem());
             }
 
             var pemText = File.ReadAllText(pemDevPath);
             var rsaImport = RSA.Create();
             rsaImport.ImportFromPem(pemText);
-            _cached = new RsaSecurityKey(rsaImport);
+            return new RsaSecurityKey(rsaImport);
         }
-
-        return _cached;
     }
 }

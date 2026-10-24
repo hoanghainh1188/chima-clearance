@@ -39,23 +39,19 @@ public sealed class AuditRepository : IAuditRepository
             query = query.Where(a => a.Action == action);
         }
 
-        if (filter.FromUtc is { } from)
-        {
-            query = query.Where(a => a.At >= from);
-        }
-
-        if (filter.ToUtc is { } to)
-        {
-            query = query.Where(a => a.At <= to);
-        }
-
-        // SQLite can't ORDER BY a DateTimeOffset: project (Id, At), sort + page in memory,
-        // then fetch the page's full rows — same approach as the ledger pagination.
-        var idAndAt = await query.Select(a => new { a.Id, a.At }).ToListAsync(cancellationToken);
+        // SQLite can't compare or ORDER BY a DateTimeOffset: project (Id, At), then filter, sort
+        // and page in memory — same approach as the ledger pagination. Comparing in .NET also
+        // compares instants, so a client "from" sent as +07:00 matches rows stored as +00:00
+        // (#155; the old SQL text comparison was offset-sensitive).
+        var idAndAt = (await query.Select(a => new { a.Id, a.At }).ToListAsync(cancellationToken))
+            .Where(x => filter.FromUtc is not { } from || x.At >= from)
+            .Where(x => filter.ToUtc is not { } to || x.At <= to)
+            .ToList();
         var total = idAndAt.Count;
 
+        // #172: newest first, so page 1 shows what just happened.
         var pageIds = idAndAt
-            .OrderBy(x => x.At)
+            .OrderByDescending(x => x.At)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .Select(x => x.Id)
@@ -82,7 +78,7 @@ public sealed class AuditRepository : IAuditRepository
                 .ToDictionaryAsync(u => u.Id, u => u.Username, cancellationToken);
 
         var items = rows
-            .OrderBy(a => a.At)
+            .OrderByDescending(a => a.At)
             .Select(a => new AuditLogItemDto(
                 a.Id,
                 a.At,

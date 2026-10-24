@@ -12,6 +12,10 @@ namespace B2.Desktop.Services.Popups;
 /// </summary>
 public partial class ConfirmPopup : Popup
 {
+    // #188: a double-click fires the handler twice; the second CloseAsync on a closing popup
+    // throws InvalidOperationException inside async void and crashes the app.
+    private bool _closing;
+
     public ConfirmPopup(string title, string message, string accept, string cancel, bool destructive)
     {
         InitializeComponent();
@@ -22,13 +26,20 @@ public partial class ConfirmPopup : Popup
         CanBeDismissedByTappingOutsideOfPopup = !destructive;
     }
 
-    private async void OnAcceptClicked(object? sender, EventArgs e)
-    {
-        await CloseAsync(true).ConfigureAwait(true);
-    }
+    private async void OnAcceptClicked(object? sender, EventArgs e) => await CloseOnceAsync(true).ConfigureAwait(true);
 
-    private async void OnCancelClicked(object? sender, EventArgs e)
+    private async void OnCancelClicked(object? sender, EventArgs e) => await CloseOnceAsync(false).ConfigureAwait(true);
+
+    private async Task CloseOnceAsync(bool result)
     {
-        await CloseAsync(false).ConfigureAwait(true);
+        if (_closing)
+        {
+            return;
+        }
+
+        _closing = true;
+        AcceptButton.IsEnabled = false;
+        CancelButton.IsEnabled = false;
+        await CloseAsync(result).ConfigureAwait(true);
     }
 }

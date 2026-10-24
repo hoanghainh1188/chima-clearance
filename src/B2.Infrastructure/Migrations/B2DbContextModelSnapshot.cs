@@ -243,6 +243,7 @@ namespace B2.Infrastructure.Migrations
                         .HasColumnType("TEXT");
 
                     b.Property<byte[]>("RowVersion")
+                        .IsConcurrencyToken()
                         .IsRequired()
                         .HasColumnType("BLOB");
 

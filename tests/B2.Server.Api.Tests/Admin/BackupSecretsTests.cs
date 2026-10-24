@@ -97,4 +97,27 @@ public sealed class BackupSecretsTests
             Directory.Delete(dir, recursive: true);
         }
     }
+
+    [Fact]
+    [Trait("Issue", "169")]
+    public void Should_replace_the_secrets_file_atomically_without_leaving_a_temp_file()
+    {
+        var dir = Path.Combine(Path.GetTempPath(), $"b2-secrets-{Guid.NewGuid():N}");
+        try
+        {
+            var store = new BackupSecretsStore(dir);
+            var created = store.GetOrCreate();
+            store.MarkAcknowledged();
+
+            var keys = Path.Combine(dir, "keys");
+            Directory.GetFiles(keys, "*.tmp").Should().BeEmpty("writes go to a temp file renamed over the target");
+            var reloaded = new BackupSecretsStore(dir).GetOrCreate();
+            reloaded.InstallPassword.Should().Be(created.InstallPassword);
+            reloaded.AcknowledgedAtInstall.Should().BeTrue();
+        }
+        finally
+        {
+            Directory.Delete(dir, recursive: true);
+        }
+    }
 }

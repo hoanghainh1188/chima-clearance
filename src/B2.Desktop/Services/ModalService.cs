@@ -11,8 +11,12 @@ namespace B2.Desktop.Services;
 /// Windows out of the box; backdrop dismissal is gated by the
 /// <c>destructive</c> flag passed in.
 /// </summary>
-public sealed class ModalService : IModalService
+public sealed class ModalService : IModalService, IDisposable
 {
+    // #188: CommunityToolkit allows one popup at a time ("Only one popup can be displayed at a
+    // time" otherwise). Queue concurrent requests instead of crashing the caller.
+    private readonly SemaphoreSlim _onePopup = new(1, 1);
+
     // ShowPopupAsync MUST run on the UI thread. ViewModel commands frequently
     // reach these methods from a thread-pool continuation (await ...
     // ConfigureAwait(false)); showing a popup off the UI thread throws and, in
@@ -33,9 +37,17 @@ public sealed class ModalService : IModalService
                 return false;
             }
 
-            var popup = new ConfirmPopup(title, message, accept, cancel, destructive);
-            var result = await page.ShowPopupAsync(popup, token: cancellationToken).ConfigureAwait(true);
-            return result is true;
+            await _onePopup.WaitAsync(cancellationToken).ConfigureAwait(true);
+            try
+            {
+                var popup = new ConfirmPopup(title, message, accept, cancel, destructive);
+                var result = await page.ShowPopupAsync(popup, token: cancellationToken).ConfigureAwait(true);
+                return result is true;
+            }
+            finally
+            {
+                _onePopup.Release();
+            }
         });
 
     public Task ShowAsync(
@@ -51,7 +63,17 @@ public sealed class ModalService : IModalService
                 return;
             }
 
-            var popup = new InfoPopup(title, message, close);
-            await page.ShowPopupAsync(popup, token: cancellationToken).ConfigureAwait(true);
+            await _onePopup.WaitAsync(cancellationToken).ConfigureAwait(true);
+            try
+            {
+                var popup = new InfoPopup(title, message, close);
+                await page.ShowPopupAsync(popup, token: cancellationToken).ConfigureAwait(true);
+            }
+            finally
+            {
+                _onePopup.Release();
+            }
         });
+
+    public void Dispose() => _onePopup.Dispose();
 }

@@ -29,6 +29,9 @@ public sealed class UserRepository : IUserRepository
         return _db.Users.AnyAsync(u => u.Username == key, cancellationToken);
     }
 
+    public Task<int> CountActiveAdminsAsync(CancellationToken cancellationToken) =>
+        _db.Users.CountAsync(u => u.Role == Role.Admin && u.IsActive, cancellationToken);
+
     public async Task AddAsync(User user, CancellationToken cancellationToken) =>
         await _db.Users.AddAsync(user, cancellationToken);
 

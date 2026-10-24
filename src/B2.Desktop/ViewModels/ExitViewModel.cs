@@ -61,7 +61,7 @@ public partial class ExitViewModel : ObservableObject, IDisposable
         var token = _debounceCts.Token;
         try
         {
-            await Task.Delay(DebounceMs, token).ConfigureAwait(false);
+            await Task.Delay(DebounceMs, token).ConfigureAwait(true);
         }
         catch (TaskCanceledException)
         {
@@ -75,7 +75,7 @@ public partial class ExitViewModel : ObservableObject, IDisposable
 
         await MainThread
             .InvokeOnMainThreadAsync(async () => await SearchCommand.ExecuteAsync(null).ConfigureAwait(true))
-            .ConfigureAwait(false);
+            .ConfigureAwait(true);
     }
 
     [RelayCommand]
@@ -100,7 +100,7 @@ public partial class ExitViewModel : ObservableObject, IDisposable
         IsSearching = true;
         try
         {
-            var list = await _api.SearchVehiclesAsync(q, unexited: true).ConfigureAwait(false);
+            var list = await _api.SearchVehiclesAsync(q, unexited: true).ConfigureAwait(true);
             foreach (var r in list)
             {
                 Results.Add(r);
@@ -147,13 +147,13 @@ public partial class ExitViewModel : ObservableObject, IDisposable
         try
         {
             var key = Guid.NewGuid().ToString("N");
-            var response = await _api.MarkVehicleExitAsync(target.VehicleId, key).ConfigureAwait(false);
+            var response = await _api.MarkVehicleExitAsync(target.VehicleId, key).ConfigureAwait(true);
             var toast = string.Format(CultureInfo.CurrentCulture, ExitToastExitMarkedFormat, target.PlateNumber);
-            await _toast.ShowAsync(toast, ToastSeverity.Success).ConfigureAwait(false);
+            await _toast.ShowAsync(toast, ToastSeverity.Success).ConfigureAwait(true);
 
             if (string.Equals(response.DeclarationStatus, "AllExited", StringComparison.OrdinalIgnoreCase))
             {
-                await _toast.ShowAsync(AppResources.Exit_Toast_DeclarationAllExited, ToastSeverity.Success).ConfigureAwait(false);
+                await _toast.ShowAsync(AppResources.Exit_Toast_DeclarationAllExited, ToastSeverity.Success).ConfigureAwait(true);
             }
 
             Suffix = string.Empty;

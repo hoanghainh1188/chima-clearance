@@ -66,11 +66,9 @@ public sealed class AuditPersistenceMiddleware(RequestDelegate next, ILogger<Aud
             };
 
             db.AuditLogs.Add(log);
-            await db.SaveChangesAsync(context.RequestAborted);
-        }
-        catch (OperationCanceledException) when (context.RequestAborted.IsCancellationRequested)
-        {
-            // Client disconnected after the domain write committed — nothing actionable.
+            // #168: never tie the audit write to RequestAborted — the domain write has already
+            // committed, so a client disconnect here would leave a mutation with no audit row.
+            await db.SaveChangesAsync(CancellationToken.None);
         }
         catch (Exception ex)
         {
