@@ -214,6 +214,41 @@ public sealed class ExcelExportEndpointTests
             .Should().Be("SoB2_20260201_20260205.xlsx");
     }
 
+    [Fact]
+    [Trait("Feature", "F-13")]
+    [Trait("Issue", "161")]
+    public async Task Formula_like_user_text_is_exported_as_inert_text()
+    {
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        client.SetBearer((await client.LoginAsAdminAsync()).AccessToken);
+        const string company = "=HYPERLINK(\"http://evil.example\",\"x\")";
+        const string goods = "+cmd|' /C calc'!A0";
+        const string note = "@SUM(1+1)";
+        var create = await client.PostAsJsonAsync(
+            "/api/declarations",
+            new DeclarationCreateRequest(
+                [TestDeclarationNumbers.Next()], SeedIds.ProcessorId, company, goods, SeedIds.YardId,
+                new VehicleAddRequest("31A30009", null, note)),
+            TestJson.Options);
+        create.EnsureSuccessStatusCode();
+        var decl = (await create.Content.ReadFromJsonAsync<DeclarationDto>(TestJson.Options))!;
+        var date = decl.BusinessDate.ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        var ws = await ExportWorksheetAsync(client, date, date);
+
+        // ClosedXML writes a string assigned through .Value as a text cell; only FormulaA1 makes a
+        // formula. Excel therefore shows these literally and never evaluates them.
+        var row = DataRows(ws).Single(r => r.Cell(PlateColumn).GetString() == "31A30009");
+        foreach (var (column, expected) in new[] { (4, company), (7, goods), (15, note) })
+        {
+            var cell = row.Cell(column);
+            cell.HasFormula.Should().BeFalse();
+            cell.DataType.Should().Be(XLDataType.Text);
+            cell.GetString().Should().Be(expected);
+        }
+    }
+
     private static async Task<DeclarationDto> CreateDeclarationAsync(HttpClient client, string plate)
     {
         var create = await client.PostAsJsonAsync(

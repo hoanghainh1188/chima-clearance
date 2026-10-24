@@ -297,26 +297,25 @@ public sealed class DeclarationRepository : IDeclarationRepository
             }
         }
 
-        // SQLite provider cannot translate ORDER BY on DateTimeOffset. For typical daily volume we
-        // project (Id, EnteredAt) for the filtered set, sort in-memory, then page (F-10 ledger).
+        // #143: sort and page in SQLite. The provider cannot ORDER BY a DateTimeOffset column,
+        // but julianday() of its ISO text is a sortable REAL, so only one page of ids is loaded
+        // instead of every matching (Id, EnteredAt) over the 3-year retention window (F-10).
         var total = await baseQuery.CountAsync(cancellationToken);
         var page = query.Page <= 0 ? 1 : query.Page;
         var pageSize = query.PageSize <= 0 ? 50 : query.PageSize;
-        var idAndEnteredAt = await baseQuery
-            .Select(d => new { d.Id, d.EnteredAt })
-            .ToListAsync(cancellationToken);
-        var sortedSlice = idAndEnteredAt
-            .OrderByDescending(x => x.EnteredAt)
+        var ids = await baseQuery
+            .OrderByDescending(d => SqliteFunctions.JulianDay(d.EnteredAt))
+            .ThenBy(d => d.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
-            .ToList();
+            .Select(d => d.Id)
+            .ToListAsync(cancellationToken);
 
-        if (sortedSlice.Count == 0)
+        if (ids.Count == 0)
         {
             return (Array.Empty<DeclarationSummaryRow>(), total);
         }
 
-        var ids = sortedSlice.Select(s => s.Id).ToList();
         var rows = await (
                 from d in _db.Declarations.AsNoTracking()
                 join u in _db.Users.AsNoTracking() on d.EnteredByUserId equals u.Id

@@ -30,26 +30,25 @@ public sealed class RefreshTokenRepository : IRefreshTokenRepository
             cancellationToken);
     }
 
-    public async Task<Guid?> GetActiveUserIdAsync(string plainRefreshToken, CancellationToken cancellationToken)
+    public async Task<Guid?> TryConsumeAsync(string plainRefreshToken, CancellationToken cancellationToken)
     {
         var hash = TokenHash.Sha256Hex(plainRefreshToken);
         var now = _clock.UtcNow;
-        // The SQLite provider cannot translate DateTimeOffset comparisons (every /refresh used to
-        // 500 here); a SHA-256 of a random token is effectively unique, so check the expiry on the single materialised row.
-        var row = await _db.RefreshTokens.AsNoTracking().FirstOrDefaultAsync(
-            r => r.TokenHash == hash && r.RevokedAt == null,
-            cancellationToken);
-        return row is not null && row.ExpiresAt > now ? row.UserId : null;
-    }
-
-    public async Task RevokeAsync(string plainRefreshToken, CancellationToken cancellationToken)
-    {
-        var hash = TokenHash.Sha256Hex(plainRefreshToken);
-        var row = await _db.RefreshTokens.FirstOrDefaultAsync(r => r.TokenHash == hash && r.RevokedAt == null, cancellationToken);
-        if (row is not null)
+        var row = await _db.RefreshTokens.AsNoTracking()
+            .Where(r => r.TokenHash == hash && r.RevokedAt == null)
+            .Select(r => new { r.Id, r.UserId, r.ExpiresAt })
+            .FirstOrDefaultAsync(cancellationToken);
+        if (row is null || row.ExpiresAt <= now)
         {
-            row.RevokedAt = _clock.UtcNow;
+            return null;
         }
+
+        // Compare-and-set: SQLite serialises writers, so of two concurrent refreshes with the same
+        // token exactly one sees RevokedAt == null here and wins; the other gets 0 rows.
+        var consumed = await _db.RefreshTokens
+            .Where(r => r.Id == row.Id && r.RevokedAt == null)
+            .ExecuteUpdateAsync(s => s.SetProperty(r => r.RevokedAt, now), cancellationToken);
+        return consumed == 1 ? row.UserId : null;
     }
 
     public async Task RevokeAllForUserAsync(Guid userId, CancellationToken cancellationToken)
