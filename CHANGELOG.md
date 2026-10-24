@@ -6,7 +6,26 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 
-Nothing pending.
+### Security
+
+#### HTTPS on the LAN — #147, #176, ADR-0010
+
+- The service listened on **plain HTTP** `0.0.0.0:5000`: passwords, JWTs and every clearance
+  record crossed the LAN in cleartext. It now serves **HTTPS only** on `https://0.0.0.0:5001`
+  with `keys\server.pfx`, and refuses to start with `http://` on a non-loopback address or (outside
+  Development) without the certificate. Firewall rule moved to TCP 5001.
+- The installer's certificate named only `localhost`, so a remote PC could not validate it. Its
+  SANs now cover the machine's hostname(s) and LAN IPv4 addresses; it is exported to
+  `C:\ProgramData\B2\b2-server.cer`. New `B2Clearance.exe renew-certificate` re-issues after an
+  IP / hostname change.
+- Exit-gate PCs trust the server via `install.ps1 -ClientOnly -ServerUrl … -ServerCertificate
+  b2-server.cer` (imported into LocalMachine\Root; Thumbprint printed for comparison). The
+  Desktop's default endpoint is now `https://127.0.0.1:5001/`; a bare IP means `https://…:5001/`.
+
+**Upgrade**: run `.\install.ps1` on the entry gate first (it issues the new certificate — note the
+Thumbprint, copy `b2-server.cer` to USB), then on each exit gate
+`.\install.ps1 -ClientOnly -ServerUrl <ip> -ServerCertificate <path>`. A `b2-client.json` that says
+`http://…:5000` must be changed to the bare IP.
 
 ## [1.3.0] — 2026-10-02 — per-install Admin password; automatic backup; pre-UAT fixes from the requirements audit
 

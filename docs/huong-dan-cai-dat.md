@@ -9,7 +9,7 @@ Thông thường hệ thống gồm **2 máy** trong cùng mạng LAN:
 | Máy | Vai trò | Lệnh cài |
 | --- | --- | --- |
 | **Cổng vào** | Máy chủ (chạy dịch vụ, giữ cơ sở dữ liệu và bản sao lưu) + ứng dụng Sổ B2 | `.\install.ps1` |
-| **Cổng ra** | Chỉ ứng dụng Sổ B2, kết nối tới máy cổng vào | `.\install.ps1 -ClientOnly -ServerUrl <IP máy cổng vào>` |
+| **Cổng ra** | Chỉ ứng dụng Sổ B2, kết nối tới máy cổng vào | `.\install.ps1 -ClientOnly -ServerUrl <IP máy cổng vào> -ServerCertificate <tệp b2-server.cer>` |
 | **Một máy dùng cho cả hai cổng** | Máy chủ + ứng dụng, làm cả việc cổng vào lẫn cổng ra | `.\install.ps1` |
 
 **Luôn cài máy cổng vào trước.**
@@ -66,11 +66,17 @@ thư mục `Desktop\`, `Templates\`, `docs\` (chính hướng dẫn này và s�
 
 4. Chờ khoảng 1–3 phút. Script tự làm các bước: cài VC++ và WebView2 → chép chương trình
    vào `C:\Program Files\B2Clearance` → đăng ký dịch vụ **B2ClearanceService** (tự chạy cùng
-   Windows) → mở firewall TCP 5000 → **hiển thị MÃ PHỤC HỒI** → **hiển thị MẬT KHẨU ADMIN BAN
-   ĐẦU** → tạo shortcut trên Desktop → khởi động dịch vụ.
+   Windows) → cấp **chứng chỉ bảo mật (HTTPS)** cho máy này → mở firewall TCP 5001 →
+   **hiển thị MÃ PHỤC HỒI** → **hiển thị MẬT KHẨU ADMIN BAN ĐẦU** → tạo shortcut trên Desktop
+   → khởi động dịch vụ.
 5. Khi thấy dòng chữ xanh **HOAN TAT**, cài đặt đã xong.
 6. Ghi lại **địa chỉ IP** của máy này (chạy `ipconfig`, xem dòng `IPv4 Address`, ví dụ
-   `192.168.1.10`) — cần cho bước cài máy cổng ra.
+   `192.168.1.10`) — cần cho bước cài máy cổng ra. Nên nhờ IT đặt **IP tĩnh** cho máy cổng vào:
+   chứng chỉ gắn với IP lúc cài (đổi IP → xem § 7, dòng "Đổi IP máy cổng vào").
+7. Ghi lại dòng **`Thumbprint`** trong khung chứng chỉ TLS trên màn hình, và **chép tệp
+   `C:\ProgramData\B2\b2-server.cer` vào USB** — cần cho bước cài máy cổng ra. Tệp này là
+   phần **công khai** của chứng chỉ, chép đi không ảnh hưởng an toàn; **không** chép
+   `server.pfx` trong thư mục `keys`.
 
 ### 📋 Mã phục hồi — BẮT BUỘC làm ngay
 
@@ -97,7 +103,7 @@ thư mục `Desktop\`, `Templates\`, `docs\` (chính hướng dẫn này và s�
 1. Mở shortcut **"Sổ B2 — Cửa khẩu Chi Ma"** trên Desktop.
 2. Đăng nhập tài khoản **`admin`** với mật khẩu ban đầu đã ghi ở § 3.
 
-   > ⚠️ Máy cổng vào mở cổng 5000 cho mạng nội bộ: cho tới khi đổi mật khẩu, ai biết mật khẩu
+   > ⚠️ Máy cổng vào mở cổng 5001 cho mạng nội bộ: cho tới khi đổi mật khẩu, ai biết mật khẩu
    > ban đầu đều đăng nhập được từ máy khác trong LAN. Làm bước 3 **ngay trong buổi cài**.
 3. Hệ thống **bắt buộc đổi mật khẩu** ngay. Mật khẩu mới: ít nhất 10 ký tự, gồm ít nhất
    3 trong 4 loại: chữ hoa, chữ thường, số, ký tự đặc biệt.
@@ -113,14 +119,19 @@ thư mục `Desktop\`, `Templates\`, `docs\` (chính hướng dẫn này và s�
 
 ## 5. Cài máy cổng ra
 
-1. Chép thư mục từ USB vào máy, mở PowerShell **Run as administrator** như § 3.
-2. Chạy (thay `192.168.1.10` bằng IP máy cổng vào đã ghi ở § 3 bước 6):
+1. Chép thư mục từ USB vào máy, mở PowerShell **Run as administrator** như § 3. Cắm USB có
+   tệp `b2-server.cer` (§ 3 bước 7).
+2. Chạy (thay `192.168.1.10` bằng IP máy cổng vào đã ghi ở § 3 bước 6, `E:\b2-server.cer` bằng
+   đường dẫn tệp trên USB):
 
    ```powershell
    cd C:\B2-Setup
    Set-ExecutionPolicy -Scope Process Bypass -Force
-   .\install.ps1 -ClientOnly -ServerUrl 192.168.1.10
+   .\install.ps1 -ClientOnly -ServerUrl 192.168.1.10 -ServerCertificate E:\b2-server.cer
    ```
+
+   Script in dòng **`Đã tin chứng chỉ máy chủ B2 — Thumbprint …`**: đối chiếu với Thumbprint đã
+   ghi ở § 3 bước 7 — phải **giống hệt**. Khác nhau → dừng lại, chép lại tệp từ máy cổng vào.
 
 3. Máy này **không** có dịch vụ, cơ sở dữ liệu hay mã phục hồi riêng — mọi dữ liệu nằm ở
    máy cổng vào.
@@ -163,14 +174,17 @@ Nếu sau này IP máy cổng vào thay đổi: sửa `serverUrl` trong file tr�
 | `install.ps1 cannot be loaded because running scripts is disabled` | Chạy lại `Set-ExecutionPolicy -Scope Process Bypass -Force` trong **cùng cửa sổ** PowerShell. Nếu vẫn bị chặn (chính sách nhóm của đơn vị), nhờ IT cho phép chạy script. |
 | `The script ... contains a "#requires" statement for running as Administrator` | PowerShell chưa chạy quyền Administrator — mở lại theo § 3 bước 2. |
 | `-ClientOnly phai di kem -ServerUrl` | Thiếu IP máy cổng vào trong lệnh — xem § 5 bước 2. |
+| `-ClientOnly phai di kem -ServerCertificate` / `Khong tim thay tep chung chi` | Thiếu hoặc sai đường dẫn tệp `b2-server.cer` — xem § 3 bước 7 và § 5 bước 2. |
+| `Tep chung chi khong duoc chua khoa bi mat` | Đã chọn nhầm `server.pfx`. Dùng `C:\ProgramData\B2\b2-server.cer` của máy cổng vào. |
 | `robocopy that bai` | Kiểm tra ổ `C:` còn trống và không có ai đang mở ứng dụng Sổ B2 / thư mục `C:\Program Files\B2Clearance`. Chạy lại `install.ps1`. |
 | Mất mật khẩu Admin ban đầu trước lần đăng nhập đầu tiên | PowerShell **Run as administrator**: `& "C:\Program Files\B2Clearance\B2Clearance.exe" reset-initial-admin` — hiện mật khẩu mới và khởi động lại dịch vụ. Nếu báo "đã đổi mật khẩu" thì làm theo [`runbook.md`](runbook.md) § 2. |
 | `B2Clearance.exe install that bai` hoặc dòng lỗi có `sc.exe` | Chụp màn hình toàn bộ nội dung lỗi và gửi đội phát triển (§ 9). Không sửa tay trong Registry/Services. |
 | `Khong thay WebView2 standalone installer` | Thiếu file WebView2 trong `prereqs\` — làm lại § 2 bước 2–3, rồi chạy lại `install.ps1`. |
 | Ứng dụng mở lên rồi tự tắt | Thường do thiếu WebView2 hoặc VC++. Chạy thủ công 2 file trong `prereqs\`, rồi mở lại ứng dụng. |
 | Máy cổng vào báo **🔴 Mất kết nối** | Kiểm tra dịch vụ: `Get-Service B2ClearanceService`. Nếu `Stopped` → `Start-Service B2ClearanceService`, chờ 15 giây. |
-| Máy cổng ra thiếu file `b2-client.json` | Lúc cài chưa truyền `-ServerUrl` (không thấy dòng `Endpoint desktop -> ...`). Chạy lại `.\install.ps1 -ClientOnly -ServerUrl <IP máy cổng vào>`. |
-| Máy cổng vào 🟢 nhưng máy cổng ra **🔴 Mất kết nối** | 1) Trên máy cổng ra: `ping <IP máy cổng vào>`. 2) Đối chiếu IP trong `b2-client.json` (§ 5). 3) Trên máy cổng vào: `Get-NetConnectionProfile` phải là `Private` — firewall chỉ mở cổng 5000 cho mạng Private; nếu là `Public`, nhờ IT chuyển sang Private. |
+| Máy cổng ra thiếu file `b2-client.json` | Lúc cài chưa truyền `-ServerUrl` (không thấy dòng `Endpoint desktop -> ...`). Chạy lại `.\install.ps1 -ClientOnly -ServerUrl <IP máy cổng vào> -ServerCertificate <tệp .cer>`. |
+| Máy cổng vào 🟢 nhưng máy cổng ra **🔴 Mất kết nối** | 1) Trên máy cổng ra: `ping <IP máy cổng vào>`. 2) Đối chiếu IP trong `b2-client.json` (§ 5). 3) Trên máy cổng vào: `Get-NetConnectionProfile` phải là `Private` — firewall chỉ mở cổng 5001 cho mạng Private; nếu là `Public`, nhờ IT chuyển sang Private. 4) Chứng chỉ: mở `https://<IP máy cổng vào>:5001/` bằng Edge trên máy cổng ra — trang trắng / lỗi 404 là **bình thường**; nếu Edge báo *"Kết nối của bạn không phải là kết nối riêng tư"* nghĩa là máy cổng ra chưa nhập đúng `b2-server.cer` mới nhất (cài lại theo § 5). |
+| Đổi IP máy cổng vào | Trên máy cổng vào (Administrator): `& "C:\Program Files\B2Clearance\B2Clearance.exe" renew-certificate`. Nếu in "Đã cấp chứng chỉ TLS mới": chép `b2-server.cer` mới sang máy cổng ra và cài lại theo § 5 với IP mới. |
 
 Chạy lại `install.ps1` là an toàn: dữ liệu tại `C:\ProgramData\B2` được giữ nguyên.
 
@@ -181,6 +195,9 @@ Chạy lại `install.ps1` là an toàn: dữ liệu tại `C:\ProgramData\B2` �
 - **Nâng cấp**: chuẩn bị USB với gói zip mới (§ 2), rồi chạy **đúng lệnh đã dùng khi cài**
   trên từng máy (§ 3 hoặc § 5). Nâng cấp máy cổng vào trước. Dữ liệu, bản sao lưu và mã phục
   hồi được giữ nguyên; mã phục hồi **không** đổi.
+- **Nâng cấp từ v1.3.0 trở về trước lên bản HTTPS** (#147): máy cổng vào được cấp chứng chỉ mới
+  (đọc lại § 3 bước 7 — ghi Thumbprint, chép `b2-server.cer`). Máy cổng ra **phải** cài lại với
+  thêm `-ServerCertificate` (§ 5); nếu `b2-client.json` cũ ghi `http://…:5000`, sửa thành IP trần.
 - **Gỡ cài** (PowerShell Administrator, trong thư mục gói cài):
 
   ```powershell

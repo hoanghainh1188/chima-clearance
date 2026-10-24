@@ -1,8 +1,5 @@
 using System.Diagnostics;
-using System.Net;
 using System.Security.AccessControl;
-using System.Security.Cryptography;
-using System.Security.Cryptography.X509Certificates;
 using System.Security.Principal;
 
 namespace B2.Installer;
@@ -20,7 +17,7 @@ internal static class InstallerActions
     private const string ServiceDisplayName = "B2 Clearance Service";
     private const string ServiceDescription = "Hệ thống quản lý thông quan hàng hóa Cổng B2";
     private const string FirewallRuleName = "B2 Clearance API";
-    private const int ApiPort = 5000;
+    private const int ApiPort = 5001; // HTTPS only (#147, ADR-0010)
 
     // -------------------------------------------------------------------------
     // Install
@@ -71,55 +68,11 @@ internal static class InstallerActions
     }
 
     /// <summary>
-    /// Generates a 10-year self-signed RSA-2048 / SHA-256 cert for localhost, stores the
-    /// PFX (with private key) in <c>C:\ProgramData\B2\keys\server.pfx</c> for Kestrel, and
-    /// installs the public cert into LocalMachine\Root so the Desktop trusts HTTPS.
-    /// Skips if the PFX already exists (idempotent across re-installs).
+    /// Issues (or keeps) the HTTPS certificate in <c>keys\server.pfx</c> with SANs for this
+    /// machine's hostname(s) and LAN IPv4 addresses, trusts it locally, and exports
+    /// <c>b2-server.cer</c> for the exit-gate PCs. See <see cref="ServerCertificate"/>.
     /// </summary>
-    public static void InstallCertificate()
-    {
-        var pfxPath = Path.Combine(DataDir, "keys", "server.pfx");
-        if (File.Exists(pfxPath))
-        {
-            return;
-        }
-
-        using var rsa = RSA.Create(2048);
-        var req = new CertificateRequest(
-            "CN=localhost, O=B2 Clearance, OU=Internal",
-            rsa,
-            HashAlgorithmName.SHA256,
-            RSASignaturePadding.Pkcs1);
-
-        req.CertificateExtensions.Add(
-            new X509BasicConstraintsExtension(false, false, 0, true));
-        req.CertificateExtensions.Add(
-            new X509KeyUsageExtension(
-                X509KeyUsageFlags.DigitalSignature | X509KeyUsageFlags.KeyEncipherment,
-                true));
-        req.CertificateExtensions.Add(
-            new X509EnhancedKeyUsageExtension(
-                new OidCollection { new Oid("1.3.6.1.5.5.7.3.1") }, false)); // serverAuth
-
-        var sanBuilder = new SubjectAlternativeNameBuilder();
-        sanBuilder.AddDnsName("localhost");
-        sanBuilder.AddIpAddress(IPAddress.Loopback);
-        sanBuilder.AddIpAddress(IPAddress.IPv6Loopback);
-        req.CertificateExtensions.Add(sanBuilder.Build());
-
-        var cert = req.CreateSelfSigned(
-            DateTimeOffset.UtcNow.AddDays(-1),
-            DateTimeOffset.UtcNow.AddYears(10));
-
-        // Save PFX (private key + cert) for Kestrel — no passphrase, protected by NTFS ACL.
-        File.WriteAllBytes(pfxPath, cert.Export(X509ContentType.Pfx));
-
-        // Install public cert into LocalMachine\Root so Desktop trusts the TLS connection.
-        using var store = new X509Store(StoreName.Root, StoreLocation.LocalMachine);
-        store.Open(OpenFlags.ReadWrite);
-        store.Add(cert);
-        store.Close();
-    }
+    public static bool InstallCertificate() => ServerCertificate.Ensure();
 
     public static void CopyTemplate(string appDir)
     {
@@ -175,7 +128,7 @@ internal static class InstallerActions
             "actions= restart/5000/restart/10000/restart/30000");
     }
 
-    /// <summary>Opens TCP 5000 inbound on the Private firewall profile for the API.</summary>
+    /// <summary>Opens TCP 5001 (HTTPS) inbound on the Private firewall profile for the API.</summary>
     public static void AddFirewallRule()
     {
         // Delete old rule first (idempotent).

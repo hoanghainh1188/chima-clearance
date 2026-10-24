@@ -196,17 +196,26 @@ ghi tờ khai mới.
 **Kiểm tra**:
 1. Ping máy chủ: `ping <ip-máy-chủ>` trên máy client bị lỗi.
 2. Kiểm tra dịch vụ B2 còn chạy không (xem mục 1).
-3. Kiểm tra tường lửa Windows trên máy cổng vào: cổng 5000 chỉ được mở cho mạng **Private**.
+3. Kiểm tra tường lửa Windows trên máy cổng vào: cổng 5001 (HTTPS) chỉ được mở cho mạng **Private**.
    Chạy `Get-NetConnectionProfile` — nếu `NetworkCategory` là `Public`, nhờ IT chuyển sang
    `Private`.
 4. **Trên máy cổng ra**: mở `C:\Program Files\B2Clearance\Desktop\b2-client.json` và đối chiếu
    `serverUrl` với IP hiện tại của máy cổng vào (`ipconfig` trên máy đó). IP đổi sau khi khởi
    động lại router là nguyên nhân phổ biến nhất.
+5. **Chứng chỉ HTTPS** (#147): trên máy cổng ra mở `https://<ip-máy-cổng-vào>:5001/` bằng Edge.
+   Trang trắng / 404 là bình thường. Edge cảnh báo "không phải kết nối riêng tư" → máy cổng ra
+   chưa tin chứng chỉ hiện tại của máy cổng vào (chưa nhập, hoặc máy cổng vào đã cấp lại).
 
 **Khắc phục**:
 - Nếu dịch vụ bị dừng: khởi động lại (xem mục 1).
-- Nếu sai địa chỉ máy chủ: sửa `serverUrl` trong `b2-client.json` rồi mở lại app — không cần
-  cài lại. Đề nghị IT đặt IP tĩnh cho máy cổng vào để khỏi lặp lại.
+- Nếu sai địa chỉ máy chủ: sửa `serverUrl` trong `b2-client.json` rồi mở lại app. Đề nghị IT
+  đặt IP tĩnh cho máy cổng vào để khỏi lặp lại. **Máy cổng vào đã đổi IP**: chứng chỉ chỉ ghi IP
+  cũ — trên máy cổng vào chạy (Administrator)
+  `& "C:\Program Files\B2Clearance\B2Clearance.exe" renew-certificate`, chép
+  `C:\ProgramData\B2\b2-server.cer` mới sang máy cổng ra và chạy
+  `.\install.ps1 -ClientOnly -ServerUrl <IP mới> -ServerCertificate <tệp .cer>`.
+- Nếu lỗi chứng chỉ (bước 5): chép lại `b2-server.cer` từ máy cổng vào và cài lại máy cổng ra
+  như trên; đối chiếu Thumbprint script in ra với Thumbprint lúc cài máy cổng vào.
 - Nếu vấn đề mạng: liên hệ IT.
 - Nếu sau 5 phút vẫn không kết nối được: leo thang theo mục 7.
 
@@ -218,8 +227,9 @@ ghi tờ khai mới.
 }
 ```
 
-Đặt file tên `b2-client.json` cạnh `B2.Desktop.exe`. Chấp nhận IP trần (mặc định cổng 5000),
-`192.168.1.10:5000`, hoặc `http://192.168.1.10:5000/`. Không có file này thì app tự nối tới
+Đặt file tên `b2-client.json` cạnh `B2.Desktop.exe`. Chấp nhận IP trần (mặc định
+`https://…:5001/`), `192.168.1.10:5001`, hoặc `https://192.168.1.10:5001/`. Máy chủ **không**
+còn nghe `http://…:5000` — sửa file cũ ghi địa chỉ đó thành IP trần. Không có file này thì app tự nối tới
 server trên **chính máy đó** — đúng cho máy cổng vào, sai cho máy cổng ra.
 
 ---

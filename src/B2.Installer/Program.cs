@@ -6,8 +6,10 @@ using B2.Installer;
 // to its permanent location, so AppContext.BaseDirectory points at the install folder that
 // holds B2.Server.Service.exe, litestream.exe, and Templates\.
 //
-//   B2Clearance.exe install    → scaffold dirs, TLS cert, service, firewall, recovery code, start
+//   B2Clearance.exe install    → scaffold dirs, LAN TLS cert (+ b2-server.cer), service, firewall, recovery code, start
 //   B2Clearance.exe uninstall  → stop + remove the service and firewall rule (keeps data)
+//   B2Clearance.exe renew-certificate  → re-issue the HTTPS certificate if this PC's hostname / LAN
+//                                        IP changed (or it nears expiry), then restart the service
 //   B2Clearance.exe reset-initial-admin → re-issue the initial Admin password (F-01), only
 //                                          while the Admin has not chosen their own yet
 //
@@ -34,6 +36,17 @@ if (command == "install")
     return 0;
 }
 
+if (command == "renew-certificate")
+{
+    if (InstallerActions.InstallCertificate())
+    {
+        InstallerActions.RestartService();
+        Console.WriteLine("Đã khởi động lại dịch vụ B2 với chứng chỉ mới.");
+    }
+
+    return 0;
+}
+
 if (command == "reset-initial-admin")
 {
     return AdminBootstrapSetup.ResetInitialAdmin();
@@ -48,6 +61,6 @@ if (command == "uninstall")
 
 var version = typeof(Program).Assembly.GetName().Version?.ToString(3) ?? "dev";
 Console.WriteLine($"B2 Clearance Installer v{version}");
-Console.WriteLine("Dùng: B2Clearance.exe install | uninstall | reset-initial-admin   (chạy bằng quyền Administrator)");
+Console.WriteLine("Dùng: B2Clearance.exe install | uninstall | renew-certificate | reset-initial-admin   (chạy bằng quyền Administrator)");
 Console.WriteLine("Thông thường bạn chạy deploy\\install.ps1 thay vì gọi trực tiếp.");
 return 0;
