@@ -54,8 +54,24 @@ public sealed class ReportsRepository : IReportsRepository
         bool includeCancelled,
         CancellationToken cancellationToken)
     {
-        var q = BaseVehicleQuery(date, date, includeCancelled).Where(v => v.ExitMarked && v.ExitTime != null);
-        var rows = await q.Select(v => v.ExitTime!.Value).ToListAsync(cancellationToken);
+        // #154: bucket the vehicles that physically exited on `date` (Vietnam time), whatever
+        // day their declaration was opened. julianday() normalises the stored offset to UTC
+        // because EF cannot translate DateTimeOffset comparisons on SQLite.
+        var (startUtc, endUtc) = VietnamTime.BusinessDayUtcBounds(date);
+        var includeCancelledFlag = includeCancelled ? 1 : 0;
+        var rows = await _db.Database
+            .SqlQuery<DateTimeOffset>(
+                $"""
+                 SELECT v."ExitTime" AS "Value"
+                 FROM "Vehicles" AS v
+                 INNER JOIN "Declarations" AS d ON d."Id" = v."DeclarationId"
+                 WHERE v."ExitMarked" = 1
+                   AND v."ExitTime" IS NOT NULL
+                   AND ({includeCancelledFlag} = 1 OR d."Status" <> 'Cancelled')
+                   AND julianday(v."ExitTime") >= julianday({startUtc})
+                   AND julianday(v."ExitTime") < julianday({endUtc})
+                 """)
+            .ToListAsync(cancellationToken);
         return rows
             .GroupBy(t => BucketLabel(t, bucketMinutes))
             .Select(g => new HourReportItemDto(g.Key, g.Count()))

@@ -35,13 +35,16 @@ public sealed class VehicleSuggestRepository : IVehicleSuggestRepository
         }
     }
 
+    // #182: a cancelled declaration is erroneous data by definition — never suggest from it.
     private static string BuildQuery(string field) => field switch
     {
         "trailer" =>
             """
             SELECT v."TrailerOrContainerNumber"
             FROM "Vehicles" AS v
+            INNER JOIN "Declarations" AS d ON d."Id" = v."DeclarationId"
             WHERE v."PlateNumber" = @plate
+              AND d."Status" <> 'Cancelled'
               AND v."EntryTime" > @cutoff
               AND v."TrailerOrContainerNumber" IS NOT NULL
               AND v."TrailerOrContainerNumber" <> ''
@@ -56,6 +59,7 @@ public sealed class VehicleSuggestRepository : IVehicleSuggestRepository
             FROM "Vehicles" AS v
             INNER JOIN "Declarations" AS d ON d."Id" = v."DeclarationId"
             WHERE v."PlateNumber" = @plate
+              AND d."Status" <> 'Cancelled'
               AND v."EntryTime" > @cutoff
               AND d."CompanyName" IS NOT NULL
               AND d."CompanyName" <> ''
@@ -70,6 +74,7 @@ public sealed class VehicleSuggestRepository : IVehicleSuggestRepository
             FROM "Vehicles" AS v
             INNER JOIN "Declarations" AS d ON d."Id" = v."DeclarationId"
             WHERE v."PlateNumber" = @plate
+              AND d."Status" <> 'Cancelled'
               AND v."EntryTime" > @cutoff
               AND d."GoodsName" IS NOT NULL
               AND d."GoodsName" <> ''

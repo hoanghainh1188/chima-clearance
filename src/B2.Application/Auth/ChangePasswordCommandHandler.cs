@@ -15,6 +15,7 @@ public sealed class ChangePasswordCommandHandler
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditContext _audit;
     private readonly IAdminBootstrapStore _adminBootstrap;
+    private readonly IRefreshTokenRepository _refreshTokens;
 
     public ChangePasswordCommandHandler(
         IUserRepository users,
@@ -22,7 +23,8 @@ public sealed class ChangePasswordCommandHandler
         IClock clock,
         IUnitOfWork unitOfWork,
         IAuditContext audit,
-        IAdminBootstrapStore adminBootstrap)
+        IAdminBootstrapStore adminBootstrap,
+        IRefreshTokenRepository refreshTokens)
     {
         _users = users;
         _hasher = hasher;
@@ -30,6 +32,7 @@ public sealed class ChangePasswordCommandHandler
         _unitOfWork = unitOfWork;
         _audit = audit;
         _adminBootstrap = adminBootstrap;
+        _refreshTokens = refreshTokens;
     }
 
     public async Task HandleAsync(Guid userId, ChangePasswordRequest request, CancellationToken cancellationToken)
@@ -50,6 +53,8 @@ public sealed class ChangePasswordCommandHandler
         var before = System.Text.Json.JsonSerializer.Serialize(new { mustChangePassword = user.MustChangePassword });
         user.SetPasswordHash(_hasher.HashPassword(request.NewPassword), mustChange: false);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        // #159: sessions minted under the old password end here (Desktop re-logs in afterwards).
+        await _refreshTokens.RevokeAllForUserAsync(user.Id, cancellationToken);
         if (user.Username == AdminPasswordBootstrapper.SeedAdminUsername)
         {
             // F-01: from now on no installer run may replace this password (ADR-0009).
