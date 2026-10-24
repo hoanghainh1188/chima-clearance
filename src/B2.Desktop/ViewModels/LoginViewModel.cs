@@ -54,6 +54,7 @@ public partial class LoginViewModel : ObservableObject
         {
             var response = await _api.LoginAsync(new LoginRequest(Username.Trim(), Password));
             _auth.AccessToken = response.AccessToken;
+            _auth.RefreshToken = response.RefreshToken;
 
             if (response.MustChangePassword)
             {

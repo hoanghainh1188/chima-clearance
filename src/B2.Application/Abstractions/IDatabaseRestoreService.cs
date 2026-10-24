@@ -14,6 +14,12 @@ public interface IDatabaseRestoreService
     /// Called once at startup before the DB opens.</summary>
     RestoreStagingMetadata? ApplyPending();
 
+    /// <summary>Cleans up the pre-restore backup after startup migrations succeed.</summary>
+    void CommitPending();
+
+    /// <summary>Rolls back to the pre-restore database if startup migrations or checks fail.</summary>
+    void RollbackPending();
+
     /// <summary>True while a restore is staged and awaiting apply (writes must be refused).</summary>
     bool IsRestorePending();
 }

@@ -12,4 +12,6 @@ namespace B2.Desktop.Services.Api;
 public interface IAuthTokenStore
 {
     string? AccessToken { get; set; }
+    string? RefreshToken { get; set; }
+    void Clear();
 }

@@ -809,6 +809,23 @@ public sealed partial class LedgerViewModel : ObservableObject, IDisposable
             catch (ApiException) { /* officer-name overlay is best-effort */ }
             catch (HttpRequestException) { }
 
+            if (useSince)
+            {
+                // FR-028 / Bug #163: polling fallback queries delta since watermark.
+                // If nothing changed, do not wipe out the active ledger view.
+                if (response.Items.Count == 0)
+                {
+                    return;
+                }
+
+                // New or updated records detected: update watermark and trigger full page refresh
+                // so ordinal numbering and date headers remain intact.
+                _sinceWatermark = response.Items.Max(x => x.EnteredAt);
+                IsLoading = false;
+                await LoadAsync(useSince: false).ConfigureAwait(true);
+                return;
+            }
+
             DisplayItems.Clear();
             RebuildDisplayItems(response.Items, Page, PageSize, _officerByDate, DisplayItems);
 

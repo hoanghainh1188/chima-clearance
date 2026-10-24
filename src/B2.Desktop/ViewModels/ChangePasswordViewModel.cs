@@ -70,7 +70,7 @@ public partial class ChangePasswordViewModel : ObservableObject
         try
         {
             await _api.ChangePasswordAsync(new ChangePasswordRequest(CurrentPassword, NewPassword));
-            _auth.AccessToken = null;
+            _auth.Clear();
             InfoMessage = AppResources.ChangePassword_SuccessRelogin;
             CurrentPassword = string.Empty;
             NewPassword = string.Empty;

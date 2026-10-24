@@ -632,7 +632,7 @@ public sealed class MainShellPage : ContentPage, IToastPresenter
     {
         _connectivity.ModeChanged -= OnConnectivityModeChanged;
         await _connectivity.StopAsync().ConfigureAwait(false);
-        _auth.AccessToken = null;
+        _auth.Clear();
         _session.Clear();
         await _navigator.NavigateToLoginAsync().ConfigureAwait(false);
     }

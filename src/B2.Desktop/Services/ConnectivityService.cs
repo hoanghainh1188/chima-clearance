@@ -257,6 +257,26 @@ public sealed class ConnectivityService : IDisposable, IAsyncDisposable
                 Mode = ok ? ConnectivityMode.PollingFallback : ConnectivityMode.Offline;
                 if (ok)
                 {
+                    // Bug #137: When server HTTP is reachable but hub was Closed/Disconnected,
+                    // attempt to restart the SignalR connection to restore real-time events.
+                    if (hub is not null && hub.State == HubConnectionState.Disconnected)
+                    {
+                        try
+                        {
+                            await hub.StartAsync(ct).ConfigureAwait(false);
+                            if (hub.State == HubConnectionState.Connected)
+                            {
+                                StopPollingTimer();
+                                Mode = ConnectivityMode.Online;
+                                break;
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            _logger.LogDebug(ex, "SignalR reconnect attempt failed during polling fallback");
+                        }
+                    }
+
                     MainThread.BeginInvokeOnMainThread(() => SuggestedListRefresh?.Invoke());
                 }
             }

@@ -125,7 +125,32 @@ public static class AdminEndpoints
 
                 if (!env.IsEnvironment("Testing"))
                 {
-                    lifetime.StopApplication();
+                    // Bug #173 fix: Flush HTTP 200 response to client first before shutting down,
+                    // and spawn a background helper so Windows Service is automatically restarted.
+                    _ = Task.Run(
+                        async () =>
+                        {
+                            await Task.Delay(1000, CancellationToken.None);
+                            if (OperatingSystem.IsWindows())
+                            {
+                                try
+                                {
+                                    var psi = new System.Diagnostics.ProcessStartInfo("cmd.exe", "/c ping 127.0.0.1 -n 3 > nul & sc.exe start B2ClearanceService")
+                                    {
+                                        CreateNoWindow = true,
+                                        UseShellExecute = false,
+                                    };
+                                    System.Diagnostics.Process.Start(psi);
+                                }
+                                catch
+                                {
+                                    // Best-effort restart helper
+                                }
+                            }
+
+                            lifetime.StopApplication();
+                        },
+                        CancellationToken.None);
                 }
 
                 return Results.Ok(new { restartRequired = true });
