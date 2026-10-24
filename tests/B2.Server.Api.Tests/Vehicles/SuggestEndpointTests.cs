@@ -221,4 +221,39 @@ public sealed class SuggestEndpointTests
 
         response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
     }
+
+    [Theory]
+    [Trait("Feature", "F-17")]
+    [Trait("Issue", "182")]
+    [InlineData("trailer")]
+    [InlineData("company")]
+    [InlineData("goods")]
+    public async Task Should_not_suggest_from_cancelled_declarations(string field)
+    {
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+
+        using (var scope = factory.Services.CreateAsyncScope())
+        {
+            var db = scope.ServiceProvider.GetRequiredService<B2DbContext>();
+            var decl = Domain.Declarations.Declaration.CreateNew(
+                Guid.NewGuid(),
+                [Domain.Declarations.DeclarationNumber.Parse(TestDeclarationNumbers.Next())],
+                SeedIds.ProcessorId, "TypoCo", "TypoGoods", SeedIds.YardId,
+                SeedIds.AdminUserId, Recent, DateOnly.FromDateTime(Recent.UtcDateTime));
+            decl.AddVehicle(Guid.NewGuid(), Domain.Declarations.PlateNumber.Parse("55C12345"),
+                Recent, SeedIds.AdminUserId, Domain.Declarations.ContainerNumber.TryParse("TYPOTRAILER"), null);
+            decl.Cancel(Domain.Users.Role.Admin, SeedIds.AdminUserId, "nhập sai", Recent.AddMinutes(1));
+            db.Declarations.Add(decl);
+            await db.SaveChangesAsync();
+        }
+
+        var response = await client.GetAsync($"/api/vehicles/suggest?plate=55C12345&field={field}");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var body = await response.Content.ReadFromJsonAsync<VehicleSuggestResponse>(TestJson.Options);
+        body!.Value.Should().BeNull();
+    }
 }

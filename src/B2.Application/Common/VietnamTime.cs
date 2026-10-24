@@ -18,6 +18,18 @@ public static class VietnamTime
         return DateOnly.FromDateTime(local);
     }
 
+    /// <summary>
+    /// Half-open UTC interval <c>[StartUtc, EndUtc)</c> covering the Vietnam business day
+    /// <paramref name="date"/> — for filtering stored instants (EntryTime / ExitTime) by the
+    /// day they physically happened on, rather than by their declaration's BusinessDate.
+    /// </summary>
+    public static (DateTimeOffset StartUtc, DateTimeOffset EndUtc) BusinessDayUtcBounds(DateOnly date)
+    {
+        var start = TimeZoneInfo.ConvertTimeToUtc(date.ToDateTime(TimeOnly.MinValue), TimeZone);
+        var end = TimeZoneInfo.ConvertTimeToUtc(date.AddDays(1).ToDateTime(TimeOnly.MinValue), TimeZone);
+        return (new DateTimeOffset(start, TimeSpan.Zero), new DateTimeOffset(end, TimeSpan.Zero));
+    }
+
     private static TimeZoneInfo ResolveVietnamTimeZone()
     {
         try

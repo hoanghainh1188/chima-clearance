@@ -14,19 +14,22 @@ public sealed class UserCommandHandler
     private readonly IClock _clock;
     private readonly IUnitOfWork _unitOfWork;
     private readonly IAuditContext _audit;
+    private readonly IRefreshTokenRepository _refreshTokens;
 
     public UserCommandHandler(
         IUserRepository users,
         IPasswordHasher hasher,
         IClock clock,
         IUnitOfWork unitOfWork,
-        IAuditContext audit)
+        IAuditContext audit,
+        IRefreshTokenRepository refreshTokens)
     {
         _users = users;
         _hasher = hasher;
         _clock = clock;
         _unitOfWork = unitOfWork;
         _audit = audit;
+        _refreshTokens = refreshTokens;
     }
 
     public async Task<UserDto> CreateAsync(Guid actorUserId, UserCreateRequest request, CancellationToken cancellationToken)
@@ -82,6 +85,12 @@ public sealed class UserCommandHandler
         }
 
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        if (request.IsActive is false)
+        {
+            // #159: a deactivated account must not keep live sessions that would revive on re-activation.
+            await _refreshTokens.RevokeAllForUserAsync(user.Id, cancellationToken);
+        }
+
         var after = System.Text.Json.JsonSerializer.Serialize(new { user.FullName, user.Role, user.IsActive });
         _audit.Set(new AuditEnvelope(actorUserId, AuditAction.Update, nameof(User), user.Id, before, after, null));
 
@@ -96,6 +105,8 @@ public sealed class UserCommandHandler
         var before = System.Text.Json.JsonSerializer.Serialize(new { mustChangePassword = user.MustChangePassword });
         user.SetPasswordHash(_hasher.HashPassword(request.TemporaryPassword), mustChange: true);
         await _unitOfWork.SaveChangesAsync(cancellationToken);
+        // #159: a reset (typically after a suspected compromise) must end every existing session.
+        await _refreshTokens.RevokeAllForUserAsync(user.Id, cancellationToken);
         var after = System.Text.Json.JsonSerializer.Serialize(new { mustChangePassword = user.MustChangePassword });
         _audit.Set(new AuditEnvelope(actorUserId, AuditAction.Update, nameof(User), user.Id, before, after, null));
     }

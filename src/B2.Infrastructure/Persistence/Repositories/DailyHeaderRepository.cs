@@ -1,6 +1,6 @@
 using B2.Application.Abstractions;
+using B2.Application.Common;
 using B2.Domain.DailyHeaders;
-using B2.Domain.Declarations;
 using Microsoft.EntityFrameworkCore;
 
 namespace B2.Infrastructure.Persistence.Repositories;
@@ -41,8 +41,20 @@ public sealed class DailyHeaderRepository : IDailyHeaderRepository
 
     public Task<int> CountVehiclesEnteredOnDateAsync(DateOnly date, CancellationToken cancellationToken)
     {
-        return _db.Vehicles
-            .Where(v => v.Declaration.BusinessDate == date && v.Declaration.Status != DeclarationStatus.Cancelled)
-            .CountAsync(cancellationToken);
+        // FR-012 / #146: count by the vehicle's own EntryTime (a declaration may gain vehicles
+        // on later days via AddVehicle), not by its parent's BusinessDate. EF cannot translate
+        // DateTimeOffset comparisons on SQLite; julianday() normalises any stored offset to UTC.
+        var (startUtc, endUtc) = VietnamTime.BusinessDayUtcBounds(date);
+        return _db.Database
+            .SqlQuery<int>(
+                $"""
+                 SELECT COUNT(*) AS "Value"
+                 FROM "Vehicles" AS v
+                 INNER JOIN "Declarations" AS d ON d."Id" = v."DeclarationId"
+                 WHERE d."Status" <> 'Cancelled'
+                   AND julianday(v."EntryTime") >= julianday({startUtc})
+                   AND julianday(v."EntryTime") < julianday({endUtc})
+                 """)
+            .SingleAsync(cancellationToken);
     }
 }

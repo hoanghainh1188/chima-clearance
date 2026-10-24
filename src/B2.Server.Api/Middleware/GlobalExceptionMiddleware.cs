@@ -2,6 +2,7 @@ using System.Net;
 using System.Text.Json;
 using B2.Domain;
 using FluentValidation;
+using Microsoft.EntityFrameworkCore;
 
 namespace B2.Server.Api.Middleware;
 
@@ -19,6 +20,11 @@ public sealed class GlobalExceptionMiddleware(RequestDelegate next, ILogger<Glob
         }
         catch (DomainException dex)
         {
+            await WriteDomainAsync(context, dex);
+        }
+        catch (DbUpdateException uex) when (UniqueConstraintViolation.TryTranslate(uex, out var dex))
+        {
+            logger.LogWarning(uex, "Unique constraint violation translated to {Code}", dex.Code);
             await WriteDomainAsync(context, dex);
         }
         catch (Exception ex)

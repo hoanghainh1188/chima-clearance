@@ -50,6 +50,7 @@ public sealed class Vehicle
 
     public void MarkExit(Guid confirmedByUserId, DateTimeOffset exitTime)
     {
+        EnsureDeclarationLoaded();
         if (ExitMarked)
         {
             throw new DomainException(
@@ -74,6 +75,7 @@ public sealed class Vehicle
 
     public void UnExit()
     {
+        EnsureDeclarationLoaded();
         if (!ExitMarked)
         {
             throw new DomainException("VEHICLE_NOT_EXITED", "Vehicle is not marked as exited.", 400);
@@ -110,6 +112,7 @@ public sealed class Vehicle
     /// </summary>
     public void UpdateNote(string? note)
     {
+        EnsureDeclarationLoaded();
         if (Declaration is { Status: DeclarationStatus.Cancelled })
         {
             throw new DomainException(
@@ -118,6 +121,29 @@ public sealed class Vehicle
                 409);
         }
 
+        // #183: KVGS confirmation seals the declaration (FR-022) — its ledger rows are final.
+        if (Declaration is { Status: DeclarationStatus.KVGSConfirmed })
+        {
+            throw new DomainException(
+                "DECLARATION_LOCKED",
+                "Cannot edit the note of a vehicle on a KVGS-confirmed declaration.",
+                409);
+        }
+
         Note = string.IsNullOrWhiteSpace(note) ? null : note.Trim();
+    }
+
+    /// <summary>
+    /// #139: every mutator guards on the parent's status, and <c>Declaration is { Status: … }</c>
+    /// is silently false when the navigation was not loaded. Fail loudly instead of letting a
+    /// cancelled / KVGS-locked declaration's vehicle be mutated.
+    /// </summary>
+    private void EnsureDeclarationLoaded()
+    {
+        if (Declaration is null)
+        {
+            throw new InvalidOperationException(
+                "Vehicle.Declaration must be loaded before mutating the vehicle (status invariants).");
+        }
     }
 }

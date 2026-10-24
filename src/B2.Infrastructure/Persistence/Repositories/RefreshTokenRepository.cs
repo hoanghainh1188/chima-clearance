@@ -34,10 +34,12 @@ public sealed class RefreshTokenRepository : IRefreshTokenRepository
     {
         var hash = TokenHash.Sha256Hex(plainRefreshToken);
         var now = _clock.UtcNow;
-        var row = await _db.RefreshTokens.FirstOrDefaultAsync(
-            r => r.TokenHash == hash && r.RevokedAt == null && r.ExpiresAt > now,
+        // The SQLite provider cannot translate DateTimeOffset comparisons (every /refresh used to
+        // 500 here); a SHA-256 of a random token is effectively unique, so check the expiry on the single materialised row.
+        var row = await _db.RefreshTokens.AsNoTracking().FirstOrDefaultAsync(
+            r => r.TokenHash == hash && r.RevokedAt == null,
             cancellationToken);
-        return row?.UserId;
+        return row is not null && row.ExpiresAt > now ? row.UserId : null;
     }
 
     public async Task RevokeAsync(string plainRefreshToken, CancellationToken cancellationToken)
