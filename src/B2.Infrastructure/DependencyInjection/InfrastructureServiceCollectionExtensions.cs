@@ -26,7 +26,9 @@ public static class InfrastructureServiceCollectionExtensions
         string dataDirectory,
         bool enableBackgroundJobs = true)
     {
-        services.AddDbContext<B2DbContext>(options => options.UseSqlite(connectionString));
+        services.AddDbContext<B2DbContext>(options => options
+            .UseSqlite(connectionString)
+            .AddInterceptors(SqlitePragmaInterceptor.Instance));
         services.AddScoped<IUnitOfWork>(sp => sp.GetRequiredService<B2DbContext>());
         services.AddScoped<IClock, SystemClock>();
         services.AddScoped<IPasswordHasher, BcryptPasswordHasher>();

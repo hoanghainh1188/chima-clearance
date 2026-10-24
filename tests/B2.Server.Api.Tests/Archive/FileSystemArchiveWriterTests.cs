@@ -111,6 +111,21 @@ public sealed class FileSystemArchiveWriterTests : IDisposable
         Directory.GetFiles(Path.Combine(_dir, "2022")).Should().BeEmpty();
     }
 
+    [Fact]
+    [Trait("Issue", "145")]
+    public void Verification_failure_keeps_the_archive_read_only()
+    {
+        Directory.CreateDirectory(_dir);
+        var path = Path.Combine(_dir, "corrupt.xlsx");
+        File.WriteAllText(path, "not a workbook");
+        File.SetAttributes(path, FileAttributes.ReadOnly);
+
+        new FileSystemArchiveWriter(_dir).VerifyExcel(path, minimumRows: 1).Should().BeFalse();
+
+        File.GetAttributes(path).HasFlag(FileAttributes.ReadOnly).Should().BeTrue(
+            "a workbook that fails to open must not leave the archive writable");
+    }
+
     public void Dispose()
     {
         // WriteExcelAsync marks the archive file read-only (FR-021), so a plain recursive

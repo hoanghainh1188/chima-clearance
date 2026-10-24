@@ -1,4 +1,4 @@
-# ADR-0011: Stream the annual archive with DocumentFormat.OpenXml
+# ADR-0012: Stream the annual archive with DocumentFormat.OpenXml
 
 **Status**: **Proposed** — awaiting owner ratification with the PR that implements it.
 **Date**: 2026-10-24

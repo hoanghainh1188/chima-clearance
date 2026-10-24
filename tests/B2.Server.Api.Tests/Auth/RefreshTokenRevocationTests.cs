@@ -101,6 +101,21 @@ public sealed class RefreshTokenRevocationTests
         (await RefreshAsync(client, rotated.RefreshToken)).IsSuccessStatusCode.Should().BeTrue();
     }
 
+    [Fact]
+    [Trait("Issue", "149")]
+    public async Task Concurrent_refreshes_with_one_token_mint_exactly_one_new_pair()
+    {
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var op = await client.LoginAsNewOperatorAsync();
+
+        var responses = await Task.WhenAll(Enumerable.Range(0, 8).Select(_ => RefreshAsync(client, op.RefreshToken)));
+
+        responses.Count(r => r.IsSuccessStatusCode).Should().Be(1, "a refresh token is single-use");
+        responses.Where(r => !r.IsSuccessStatusCode)
+            .Should().OnlyContain(r => r.StatusCode == System.Net.HttpStatusCode.Unauthorized);
+    }
+
     private static async Task AsAdminAsync(HttpClient client, Func<HttpClient, Task<HttpResponseMessage>> call)
     {
         client.DefaultRequestHeaders.Authorization = null;

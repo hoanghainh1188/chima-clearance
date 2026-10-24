@@ -5,7 +5,7 @@ using Microsoft.Data.Sqlite;
 namespace B2.Infrastructure.Backup;
 
 /// <summary>
-/// F-15 restore staging + apply-on-startup. <see cref="Stage"/> drops the decrypted DB at
+/// F-15 restore staging + apply-on-startup. <see cref="StageAsync"/> streams the decrypted DB to
 /// <c>{db}.restore-pending</c> plus a JSON sidecar for post-restore audit; <see cref="ApplyPending"/>
 /// (run before EF opens the DB) atomically promotes the pending file via <see cref="File.Replace"/>
 /// when a live DB already exists. Doing the swap before any connection opens avoids file-lock conflicts.
@@ -25,9 +25,12 @@ public sealed class DatabaseRestoreService : IDatabaseRestoreService
         _metadataPath = _pendingPath + ".meta.json";
     }
 
-    public void Stage(byte[] databaseBytes, RestoreStagingMetadata metadata)
+    public async Task StageAsync(
+        Func<Stream, CancellationToken, Task> writeDatabase,
+        RestoreStagingMetadata metadata,
+        CancellationToken cancellationToken)
     {
-        ArgumentNullException.ThrowIfNull(databaseBytes);
+        ArgumentNullException.ThrowIfNull(writeDatabase);
         ArgumentNullException.ThrowIfNull(metadata);
 
         var directory = Path.GetDirectoryName(_pendingPath);
@@ -37,9 +40,27 @@ public sealed class DatabaseRestoreService : IDatabaseRestoreService
         }
 
         var temp = _pendingPath + ".tmp";
-        File.WriteAllBytes(temp, databaseBytes);
-        File.Move(temp, _pendingPath, overwrite: true);
-        File.WriteAllText(_metadataPath, JsonSerializer.Serialize(metadata, JsonOptions));
+        try
+        {
+            await using (var stream = new FileStream(temp, FileMode.Create, FileAccess.ReadWrite, FileShare.None, 81_920, FileOptions.Asynchronous))
+            {
+                await writeDatabase(stream, cancellationToken);
+                await stream.FlushAsync(cancellationToken);
+            }
+
+            File.Move(temp, _pendingPath, overwrite: true);
+        }
+        catch
+        {
+            if (File.Exists(temp))
+            {
+                File.Delete(temp);
+            }
+
+            throw;
+        }
+
+        await File.WriteAllTextAsync(_metadataPath, JsonSerializer.Serialize(metadata, JsonOptions), cancellationToken);
     }
 
     public bool IsRestorePending() => File.Exists(_pendingPath);

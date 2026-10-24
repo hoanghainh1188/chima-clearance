@@ -25,7 +25,8 @@ do not infer requirements from existing code alone:
    `ADR-0008` dev-only PDF export tool for the operator docs;
    `ADR-0009` per-install initial Admin password;
    `ADR-0010` LAN TLS certificate + client trust via the OS store;
-   `ADR-0011` streamed annual archive via DocumentFormat.OpenXml)
+   `ADR-0011` streaming chunked backup container v2;
+   `ADR-0012` streamed annual archive via DocumentFormat.OpenXml)
 
 When Spec Kit artifacts (`specs/001-b2-clearance/{spec,plan,tasks}.md`) conflict
 with the hand-written `specs/0X-*.md`, follow the Spec Kit artifacts.

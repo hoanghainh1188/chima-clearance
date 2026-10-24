@@ -6,8 +6,14 @@ namespace B2.Application.Abstractions;
 /// </summary>
 public interface IDatabaseRestoreService
 {
-    /// <summary>Writes the decrypted SQLite bytes and restore audit metadata to staging files.</summary>
-    void Stage(byte[] databaseBytes, RestoreStagingMetadata metadata);
+    /// <summary>Stages a restore: <paramref name="writeDatabase"/> streams the decrypted SQLite DB
+    /// into a temp file (the stream is readable and seekable, so the writer can validate what it
+    /// wrote); only if it completes is the file promoted to the pending path with its audit
+    /// metadata. If it throws, the temp file is deleted and nothing is staged.</summary>
+    Task StageAsync(
+        Func<Stream, CancellationToken, Task> writeDatabase,
+        RestoreStagingMetadata metadata,
+        CancellationToken cancellationToken);
 
     /// <summary>If a staged restore exists, swaps it into the live DB path (clearing pools
     /// and WAL sidecars first). Returns the staged metadata when a swap occurred; otherwise null.

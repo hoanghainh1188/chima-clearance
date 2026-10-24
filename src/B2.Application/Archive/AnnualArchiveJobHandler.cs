@@ -42,7 +42,8 @@ public sealed class AnnualArchiveJobHandler
 
     public async Task<IReadOnlyList<ArchiveYearResult>> HandleAsync(CancellationToken ct)
     {
-        var today = DateOnly.FromDateTime(_clock.UtcNow.Date);
+        // #144: the 00:30 ICT Jan-1 run is still Dec-31 in UTC — use the Vietnam business date.
+        var today = VietnamTime.BusinessDateFromUtc(_clock.UtcNow);
         var cutoff = today.AddYears(-RetentionYears);
 
         var years = await _archiveRepo.GetYearsOlderThanAsync(cutoff, ct);
