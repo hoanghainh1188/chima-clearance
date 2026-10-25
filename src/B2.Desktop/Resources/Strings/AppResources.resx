@@ -389,9 +389,6 @@ Ghi lại và giao cho người dùng. Người dùng phải đổi mật khẩu
   <data name="Ledger_PageSummary_Format" xml:space="preserve">
     <value>Trang {0}/{1}</value>
   </data>
-  <data name="Ledger_PlateTrailer_Format" xml:space="preserve">
-    <value>{0} / {1}</value>
-  </data>
   <data name="Ledger_PageTitle" xml:space="preserve">
     <value>Sổ B2</value>
   </data>

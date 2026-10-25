@@ -9,6 +9,7 @@ public partial class EntryPage : ContentView
         InitializeComponent();
         BindingContext = model;
         Loaded += OnLoaded;
+        model.FormCleared += (_, _) => FocusFirstField();
     }
 
     // The shell keeps one EntryPage for the whole session and re-attaches it on every sidebar
@@ -20,5 +21,21 @@ public partial class EntryPage : ContentView
         {
             await vm.InitCommand.ExecuteAsync(null).ConfigureAwait(true);
         }
+
+        FocusFirstField();
     }
+
+    // #198: focus the first field to fill — the declaration number on a fresh form, the plate
+    // while adding further vehicles to the same declaration (its section is read-only then).
+    private void FocusFirstField() => Dispatcher.Dispatch(() =>
+    {
+        if (BindingContext is EntryViewModel { IsAddChildMode: true })
+        {
+            PlateEntry.Focus();
+        }
+        else
+        {
+            DeclarationEditor.Focus();
+        }
+    });
 }

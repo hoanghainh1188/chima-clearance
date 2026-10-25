@@ -11,7 +11,19 @@
   <x:Double x:Key="FontSizeXXL">28</x:Double>
   <!-- Wireframe § 6.4 special — Exit suffix search input is 24 px (height 56). -->
   <x:Double x:Key="FontSizeSearchInput">24</x:Double>
+  <x:Double x:Key="SpacingXS">4</x:Double>
   <x:Double x:Key="SpacingS">8</x:Double>
   <x:Double x:Key="SpacingM">16</x:Double>
   <x:Double x:Key="SpacingL">24</x:Double>
+  <x:Double x:Key="SpacingXL">32</x:Double>
+  <!-- Wireframe § 3 Touch.MinTarget (WCAG 2.5.5) and § 6.4 BIG INPUT height. -->
+  <x:Double x:Key="SizeTouchMin">44</x:Double>
+  <x:Double x:Key="SizeBigInputHeight">56</x:Double>
+  <!-- Layout widths. § 5 sidebar 220 expanded / 56 collapsed; the form caps keep inputs at a
+       readable width on 1080p+ screens (#196 auth card, #198 entry form). -->
+  <x:Double x:Key="LayoutSidebarExpanded">220</x:Double>
+  <x:Double x:Key="LayoutSidebarCollapsed">56</x:Double>
+  <x:Double x:Key="LayoutAuthCardWidth">420</x:Double>
+  <x:Double x:Key="LayoutFormMaxWidth">900</x:Double>
+  <x:Double x:Key="LayoutSearchInputMinWidth">240</x:Double>
 </ResourceDictionary>

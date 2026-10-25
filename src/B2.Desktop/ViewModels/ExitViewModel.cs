@@ -43,6 +43,9 @@ public partial class ExitViewModel : ObservableObject, IDisposable
 
     public ObservableCollection<VehicleSearchResultDto> Results { get; } = new();
 
+    /// <summary>Raised after a successful exit so the view can refocus the search input.</summary>
+    public event EventHandler? ExitMarked;
+
     /// <summary>Wireframe § 8 error banner correlationId binding.</summary>
     public ISessionCorrelationService Correlation { get; }
 
@@ -165,6 +168,7 @@ public partial class ExitViewModel : ObservableObject, IDisposable
             Suffix = string.Empty;
             Results.Clear();
             SelectedResult = null;
+            ExitMarked?.Invoke(this, EventArgs.Empty);
         }
         catch (ApiException ex)
         {
