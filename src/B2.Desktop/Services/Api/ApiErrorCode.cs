@@ -19,7 +19,15 @@ public static class ApiErrorCode
     public const string LastAdminLockout = "LAST_ADMIN_LOCKOUT";
 
     /// <summary>Returns the <c>code</c> property, or <c>null</c> for an empty or non-JSON body.</summary>
-    public static string? FromProblemJson(string? content)
+    public static string? FromProblemJson(string? content) => StringProperty(content, "code");
+
+    /// <summary>
+    /// Returns a string extension of the problem body (e.g. <c>winnerUsername</c> / <c>exitTime</c>
+    /// on a 409 <c>VEHICLE_ALREADY_EXITED</c>), or <c>null</c> when absent.
+    /// </summary>
+    public static string? Extension(string? content, string name) => StringProperty(content, name);
+
+    private static string? StringProperty(string? content, string name)
     {
         if (string.IsNullOrWhiteSpace(content))
         {
@@ -30,9 +38,9 @@ public static class ApiErrorCode
         {
             using var doc = JsonDocument.Parse(content);
             return doc.RootElement.ValueKind == JsonValueKind.Object
-                && doc.RootElement.TryGetProperty("code", out var code)
-                && code.ValueKind == JsonValueKind.String
-                    ? code.GetString()
+                && doc.RootElement.TryGetProperty(name, out var value)
+                && value.ValueKind == JsonValueKind.String
+                    ? value.GetString()
                     : null;
         }
         catch (JsonException)

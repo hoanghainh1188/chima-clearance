@@ -52,13 +52,26 @@ public partial class LedgerPage : ContentView
                 {
                     _ = vm.RefreshCommand.ExecuteAsync(null);
                 }
+
+                return true;
             });
 
         AttachAccelerator(
             element,
             (Windows.System.VirtualKey)VirtualKeyForwardSlash,
             Windows.System.VirtualKeyModifiers.None,
-            () => PlateSearchEntry?.Focus());
+            () =>
+            {
+                // "/" is an ordinary character inside a text field (dates 23/10/2026, "cont/mooc"):
+                // leave it unhandled there so the field receives it (#190).
+                if (IsTextInputFocused(element))
+                {
+                    return false;
+                }
+
+                PlateSearchEntry?.Focus();
+                return true;
+            });
 
         AttachAccelerator(
             element,
@@ -68,24 +81,33 @@ public partial class LedgerPage : ContentView
             {
                 if (BindingContext is not LedgerViewModel vm)
                 {
-                    return;
+                    return true;
                 }
 
                 if (vm.IsDrawerOpen)
                 {
                     vm.CloseDetailCommand.Execute(null);
-                    return;
+                    return true;
                 }
 
                 vm.PlateSearch = string.Empty;
+                return true;
             });
     }
+
+    private static bool IsTextInputFocused(Microsoft.UI.Xaml.UIElement element) =>
+        element.XamlRoot is { } root
+        && Microsoft.UI.Xaml.Input.FocusManager.GetFocusedElement(root) is
+            Microsoft.UI.Xaml.Controls.TextBox
+            or Microsoft.UI.Xaml.Controls.PasswordBox
+            or Microsoft.UI.Xaml.Controls.RichEditBox
+            or Microsoft.UI.Xaml.Controls.AutoSuggestBox;
 
     private static void AttachAccelerator(
         Microsoft.UI.Xaml.UIElement element,
         Windows.System.VirtualKey key,
         Windows.System.VirtualKeyModifiers modifiers,
-        Action invoke)
+        Func<bool> invoke)
     {
         var accelerator = new Microsoft.UI.Xaml.Input.KeyboardAccelerator
         {
@@ -94,8 +116,8 @@ public partial class LedgerPage : ContentView
         };
         accelerator.Invoked += (_, args) =>
         {
-            invoke();
-            args.Handled = true;
+            // false = not ours here: let the key reach the focused control.
+            args.Handled = invoke();
         };
         element.KeyboardAccelerators.Add(accelerator);
     }

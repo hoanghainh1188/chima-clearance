@@ -244,7 +244,7 @@ INV-1..INV-8 list — to be added to the same test sweep):
 | --- | --- | --- | --- |
 | **INV-9** | `Declaration.Cancel(reason)` is allowed **only** from `Status = Open` and requires a non-empty `reason` | `B2.Domain` (`Declaration.Cancel`) | FR-022 |
 | **INV-10** | `Declaration.Cancelled` rows are **never** mutated further (no add-vehicle, no exit-mark, no KVGS) | `B2.Domain` aggregate methods reject; API returns 409 `DECLARATION_NOT_OPEN` | FR-022 |
-| **INV-11** | `DailyHeader.OnDutyOfficerName` is editable only on **today's** header (server-clock comparison) | `B2.Application` validator (F-25 PATCH endpoint) | FR-025 |
+| **INV-11** | `DailyHeader.OnDutyOfficerName` is editable only on **today's or yesterday's** header (server-clock comparison; yesterday covers the night shift that ends after midnight, #186) | `B2.Application` validator (F-25 PATCH endpoint) | FR-025 |
 | **INV-12** | Records older than 3 years are absent from live tables after the annual archive job runs **and** their archive file exists in the sibling folder | `AnnualArchiveJob` (`B2.Infrastructure`) | FR-021 |
 
 ---

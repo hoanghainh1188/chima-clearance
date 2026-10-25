@@ -16,6 +16,7 @@ public sealed class FileLoggerProvider : ILoggerProvider
 {
     private readonly string _directory;
     private readonly object _gate = new();
+    private readonly LogWriteBackoff _backoff = new(TimeProvider.System);
     private bool _disabled;
 
     public FileLoggerProvider(string directory)
@@ -39,7 +40,8 @@ public sealed class FileLoggerProvider : ILoggerProvider
 
     /// <summary>
     /// Best-effort append. A logging failure must never surface to the operator or abort a
-    /// clearance, so the first failure disables the provider for the rest of the session.
+    /// clearance. A transient I/O failure (file momentarily locked) pauses writing with
+    /// <see cref="LogWriteBackoff"/>; only an invalid path disables the provider for good.
     /// </summary>
     internal void Append(string line)
     {
@@ -50,7 +52,7 @@ public sealed class FileLoggerProvider : ILoggerProvider
 
         lock (_gate)
         {
-            if (_disabled)
+            if (_disabled || !_backoff.CanWrite())
             {
                 return;
             }
@@ -62,14 +64,15 @@ public sealed class FileLoggerProvider : ILoggerProvider
                     _directory,
                     "desktop-" + DateTimeOffset.Now.ToString("yyyyMMdd", System.Globalization.CultureInfo.InvariantCulture) + ".log");
                 File.AppendAllText(file, line + Environment.NewLine);
+                _backoff.RecordSuccess();
             }
             catch (IOException)
             {
-                _disabled = true;
+                _backoff.RecordFailure();
             }
             catch (UnauthorizedAccessException)
             {
-                _disabled = true;
+                _backoff.RecordFailure();
             }
             catch (ArgumentException)
             {

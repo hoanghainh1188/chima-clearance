@@ -19,6 +19,7 @@ namespace B2.Desktop.ViewModels;
 public sealed partial class ReportsViewModel : ObservableObject
 {
     private static readonly CompositeFormat ExportSuccessFormat = CompositeFormat.Parse(AppResources.Reports_Export_Success);
+    private static readonly CompositeFormat ExportSaveFailedFormat = CompositeFormat.Parse(AppResources.Reports_Export_SaveFailed_Format);
     private static readonly CompositeFormat ErrorFormat = CompositeFormat.Parse(AppResources.Reports_Error_Format);
 
     private readonly IB2Api _api;
@@ -267,9 +268,11 @@ public sealed partial class ReportsViewModel : ObservableObject
             }).ConfigureAwait(true);
             await _toast.ShowAsync(string.Format(CultureInfo.CurrentCulture, ExportSuccessFormat, path), ToastSeverity.Success).ConfigureAwait(true);
         }
-        catch (IOException ex)
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
-            await _toast.ShowAsync(ex.Message, ToastSeverity.Error).ConfigureAwait(true);
+            // Controlled Folder Access / AV / policy block on Documents throws
+            // UnauthorizedAccessException, which is not an IOException (#166).
+            await _toast.ShowAsync(string.Format(CultureInfo.CurrentCulture, ExportSaveFailedFormat, folder), ToastSeverity.Error).ConfigureAwait(true);
         }
     }
 

@@ -147,6 +147,8 @@ public static class AppResources
     public static string Common_Error_ServerUnreachable => ResourceManager.GetString(nameof(Common_Error_ServerUnreachable), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Entry_Error_DuplicateNumber => ResourceManager.GetString(nameof(Entry_Error_DuplicateNumber), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Exit_Error_AlreadyExited => ResourceManager.GetString(nameof(Exit_Error_AlreadyExited), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Exit_Error_AlreadyExitedBy_Format => ResourceManager.GetString(nameof(Exit_Error_AlreadyExitedBy_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Exit_Info_SearchedSuffix_Format => ResourceManager.GetString(nameof(Exit_Info_SearchedSuffix_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Exit_Error_DeclarationCancelled => ResourceManager.GetString(nameof(Exit_Error_DeclarationCancelled), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Exit_Error_NoMatch_Format => ResourceManager.GetString(nameof(Exit_Error_NoMatch_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Exit_Error_Search => ResourceManager.GetString(nameof(Exit_Error_Search), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
@@ -321,6 +323,7 @@ public static class AppResources
     public static string Reports_Action_Export => ResourceManager.GetString(nameof(Reports_Action_Export), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Reports_Copy_Success => ResourceManager.GetString(nameof(Reports_Copy_Success), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Reports_Export_Success => ResourceManager.GetString(nameof(Reports_Export_Success), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Reports_Export_SaveFailed_Format => ResourceManager.GetString(nameof(Reports_Export_SaveFailed_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Reports_Column_Processor => ResourceManager.GetString(nameof(Reports_Column_Processor), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Reports_Column_Yard => ResourceManager.GetString(nameof(Reports_Column_Yard), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Reports_Column_HourBucket => ResourceManager.GetString(nameof(Reports_Column_HourBucket), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;

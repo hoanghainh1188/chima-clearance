@@ -83,4 +83,30 @@ public sealed class DailyHeadersEndpointTests
             TestJson.Options);
         list.Should().ContainSingle(h => h.Date == today && h.OnDutyOfficerName == "Trực ban B");
     }
+
+    [Theory]
+    [Trait("Feature", "F-11")]
+    [Trait("Requirement", "FR-025")]
+    [InlineData(-1, HttpStatusCode.NoContent)]
+    [InlineData(-2, HttpStatusCode.BadRequest)]
+    [InlineData(1, HttpStatusCode.BadRequest)]
+    public async Task Should_allow_officer_name_on_yesterdays_header_but_not_older_or_future(
+        int dayOffset,
+        HttpStatusCode expected)
+    {
+        // #186: the night shift ends after midnight, so yesterday's header must stay editable.
+        await using var factory = new B2ApiFactory();
+        var client = factory.CreateClient();
+        var admin = await client.LoginAsAdminAsync();
+        client.SetBearer(admin.AccessToken);
+        var dateStr = VietnamToday().AddDays(dayOffset).ToString("yyyy-MM-dd", CultureInfo.InvariantCulture);
+
+        var patchMessage = new HttpRequestMessage(HttpMethod.Patch, $"/api/daily-headers/{dateStr}/officer")
+        {
+            Content = JsonContent.Create(new UpdateOfficerNameRequest("Trực ban đêm"), options: TestJson.Options),
+        };
+        var patch = await client.SendAsync(patchMessage);
+
+        patch.StatusCode.Should().Be(expected);
+    }
 }
