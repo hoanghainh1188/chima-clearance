@@ -18,6 +18,8 @@ public partial class ExitViewModel : ObservableObject, IDisposable
 
     private static readonly CompositeFormat ExitErrorNoMatchFormat = CompositeFormat.Parse(AppResources.Exit_Error_NoMatch_Format);
     private static readonly CompositeFormat ExitToastExitMarkedFormat = CompositeFormat.Parse(AppResources.Exit_Toast_ExitMarked_Format);
+    private static readonly CompositeFormat ExitAlreadyExitedByFormat = CompositeFormat.Parse(AppResources.Exit_Error_AlreadyExitedBy_Format);
+    private static readonly CompositeFormat ExitSearchedSuffixFormat = CompositeFormat.Parse(AppResources.Exit_Info_SearchedSuffix_Format);
 
     private readonly IB2Api _api;
     private readonly IToastService _toast;
@@ -86,16 +88,20 @@ public partial class ExitViewModel : ObservableObject, IDisposable
         Results.Clear();
         SelectedResult = null;
 
-        var q = Suffix.Trim();
-
-        // Empty query → list all (unexited) vehicles in the gate. A partial
-        // 1-2 char query is ignored (wait for 3-4 digits); >4 is never valid.
-        if (q.Length is 1 or 2 || q.Length > 4)
+        // Empty → list all (unexited) vehicles in the gate; 1-2 digits → wait for more;
+        // a longer number or a whole plate → search its last 4 digits and say so (#192).
+        var query = ExitSearchQuery.Parse(Suffix);
+        if (query is null)
         {
             return;
         }
 
-        var isListAll = q.Length == 0;
+        var q = query.Suffix;
+        var isListAll = query.IsListAll;
+        if (query.Adjusted)
+        {
+            WarningMessage = string.Format(CultureInfo.CurrentCulture, ExitSearchedSuffixFormat, q);
+        }
 
         IsSearching = true;
         try
@@ -162,16 +168,49 @@ public partial class ExitViewModel : ObservableObject, IDisposable
         }
         catch (ApiException ex)
         {
-            ErrorMessage = ApiErrorCode.FromProblemJson(ex.Content) switch
+            var code = ApiErrorCode.FromProblemJson(ex.Content);
+            if (code == ApiErrorCode.VehicleAlreadyExited)
             {
-                ApiErrorCode.VehicleAlreadyExited => AppResources.Exit_Error_AlreadyExited,
-                ApiErrorCode.DeclarationCancelled => AppResources.Exit_Error_DeclarationCancelled,
-                _ => AppResources.Exit_Error_MarkExit,
-            };
+                // Another gate won the race (#191): say who and when, and drop the stale row.
+                ErrorMessage = DescribeAlreadyExited(target, ex.Content);
+                RemoveResult(target);
+                return;
+            }
+
+            ErrorMessage = code == ApiErrorCode.DeclarationCancelled
+                ? AppResources.Exit_Error_DeclarationCancelled
+                : AppResources.Exit_Error_MarkExit;
         }
         catch (HttpRequestException)
         {
             ErrorMessage = AppResources.Common_Error_ServerUnreachable;
+        }
+    }
+
+    private static string DescribeAlreadyExited(VehicleSearchResultDto vehicle, string? problemJson)
+    {
+        var details = ExitConflictDetails.FromProblemJson(problemJson);
+        return details is null
+            ? AppResources.Exit_Error_AlreadyExited
+            : string.Format(
+                CultureInfo.CurrentCulture,
+                ExitAlreadyExitedByFormat,
+                vehicle.PlateNumber,
+                details.WinnerName,
+                details.ExitTime.ToLocalTime().ToString("HH:mm", CultureInfo.CurrentCulture));
+    }
+
+    private void RemoveResult(VehicleSearchResultDto vehicle)
+    {
+        var stale = Results.FirstOrDefault(r => r.VehicleId == vehicle.VehicleId);
+        if (stale is not null)
+        {
+            Results.Remove(stale);
+        }
+
+        if (SelectedResult?.VehicleId == vehicle.VehicleId)
+        {
+            SelectedResult = null;
         }
     }
 

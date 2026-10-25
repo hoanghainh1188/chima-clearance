@@ -9,5 +9,5 @@ namespace B2.Application.Common;
 /// </summary>
 internal static class ValidationMessages
 {
-    public const string OfficerNameTodayOnly = "Officer name can only be edited for today's header.";
+    public const string OfficerNameEditWindow = "Officer name can only be edited for today's or yesterday's header.";
 }

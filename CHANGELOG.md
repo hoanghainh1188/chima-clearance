@@ -8,6 +8,22 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ### Fixed
 
+#### Desktop P2 batch — #160, #166, #171, #186, #190, #191, #192
+
+- **Xác nhận xe ra** (#192): typing five digits or a whole plate (`29H-123.45`) no longer does
+  nothing — the last four digits are searched and a yellow note says which. (#191) When another
+  gate exits the vehicle first, the 409 now reads "Xe … đã được {người} đánh dấu ra lúc {giờ}" and
+  the stale row is dropped, instead of "kiểm tra kết nối hoặc quyền".
+- **Sổ B2** (#190): `/` inside a text field is typed as `/` again; it only jumps to the plate
+  search when no text field has focus. (#186) The on-duty officer name can be set on yesterday's
+  header as well as today's (INV-11), so the night shift can sign after midnight.
+- **Nhập xe** (#160): two slow F-17 suggestion round-trips hide suggestions for 60 s, not for the
+  rest of the session.
+- **Báo cáo** (#166): a Documents folder blocked by Controlled Folder Access / antivirus / policy
+  shows a Vietnamese error toast instead of crashing the app.
+- **Desktop log** (#171): a momentarily locked `desktop-YYYYMMDD.log` pauses file logging with a
+  doubling back-off (1 s → 5 min) instead of switching it off for the session.
+
 #### Annual archive streams to disk — #167, ADR-0012
 
 - The FR-021 annual archive built the whole year as a ClosedXML workbook in memory and then

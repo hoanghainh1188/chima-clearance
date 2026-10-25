@@ -9,8 +9,13 @@ public sealed class UpdateOfficerNameCommandValidator : AbstractValidator<Update
     public UpdateOfficerNameCommandValidator(IClock clock)
     {
         RuleFor(x => x.Name).NotEmpty().MaximumLength(200);
+        // INV-11: today's header, or yesterday's — a night shift ends after midnight and the
+        // officer signs the header of the shift that just closed (#186). Older headers stay locked.
         RuleFor(x => x.Date)
-            .Must(date => date == VietnamTime.BusinessDateFromUtc(clock.UtcNow))
-            .WithMessage(ValidationMessages.OfficerNameTodayOnly);
+            .Must(date => IsWithinEditWindow(date, VietnamTime.BusinessDateFromUtc(clock.UtcNow)))
+            .WithMessage(ValidationMessages.OfficerNameEditWindow);
     }
+
+    private static bool IsWithinEditWindow(DateOnly date, DateOnly today) =>
+        date == today || date == today.AddDays(-1);
 }

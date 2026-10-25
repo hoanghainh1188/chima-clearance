@@ -798,6 +798,15 @@ Alt+1 … Alt+8 — Chuyển nhanh giữa các tab
   <data name="Exit_Error_DeclarationCancelled" xml:space="preserve">
     <value>Tờ khai của xe này đã bị hủy, không đánh dấu ra được.</value>
   </data>
+  <data name="Exit_Error_AlreadyExitedBy_Format" xml:space="preserve">
+    <value>Xe {0} đã được {1} đánh dấu ra lúc {2}. Đã bỏ xe này khỏi danh sách.</value>
+  </data>
+  <data name="Exit_Info_SearchedSuffix_Format" xml:space="preserve">
+    <value>Chỉ tìm được theo 3–4 số cuối biển số — đang tìm theo '{0}'.</value>
+  </data>
+  <data name="Reports_Export_SaveFailed_Format" xml:space="preserve">
+    <value>Không lưu được file Excel vào {0}. Thư mục có thể bị chặn ghi (phần mềm diệt virus, quyền người dùng) hoặc file đang mở — đóng file hoặc nhờ quản trị cấp quyền rồi thử lại.</value>
+  </data>
   <data name="Login_SessionExpired_Title" xml:space="preserve">
     <value>Phiên đăng nhập đã hết hạn</value>
   </data>

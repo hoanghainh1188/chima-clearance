@@ -775,7 +775,9 @@ as ghost text and is accepted with Tab.
 - Suggestions are accepted with **Tab**; pressing any other key dismisses the ghost text.
 - Suggestion latency budget: < 100 ms after the triggering keystroke (well under the
   general SC-004 budget). If the query exceeds the budget twice in a row, the
-  suggestion zone hides for the rest of the session and an INFO log is emitted.
+  suggestion zone hides for a 60 s cooldown (not the rest of the session — a transient
+  LAN spike must not cost the operator suggestions until restart, #160) and an INFO log
+  is emitted.
 - Anything beyond the bullets above is explicitly **out of scope for Phase 1** and
   belongs to a Phase-2 spec.
 

@@ -65,8 +65,7 @@ public partial class EntryViewModel : ObservableObject, IDisposable
     private readonly IToastService _toast;
 
     // F-17 Smart Suggestions
-    private bool _suggestionsDisabled;
-    private int _consecutiveOverruns;
+    private readonly SuggestionLatencyGuard _suggestionGuard = new(TimeProvider.System);
     private CancellationTokenSource? _suggestCts;
 
     [ObservableProperty]
@@ -167,7 +166,7 @@ public partial class EntryViewModel : ObservableObject, IDisposable
     {
         ClearSuggestions();
 
-        if (_suggestionsDisabled || !Plate.IsMatch(NormalizePlate(plate)))
+        if (!_suggestionGuard.CanQuery() || !Plate.IsMatch(NormalizePlate(plate)))
         {
             return;
         }
@@ -194,20 +193,11 @@ public partial class EntryViewModel : ObservableObject, IDisposable
                 return;
             }
 
-            // Latency guard: auto-disable after 2 consecutive overruns (> 100ms).
-            if (sw.ElapsedMilliseconds > 100)
+            // Latency guard: 2 consecutive overruns hide the zone for a cooldown (#160).
+            // INFO log is emitted by the server; desktop just hides the zone.
+            if (_suggestionGuard.RecordRoundTrip(sw.Elapsed))
             {
-                _consecutiveOverruns++;
-                if (_consecutiveOverruns >= 2)
-                {
-                    _suggestionsDisabled = true;
-                    // INFO log is emitted by the server; desktop just hides the zone.
-                    return;
-                }
-            }
-            else
-            {
-                _consecutiveOverruns = 0;
+                return;
             }
 
             var trailer = trailerTask.Result.Value;
