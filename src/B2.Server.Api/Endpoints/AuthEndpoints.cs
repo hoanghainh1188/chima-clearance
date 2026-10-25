@@ -30,6 +30,8 @@ public static class AuthEndpoints
                 })
             .AllowAnonymous();
 
+        // FR-003 exception: refresh only rotates the caller's own token and runs on a client
+        // timer, so it is deliberately not audited (login / logout / change-password are).
         g.MapPost(
                 "/refresh",
                 async (

@@ -320,9 +320,11 @@ Required ADRs to be authored before code:
 ## 10. Security Checklist (must pass before each release)
 
 - [ ] No secrets in code or repo (verified with `gitleaks`).
-- [ ] All API endpoints require auth except `/api/auth/login` and `/api/admin/health`.
+- [ ] All API endpoints require auth except `/api/auth/login`, `/api/auth/refresh` (the
+  refresh token itself is the credential) and `/api/admin/health`.
 - [ ] All write commands check role policy.
-- [ ] AuditLog row created for every successful write.
+- [ ] AuditLog row created for every successful write, except `POST /api/auth/refresh`
+  (token rotation only — see FR-003).
 - [ ] BCrypt cost = 10; password min length 10, must include 3 of 4 char classes.
 - [ ] Self-signed cert installed by installer to LocalMachine\Root.
 - [ ] Firewall rule scoped to LAN profile only.
