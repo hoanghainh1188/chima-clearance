@@ -6,6 +6,39 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 
+Nothing pending.
+
+## [1.4.0] — 2026-10-25 — HTTPS on the LAN; idle logout; streaming backup and archive; P0–P2 bug sweep
+
+**This upgrade changes the transport: the API moves from plain HTTP `:5000` to HTTPS `:5001`.**
+Upgrade the **entry-gate PC first** with `.\install.ps1` — it issues the LAN certificate, prints
+its Thumbprint and exports `C:\ProgramData\B2\b2-server.cer`; copy that file to USB. Then on every
+exit-gate PC run `.\install.ps1 -ClientOnly -ServerUrl <ip> -ServerCertificate <path\to\b2-server.cer>`
+and check the printed Thumbprint matches. A `b2-client.json` that still says `http://…:5000`
+must be changed to the bare IP. After an IP or hostname change, run
+`B2Clearance.exe renew-certificate` on the entry gate and redistribute the `.cer`.
+
+Also new for operators:
+
+- The desktop **signs out after 30 minutes without input** (FR-018) and says why.
+- **Backups made by 1.4.0 use the v2 container**: they restore on 1.4.0 or later only (1.3.0
+  backups still restore on 1.4.0). Keep the 1.3.0 installer if a rollback may be needed.
+- The on-duty officer name can be set on **yesterday's** header too (night shift, INV-11).
+- The F-17 suggestion zone comes back **60 s** after it hides for slow responses.
+
+Use v1.4.0 for new installs, upgrades and the `T-S6-12` UAT.
+
+### Added
+
+#### Admin Users screen — `F-02`, #195
+
+- `UsersPage` was read-only. It now creates users (username, full name, role, a temporary
+  password with [Sinh]), edits name and role, resets a password (and shows the generated one
+  once), and deactivates or reactivates — never the signed-in Admin's own row. A status filter,
+  tone-insensitive name search and the four list states from wireframe § 8 are included; the
+  server's `USERNAME_TAKEN`, `USERNAME_INVALID`, `CANNOT_DEACTIVATE_SELF` and
+  `LAST_ADMIN_LOCKOUT` show specific Vietnamese errors.
+
 ### Fixed
 
 #### Desktop layout batch — #196, #197, #198, #199, #200, #201
@@ -54,6 +87,62 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
   25–39 s → 6–14 s. Same file name, layout, colours and read-only marking; INV-12 unchanged (live
   data is deleted only after the file verifies with ≥ N declaration rows).
 - A re-run after a failed verification no longer fails on the read-only file the first run left.
+
+#### P2 server batch — #143, #144, #145, #149, #151, #157, #162, #170, #177, #181
+
+- The ledger sorts and pages in SQLite instead of loading every row into memory (#143).
+- Concurrent refreshes of one refresh token mint exactly one new pair (#149).
+- The officer report credits each vehicle to the officer who entered it (#157).
+- Connection-scoped SQLite PRAGMAs are re-applied on every connection (#162).
+- Archive retention uses the Vietnam business date (#144); `VerifyExcel` always restores the
+  read-only attribute and releases the file (#145).
+- Litestream output reaches the log and the old process is disposed before a restart
+  (#151, #170); the health page's DB size includes `-wal` / `-shm` (#177).
+- Desktop logout revokes the server session, so the next officer on a shared PC does not
+  inherit a 7-day refresh token (#181).
+
+#### P1 desktop stability and KVGS queue — #142, #153, #164, #188, #194
+
+- A declaration opened on an earlier day whose last vehicle left today now appears in the KVGS
+  queue (#164).
+- ViewModels resume on the UI thread after every await, so bound collections are no longer
+  changed from a worker thread (#142).
+- Logout disposes every tab's ViewModel, ending the duplicated SignalR handlers after
+  logout/login (#153).
+- A double click on a confirm or info popup no longer crashes the app; popups queue instead of
+  failing with "only one popup at a time" (#188).
+- KVGS and Báo cáo lists no longer nest a virtualising list inside a scroll view (#194).
+
+#### P1 concurrency, durability and admin safety — #141, #148, #155, #158, #168, #169, #172, #178
+
+- A retried write with the same `Idempotency-Key` replays instead of executing twice; reusing a
+  key with a different payload returns 422 `IDEMPOTENCY_KEY_REUSED` (#141).
+- Declarations and vehicles carry a concurrency token; a lost update returns 409
+  `CONCURRENCY_CONFLICT` (#178).
+- Audit rows are saved even when the client disconnects mid-request (#168).
+- Secrets and the JWT signing key are written atomically and loaded once under a lock (#148, #169).
+- An Admin cannot deactivate themself or demote / deactivate the last active Admin (#158).
+- The audit viewer's date filter is correct across UTC offsets and lists newest first (#155, #172).
+
+#### P1 data layer, auth and domain — #139, #140, #146, #154, #159, #182, #183, #184
+
+- `POST /api/auth/refresh` always returned 500 on SQLite; token refresh works again.
+- Resetting a password, changing one's own password or deactivating a user revokes all of that
+  user's refresh tokens (#159).
+- Duplicate declaration numbers and usernames return 409 instead of 500 (#140).
+- Daily counts and the hourly exit report use the Vietnam day (#146, #154); the 00:01 job
+  finalises yesterday's total (#184).
+- Suggestions skip cancelled declarations (#182); a KVGS-confirmed vehicle's note is locked (#183).
+
+#### Critical P0 batch — #137, #138, #152, #163, #173
+
+- The desktop returns from 🔴 to 🟢 by itself after the LAN comes back: polling always runs and
+  a disconnected SignalR hub is restarted (#137).
+- A failed database initialisation after a restore rolls back to the pre-restore copy (#138).
+- Access tokens refresh on 401; a rejected refresh token shows "Phiên đăng nhập đã hết hạn" once
+  and returns to login (#152).
+- The ledger no longer flashes "Không có dữ liệu" every 3 s while polling (#163).
+- After a restore the Windows Service restarts reliably instead of racing its own shutdown (#173).
 
 ### Security
 
@@ -1348,7 +1437,8 @@ seeded admin bootstrap, and FR-017 force-rotate-password.
   applied during their respective sprints (M2 + M5 + M7 in S1; M3 + M4 + M6 in
   S3..S5). None block this release.
 
-[Unreleased]: https://example.invalid/chima-clearance/compare/v1.3.0...HEAD
+[Unreleased]: https://example.invalid/chima-clearance/compare/v1.4.0...HEAD
+[1.4.0]: https://example.invalid/chima-clearance/compare/v1.3.0...v1.4.0
 [1.3.0]: https://example.invalid/chima-clearance/compare/v1.2.2...v1.3.0
 [1.2.2]: https://example.invalid/chima-clearance/compare/v1.2.1...v1.2.2
 [1.2.1]: https://example.invalid/chima-clearance/compare/v1.2.0...v1.2.1
