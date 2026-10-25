@@ -1,11 +1,13 @@
 # Triển khai offline (máy client không có internet)
 
 > Mục tiêu: cài đặt **đơn giản, minh bạch, offline** trên PC cửa khẩu **không có internet**.
-> Cơ chế: **xcopy** — một gói `.zip` self-contained + `install.ps1`. Không có framework cài
-> đặt, không có cơ chế auto-update (đã bỏ Velopack — xem [ADR-0007](adr/ADR-0007-evaluate-go-backend-port.md)).
+> Cơ chế: **xcopy** — một payload self-contained + `install.ps1`, phát hành dưới hai dạng cùng
+> nội dung: gói `.zip` (nhấp đúp `CaiDat.cmd`) và `setup.exe` có giao diện (Inno Setup, chỉ là
+> lớp vỏ gọi `install.ps1` — [ADR-0013](adr/ADR-0013-inno-setup-gui-installer.md)). Không có cơ
+> chế auto-update (đã bỏ Velopack — xem [ADR-0007](adr/ADR-0007-evaluate-go-backend-port.md)).
 >
 > Nguyên tắc: máy đích **không cần cài .NET runtime**; các thành phần OS còn thiếu
-> (WebView2, VC++) được mang theo qua USB.
+> (WebView2, VC++) có sẵn trong bộ cài.
 
 > 👉 **Người cài đặt tại cửa khẩu**: làm theo [`huong-dan-cai-dat.md`](huong-dan-cai-dat.md)
 > (từng bước cho máy cổng vào + cổng ra, checklist, xử lý lỗi). Tài liệu này giải thích phần
@@ -17,7 +19,7 @@
 | --- | --- |
 | **.NET 8 runtime** | ❌ Không — nhúng trong exe. `B2.Server.Service.exe` (~112 MB) và Desktop (`WindowsAppSDKSelfContained=true`) đã bao gồm runtime. |
 | **Windows App SDK runtime** | ❌ Không — nhúng khi `WindowsAppSDKSelfContained=true`. |
-| **WebView2 Runtime** | ✅ **Có** — MAUI/WinUI cần, KHÔNG nhúng. Mang bản *Standalone (offline)* qua USB. |
+| **WebView2 Runtime** | ✅ **Có** — MAUI/WinUI cần, KHÔNG nhúng. Đã đóng gói sẵn bản *Evergreen Standalone* x64 trong `prereqs/` (#214). |
 | **VC++ 2015–2022 x64 Redistributable** | ✅ **Có** — KHÔNG nhúng. Đã đóng gói sẵn `prereqs/vc_redist.x64.exe`. |
 | **SQLite** | ❌ Không — `e_sqlite3.dll` đi kèm; DB là 1 file `b2.db`. |
 | **Litestream** (backup) | ❌ Không — `litestream.exe` đi kèm; chạy trên đĩa nội bộ/LAN, không cần internet. |
@@ -28,9 +30,16 @@
 ## Payload (bản phát hành tạo ra gì)
 
 Mỗi tag `vX.Y.Z` kích hoạt `.github/workflows/release.yml` (runner Windows có internet) và
-tạo GitHub Release đính kèm **một file zip**: `B2Clearance-<version>-offline.zip`. Giải nén ra:
+tạo GitHub Release đính kèm **hai file cùng nội dung**:
+
+- `B2Clearance-<version>-setup.exe` — trình cài có giao diện: chọn vai trò máy (và với máy cổng
+  ra: IP máy cổng vào + `b2-server.cer`), giải nén payload vào `%TEMP%`, chạy `install.ps1` trong
+  cửa sổ console hiện rõ (để chép mã phục hồi + mật khẩu Admin), kiểm tra mã thoát. Không có
+  mục gỡ cài trong Windows — gỡ bằng `uninstall.ps1`.
+- `B2Clearance-<version>-offline.zip` — giải nén ra:
 
 ```
+CaiDat.cmd                    # nhấp đúp: tự xin quyền Administrator, chạy install.ps1
 install.ps1 / uninstall.ps1   # script vận hành (chạy quyền Administrator)
 B2Clearance.exe               # installer CLI (đăng ký service, sinh mã phục hồi)
 B2.Server.Service.exe         # Windows Service (self-contained)
@@ -38,31 +47,34 @@ Desktop/                      # app desktop (self-contained)
 Templates/                    # mẫu Sổ B2 (.xlsx)
 litestream.exe                # backup liên tục
 prereqs/
-  vc_redist.x64.exe           # đã tải sẵn (offline)
-  README-WebView2.txt         # nhắc bổ sung WebView2 standalone
+  vc_redist.x64.exe                              # đã tải sẵn (offline), kiểm chữ ký Microsoft
+  MicrosoftEdgeWebView2RuntimeInstallerX64.exe   # đã tải sẵn (offline), kiểm chữ ký Microsoft
+docs/                         # hướng dẫn cài, runbook, tài liệu này
 ```
 
-## Bước 1 — Chuẩn bị USB (trên MÁY CÓ internet, làm 1 lần)
+## Bước 1 — Chuẩn bị USB (làm 1 lần, không cần internet)
 
-1. Tải `B2Clearance-<version>-offline.zip` từ Release, **giải nén**.
-2. Tải **WebView2 Evergreen *Standalone* Installer (x64)** từ
-   <https://developer.microsoft.com/microsoft-edge/webview2/> → **Standalone Installer**, **x64**.
-   Đặt file (`MicrosoftEdgeWebView2RuntimeInstaller*.exe`) vào thư mục `prereqs\`.
-3. Chép toàn bộ thư mục đã giải nén vào USB.
-
-> Từ đây trở đi **không cần internet nữa**.
+Tải `setup.exe` (hoặc zip, rồi giải nén) từ Release và chép vào USB. Không còn bước bổ sung
+WebView2 bằng tay — CI đã tải và kiểm chữ ký.
 
 ## Bước 2 — Cài trên PC cửa khẩu (offline)
 
-1. Chép thư mục từ USB vào PC (ví dụ `C:\B2-Setup\`).
-2. Chuột phải `install.ps1` → **Run with PowerShell** (hoặc PowerShell Administrator):
+Nhấp đúp `setup.exe` hoặc `CaiDat.cmd` → **Yes** ở UAC → chọn vai trò máy. Tương đương bằng
+lệnh (PowerShell Administrator, trong thư mục gói zip):
 
-   ```powershell
-   Set-ExecutionPolicy -Scope Process Bypass -Force   # nếu bị chặn chạy script
-   .\install.ps1
-   ```
+```powershell
+Set-ExecutionPolicy -Scope Process Bypass -Force   # nếu bị chặn chạy script
+.\install.ps1                                      # cài mới: hỏi vai trò; nâng cấp: giữ vai trò
+.\install.ps1 -Role Server                         # máy cổng vào, không hỏi
+.\install.ps1 -ServerUrl 192.168.1.10              # máy cổng ra, không hỏi
+```
 
-`install.ps1` sẽ tự động: cài VC++ + WebView2 (im lặng) → chép chương trình vào
+Vai trò máy được suy ra theo thứ tự: `-Role` / `-ClientOnly` / `-ServerUrl` → bản cài đang có
+(dịch vụ `B2ClearanceService` → cổng vào; `Desktop\b2-client.json` → cổng ra) → menu (chỉ khi cài
+mới, không tham số). `-PauseAtEnd` giữ cửa sổ mở kể cả khi lỗi (`CaiDat.cmd`/`setup.exe` bật sẵn);
+lỗi in dòng `LOI: …` và thoát mã 1.
+
+Với máy cổng vào, `install.ps1` sẽ tự động: cài VC++ + WebView2 (im lặng) → chép chương trình vào
 `C:\Program Files\B2Clearance` → gọi `B2Clearance.exe install` (tạo thư mục dữ liệu, chứng
 chỉ TLS cho tên máy + IP LAN — xuất `C:\ProgramData\B2\b2-server.cer` cho máy cổng ra, ADR-0010
 —, đăng ký Windows Service tự khởi động, mở firewall TCP 5001 (HTTPS), **sinh + hiển
@@ -72,6 +84,8 @@ tạo shortcut desktop → khởi động dịch vụ.
 > 📋 **Ghi lại MÃ PHỤC HỒI** hiển thị trên màn hình (và file `B2-Recovery-Code.txt` trên
 > Desktop) vào phong bì dán kín — dùng để giải mã backup khi quên mật khẩu cài đặt (FR-026).
 > Xóa file nhắc sau khi đã lưu an toàn.
+
+> ⚠️ `setup.exe` chưa ký số: SmartScreen có thể cảnh báo lần chạy đầu (**More info → Run anyway**).
 
 ## Bước 3 — Kiểm tra sau cài
 
@@ -83,11 +97,13 @@ tạo shortcut desktop → khởi động dịch vụ.
 ## Máy cổng ra (client trên LAN)
 
 Nghiệp vụ có **2 máy**: máy **cổng vào** chạy service (vừa server vừa client) và máy **cổng ra**
-chỉ là client, nối qua LAN. Cài máy cổng ra bằng:
+chỉ là client, nối qua LAN. Cài máy cổng ra bằng `setup.exe` / `CaiDat.cmd` (chọn **Máy cổng
+ra**), hoặc:
 
 ```powershell
-# b2-server.cer chép bằng USB từ C:\ProgramData\B2\ của máy cổng vào
-.\install.ps1 -ClientOnly -ServerUrl 192.168.1.10 -ServerCertificate E:\b2-server.cer
+# b2-server.cer chép bằng USB từ C:\ProgramData\B2\ của máy cổng vào; để ở gốc USB hoặc cạnh
+# bộ cài thì tự tìm thấy, khỏi truyền -ServerCertificate.
+.\install.ps1 -ServerUrl 192.168.1.10 -ServerCertificate E:\b2-server.cer
 ```
 
 - `-ServerUrl` ghi `Desktop\b2-client.json` → `{"serverUrl": "192.168.1.10"}`. Nhận IP trần
@@ -96,8 +112,12 @@ chỉ là client, nối qua LAN. Cài máy cổng ra bằng:
 - `-ServerCertificate` nhập chứng chỉ **công khai** của máy cổng vào vào `LocalMachine\Root`
   (gỡ chứng chỉ B2 cũ nếu có) và in **Thumbprint** — đối chiếu với dòng `Thumbprint` hiện trên
   máy cổng vào lúc cài. Từ chối tệp có khóa bí mật (`server.pfx` không bao giờ rời máy cổng vào).
-- `-ClientOnly` bỏ qua đăng ký service, cấp chứng chỉ và mã phục hồi — máy cổng ra **không** có
-  database riêng. Bắt buộc đi kèm `-ServerUrl` và `-ServerCertificate`.
+- Không truyền `-ServerCertificate`: tìm `b2-server.cer` cạnh bộ cài, ở gốc ổ chứa bộ cài, rồi ở
+  gốc các ổ rời (USB). Không thấy mà `LocalMachine\Root` đã có chứng chỉ B2 (nâng cấp) → giữ
+  nguyên; không có gì → hỏi đường dẫn.
+- Vai trò cổng ra (`-Role Client`, ngụ ý bởi `-ServerUrl`; `-ClientOnly` giữ để tương thích) bỏ qua
+  đăng ký service, cấp chứng chỉ và mã phục hồi — máy cổng ra **không** có database riêng.
+  Nâng cấp không truyền `-ServerUrl` → dùng lại `serverUrl` trong `b2-client.json`.
 - Đổi địa chỉ sau khi cài: sửa trực tiếp `C:\Program Files\B2Clearance\Desktop\b2-client.json`
   rồi mở lại app. Không cần cài lại. (Lưu bằng Notepad kèm BOM vẫn đọc được.)
 - Biến môi trường `B2_SERVER_URL` ghi đè file — tiện khi cần thử nhanh một địa chỉ khác.
@@ -119,16 +139,17 @@ hoặc đổi tên máy, chạy trên máy cổng vào (Administrator):
 
 Lệnh chỉ cấp lại khi tên/IP hiện tại không còn nằm trong chứng chỉ (hoặc sắp hết hạn), rồi khởi
 động lại dịch vụ. Khi in "Đã cấp chứng chỉ TLS mới", chép `b2-server.cer` mới sang từng máy cổng
-ra và chạy lại `install.ps1 -ClientOnly -ServerUrl … -ServerCertificate …`.
+ra (gốc USB) và chạy lại bộ cài trên máy đó với IP mới (`.\install.ps1 -ServerUrl <IP mới>`).
 
 ## Cập nhật phiên bản (vẫn offline)
 
-Không có auto-update. Nâng cấp = chạy lại `install.ps1` từ gói zip mới (qua USB): script dừng
+Không có auto-update. Nâng cấp = chạy lại `setup.exe` / `CaiDat.cmd` / `install.ps1` (không tham
+số) của bản mới (qua USB) — vai trò máy và địa chỉ máy chủ được giữ nguyên. Script dừng
 dịch vụ, chép đè binaries, khởi động lại. Dữ liệu `C:\ProgramData\B2` (database, backup, keys,
 mã phục hồi) **được giữ nguyên** — `B2Clearance.exe install` bỏ qua các bước sinh secrets
 nếu đã tồn tại (idempotent). Chứng chỉ TLS chỉ được cấp lại khi chứng chỉ cũ không còn đúng tên
 máy / IP LAN — bản ≤ v1.3.0 chỉ có `localhost`, nên lần nâng cấp đầu lên HTTPS **luôn** cấp mới:
-sau đó cài lại máy cổng ra với `-ServerCertificate` như trên.
+sau đó nâng cấp máy cổng ra với `b2-server.cer` mới ở gốc USB.
 
 ## Gỡ cài
 
@@ -188,14 +209,12 @@ Cấu hình tối thiểu mỗi máy ảo: 2 vCPU, 4 GB RAM, 64 GB ổ đĩa. Wi
 
 ### Đưa gói cài vào máy ảo
 
-Chuẩn bị thư mục như § Bước 1 trên Mac (giải nén zip, thêm WebView2 Standalone **x64** vào
-`prereqs\`), rồi chép vào máy ảo bằng thư mục chia sẻ hoặc kéo-thả. **Chép vào `C:\B2-Setup\`
-trước khi chạy** — không chạy `install.ps1` trực tiếp từ đường dẫn mạng/chia sẻ
+Chuẩn bị như § Bước 1 trên Mac (`setup.exe`, hoặc giải nén zip), rồi chép vào máy ảo bằng thư mục chia sẻ hoặc kéo-thả. **Chép vào `C:\B2-Setup\`
+trước khi chạy** — không chạy `CaiDat.cmd` / `install.ps1` trực tiếp từ đường dẫn mạng/chia sẻ
 (`\\Mac\...`), vì robocopy và ExecutionPolicy xử lý đường dẫn UNC khác ổ cục bộ.
 
 Windows 11 đã có sẵn WebView2 Runtime, nên trên máy ảo Windows 11 bước cài WebView2 gần như
-không có tác dụng; PC cửa khẩu chạy Windows 10 thì có. Vẫn đặt file vào `prereqs\` để diễn tập
-đúng quy trình.
+không có tác dụng; PC cửa khẩu chạy Windows 10 thì có.
 
 ### Kịch bản diễn tập
 
@@ -204,12 +223,12 @@ mọi chỗ tài liệu thiếu hoặc sai.
 
 | # | Kịch bản | Kỳ vọng |
 | --- | --- | --- |
-| 1 | Máy cổng vào (snapshot `clean`): `.\install.ps1` | Hiện mã phục hồi, `HOAN TAT`; `Get-Service B2ClearanceService` → `Running` |
+| 1 | Máy cổng vào (snapshot `clean`): nhấp đúp `CaiDat.cmd` → chọn `1` | UAC hỏi quyền; hiện mã phục hồi, `HOAN TAT`; `Get-Service B2ClearanceService` → `Running` |
 | 2 | Đăng nhập `admin` lần đầu | Bị buộc đổi mật khẩu; sau đó 🟢 Online |
-| 3 | Máy cổng ra (snapshot `clean`): `.\install.ps1 -ClientOnly -ServerUrl <IP máy cổng vào> -ServerCertificate <b2-server.cer>` | `HOAN TAT (client-only)`; app 🟢 Online |
+| 3 | Máy cổng ra (snapshot `clean`): `setup.exe` → **Máy cổng ra**, IP máy cổng vào, `b2-server.cer` ở gốc USB tự điền | `HOAN TAT (may cong ra)`; app 🟢 Online |
 | 4 | Nhập 1 xe ở cổng vào | Xe hiện trên máy cổng ra trong vài giây |
 | 5 | Tắt service trên máy cổng vào | Máy cổng ra chuyển 🔴 Mất kết nối; bật lại → 🟢 |
-| 6 | Chạy lại `.\install.ps1` trên máy cổng vào (nâng cấp) | Không lỗi; dữ liệu ở bước 4 còn nguyên; mã phục hồi không đổi |
+| 6 | Chạy lại `setup.exe` trên máy cổng vào, rồi `CaiDat.cmd` trên máy cổng ra (nâng cấp) | Không hỏi vai trò; dữ liệu ở bước 4 còn nguyên; mã phục hồi không đổi; máy cổng ra giữ IP + chứng chỉ |
 | 7 | `.\uninstall.ps1` rồi `.\install.ps1` lại | Dữ liệu còn nguyên (không có `-PurgeData`) |
 | 8 | *(kiểm tra hồi quy)* Khôi phục `clean`, cài bằng gói **v1.2.0** | **Thất bại** ở bước đăng ký dịch vụ (`sc.exe`) — xác nhận máy ảo tái hiện được lỗi đã sửa ở v1.2.1 |
 

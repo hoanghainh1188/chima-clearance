@@ -6,7 +6,25 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ## [Unreleased]
 
-Nothing pending.
+### Changed
+
+- **deploy**: simpler installer (#214). The release now ships `B2Clearance-<ver>-setup.exe` — a
+  GUI wizard (Inno Setup, ADR-0013) that asks the gate role, and for the exit gate the server IP
+  and `b2-server.cer`, then runs `install.ps1` in a visible console — next to the offline `.zip`.
+- **deploy**: the `.zip` gains `CaiDat.cmd`: double-click, it elevates through UAC and runs
+  `install.ps1` with the execution policy bypassed, so no PowerShell typing is needed.
+- **deploy**: `install.ps1` infers what it can. On upgrade it keeps the existing role
+  (`B2ClearanceService` → entry gate; `Desktop\b2-client.json` → exit gate, saved `serverUrl`) with
+  no parameters; a fresh install with no parameters asks via a menu. New `-Role Server|Client`;
+  `-ServerUrl` implies the exit gate (`-ClientOnly` still accepted). `b2-server.cer` is found next
+  to the installer or at a USB root, and an exit-gate upgrade keeps an already-trusted B2
+  certificate. `-PauseAtEnd` keeps the window open, errors print a `LOI:` line and exit 1, and the
+  script now always exits 0 on success.
+- **release**: the WebView2 Evergreen Standalone x64 installer is downloaded into `prereqs\` and
+  its Microsoft Authenticode signature verified, like `vc_redist.x64.exe` — the manual "add
+  WebView2 to the USB" step and `README-WebView2.txt` are gone. Release notes list both assets.
+- **docs**: `huong-dan-cai-dat.md`, `deployment-offline.md` and `runbook.md` rewritten for the
+  double-click flow; the § 7 error table drops rows that can no longer happen.
 
 ## [1.4.0] — 2026-10-25 — HTTPS on the LAN; idle logout; streaming backup and archive; P0–P2 bug sweep
 

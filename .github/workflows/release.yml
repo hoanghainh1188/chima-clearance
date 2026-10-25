@@ -105,15 +105,17 @@ jobs:
       # -----------------------------------------------------------------------
       # Assemble the offline xcopy payload (no update framework — see ADR-0007):
       #   publish/pkg/
+      #     CaiDat.cmd                  ← double-click: elevate + run install.ps1 (#214)
       #     install.ps1 / uninstall.ps1 ← operator scripts (deploy/)
       #     B2Clearance.exe             ← standalone installer CLI (install|uninstall)
       #     B2.Server.Service.exe       ← Windows Service binary (self-contained)
       #     Desktop/                    ← Desktop app folder (self-contained)
       #     Templates/                  ← Sổ B2 Excel template
       #     litestream.exe              ← Continuous backup binary
-      #     prereqs/                    ← VC++ redist (+ WebView2 added on USB)
+      #     prereqs/                    ← VC++ redist + WebView2 standalone (offline)
       #     docs/                       ← install guide + runbook (operators are offline)
-      # Shipped as a single .zip: extract on USB, run install.ps1 elevated on the gate PC.
+      # Shipped twice: a .zip (extract on USB, double-click CaiDat.cmd) and a GUI setup.exe
+      # wrapping the same payload (Inno Setup, ADR-0013).
       # -----------------------------------------------------------------------
       - name: Download Litestream
         shell: bash
@@ -132,44 +134,31 @@ jobs:
           unzip -q litestream.zip -d litestream-bin
           cp litestream-bin/litestream.exe publish/installer/litestream.exe
 
-      # Offline OS prerequisites that self-contained MAUI still needs on the target.
-      # VC++ 2015–2022 x64 has a STABLE Microsoft link, so we bundle it. The WebView2
-      # Evergreen *Standalone* (offline) installer has no stable direct URL — it is added
-      # to the USB manually per docs/deployment-offline.md; we drop a placeholder note.
+      # Offline OS prerequisites that self-contained MAUI still needs on the target (#214):
+      #   - VC++ 2015–2022 x64 redistributable (stable aka.ms link, always the latest build).
+      #   - WebView2 Evergreen *Standalone* x64 — Microsoft's fwlink 2124701 serves the
+      #     current offline installer, so the operator no longer downloads it by hand.
+      # Both links move with every Microsoft release, so neither hash can be pinned; the
+      # next step verifies each Authenticode signature is valid and Microsoft's instead.
       - name: Bundle offline prerequisites
         shell: bash
         run: |
           mkdir -p publish/prereqs
           curl -fsSL "https://aka.ms/vs/17/release/vc_redist.x64.exe" -o publish/prereqs/vc_redist.x64.exe
-          # Operator note in Vietnamese. UTF-8 BOM so Notepad on older Windows 10 shows the
-          # diacritics correctly.
-          {
-            printf '\xEF\xBB\xBF'
-            cat <<'EOF'
-          Đặt bộ cài Microsoft Edge WebView2 Runtime vào thư mục này TRƯỚC khi chép sang máy
-          cửa khẩu (máy không có internet).
+          curl -fsSL "https://go.microsoft.com/fwlink/?linkid=2124701" \
+            -o publish/prereqs/MicrosoftEdgeWebView2RuntimeInstallerX64.exe
 
-          Tải trên máy có internet:
-            https://developer.microsoft.com/microsoft-edge/webview2/
-            -> Evergreen Standalone Installer -> x64
-          Tên file dạng: MicrosoftEdgeWebView2RuntimeInstallerX64.exe
-
-          install.ps1 tự cài vc_redist.x64.exe rồi đến WebView2.
-          Xem hướng dẫn đầy đủ: docs\huong-dan-cai-dat.md (ở thư mục gốc gói cài).
-          EOF
-          } > publish/prereqs/README-WebView2.txt
-
-      # vc_redist comes from a moving aka.ms link (always the latest build), so a hash
-      # cannot be pinned — verify the Authenticode signature is valid and Microsoft's instead.
-      - name: Verify VC++ redist signature
+      - name: Verify prerequisite signatures
         shell: pwsh
         run: |
-          $sig = Get-AuthenticodeSignature -FilePath 'publish/prereqs/vc_redist.x64.exe'
-          if ($sig.Status -ne 'Valid') { throw "vc_redist.x64.exe signature status: $($sig.Status)" }
-          if ($sig.SignerCertificate.Subject -notmatch 'O=Microsoft Corporation') {
-            throw "vc_redist.x64.exe signed by unexpected subject: $($sig.SignerCertificate.Subject)"
+          foreach ($file in 'vc_redist.x64.exe', 'MicrosoftEdgeWebView2RuntimeInstallerX64.exe') {
+            $sig = Get-AuthenticodeSignature -FilePath "publish/prereqs/$file"
+            if ($sig.Status -ne 'Valid') { throw "$file signature status: $($sig.Status)" }
+            if ($sig.SignerCertificate.Subject -notmatch 'O=Microsoft Corporation') {
+              throw "$file signed by unexpected subject: $($sig.SignerCertificate.Subject)"
+            }
+            Write-Host "$file signed by: $($sig.SignerCertificate.Subject)"
           }
-          Write-Host "vc_redist.x64.exe signed by: $($sig.SignerCertificate.Subject)"
 
       - name: Assemble package dir
         shell: bash
@@ -182,11 +171,11 @@ jobs:
           # Desktop (self-contained) into a subdirectory so it doesn't clash with service files
           mkdir -p publish/pkg/Desktop
           cp -r publish/desktop/. publish/pkg/Desktop/
-          # Offline prerequisites (VC++ redist + WebView2 placeholder)
+          # Offline prerequisites (VC++ redist + WebView2 standalone)
           mkdir -p publish/pkg/prereqs
           cp -r publish/prereqs/. publish/pkg/prereqs/
-          # Operator scripts at payload root
-          cp deploy/install.ps1 deploy/uninstall.ps1 publish/pkg/
+          # Operator scripts at payload root (CaiDat.cmd = double-click entry point, #214)
+          cp deploy/install.ps1 deploy/uninstall.ps1 deploy/CaiDat.cmd publish/pkg/
           # Operator docs — gate PCs are offline, so the guide must travel inside the zip.
           # Same relative layout as the repo so links between the docs keep working;
           # install.ps1 copies docs\ into Program Files too, leaving the runbook on the PC.
@@ -205,29 +194,48 @@ jobs:
           ( cd publish/pkg && 7z a -tzip "../../${ZIP}" ./* >/dev/null )
           ls -lh Releases/
 
+      # GUI installer (#214, ADR-0013): a thin Inno Setup wizard over the same payload — it asks
+      # the gate role (+ exit-gate server IP and b2-server.cer), extracts to %TEMP% and runs
+      # install.ps1 in a visible console. Inno Setup is a build-time tool only; nothing of it
+      # runs on the gate PC beyond the generated setup.exe.
+      - name: Build setup.exe (Inno Setup)
+        shell: pwsh
+        run: |
+          $iscc = Join-Path ${env:ProgramFiles(x86)} 'Inno Setup 6\ISCC.exe'
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup --no-progress -y
+            if ($LASTEXITCODE -ne 0) { throw "choco install innosetup failed ($LASTEXITCODE)" }
+          }
+          & $iscc "/DAppVersion=$env:VERSION" "/DPayloadDir=$PWD\publish\pkg" "/DOutputDir=$PWD\Releases" 'deploy\setup.iss'
+          if ($LASTEXITCODE -ne 0) { throw "ISCC failed ($LASTEXITCODE)" }
+          Get-ChildItem Releases | Format-Table Name, Length
+
       - name: Create GitHub Release
         shell: bash
         run: |
           cat > release-notes.md <<'EOF'
           ## Cài đặt offline
 
-          1. Giải nén `B2Clearance-<phiên bản>-offline.zip`, bổ sung WebView2 Standalone x64 vào
-             `prereqs\` (xem `prereqs\README-WebView2.txt`), chép sang USB.
-          2. Mở **`docs\huong-dan-cai-dat.md`** trong gói cài và làm theo từng bước.
-          3. PowerShell **Run as administrator**, trong thư mục gói cài:
+          Hai cách, cùng một bộ cài bên trong — chọn một:
 
-          | Máy | Lệnh |
-          | --- | --- |
-          | Cổng vào (máy chủ) — cài trước | `.\install.ps1` |
-          | Cổng ra (chỉ ứng dụng) | `.\install.ps1 -ClientOnly -ServerUrl <IP máy cổng vào>` |
+          - **`B2Clearance-<phiên bản>-setup.exe`** — chép sang USB, nhấp đúp trên PC cửa khẩu, chọn
+            vai trò máy, bấm Tiếp.
+          - **`B2Clearance-<phiên bản>-offline.zip`** — giải nén, chép thư mục sang USB, nhấp đúp
+            **`CaiDat.cmd`**.
 
-          Nâng cấp: chạy lại đúng lệnh đã dùng khi cài; dữ liệu và mã phục hồi được giữ nguyên.
+          WebView2 và VC++ đã có sẵn trong gói — không cần tải thêm. Cài **máy cổng vào trước**; với
+          máy cổng ra, chép `C:\ProgramData\B2\b2-server.cer` của máy cổng vào vào gốc USB, bộ cài tự
+          tìm thấy. Hướng dẫn từng bước: `docs\huong-dan-cai-dat.md` trong gói zip.
+
+          Nâng cấp: chạy lại `setup.exe` hoặc `CaiDat.cmd` của bản mới — vai trò máy, địa chỉ máy chủ,
+          dữ liệu và mã phục hồi được giữ nguyên.
           Thay đổi chi tiết: `CHANGELOG.md`.
           EOF
           gh release create "${GITHUB_REF_NAME}" \
             --title "B2 Clearance ${GITHUB_REF_NAME}" \
             --notes-file release-notes.md \
-            "Releases/B2Clearance-${VERSION}-offline.zip"
+            "Releases/B2Clearance-${VERSION}-offline.zip" \
+            "Releases/B2Clearance-${VERSION}-setup.exe"
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
