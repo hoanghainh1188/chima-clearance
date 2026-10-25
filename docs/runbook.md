@@ -212,8 +212,8 @@ ghi tờ khai mới.
   đặt IP tĩnh cho máy cổng vào để khỏi lặp lại. **Máy cổng vào đã đổi IP**: chứng chỉ chỉ ghi IP
   cũ — trên máy cổng vào chạy (Administrator)
   `& "C:\Program Files\B2Clearance\B2Clearance.exe" renew-certificate`, chép
-  `C:\ProgramData\B2\b2-server.cer` mới sang máy cổng ra và chạy
-  `.\install.ps1 -ClientOnly -ServerUrl <IP mới> -ServerCertificate <tệp .cer>`.
+  `C:\ProgramData\B2\b2-server.cer` mới vào gốc USB, rồi trên máy cổng ra chạy lại bộ cài
+  (`setup.exe` / `CaiDat.cmd`) và nhập IP mới — hoặc `.\install.ps1 -ServerUrl <IP mới>`.
 - Nếu lỗi chứng chỉ (bước 5): chép lại `b2-server.cer` từ máy cổng vào và cài lại máy cổng ra
   như trên; đối chiếu Thumbprint script in ra với Thumbprint lúc cài máy cổng vào.
 - Nếu vấn đề mạng: liên hệ IT.

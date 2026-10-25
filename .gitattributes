@@ -27,6 +27,12 @@
 # Keep these files UTF-8 **with** BOM (opposite of the .cs rule in CLAUDE.md) and CRLF.
 *.ps1 text eol=crlf
 
+# cmd.exe mis-parses labels/blocks in LF batch files; deploy/CaiDat.cmd stays ASCII + CRLF.
+*.cmd text eol=crlf
+
+# Inno Setup reads .iss as UTF-8 only with a BOM (Vietnamese wizard text); CRLF like the .ps1.
+*.iss text eol=crlf
+
 # Binary
 *.xlsx binary
 *.png binary
