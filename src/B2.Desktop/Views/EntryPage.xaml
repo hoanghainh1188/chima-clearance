@@ -24,100 +24,129 @@
            TextColor="{StaticResource ColorError}"
            IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
     <ScrollView Grid.Row="2">
-      <VerticalStackLayout Spacing="{StaticResource SpacingM}">
+      <!-- #198: capped width, two section cards (wireframe § 6.3) instead of inputs stretched
+           across the whole window. -->
+      <VerticalStackLayout Spacing="{StaticResource SpacingM}"
+                           MaximumWidthRequest="{StaticResource LayoutFormMaxWidth}"
+                           HorizontalOptions="Fill">
         <ActivityIndicator IsRunning="{Binding IsLoading}"
                            IsVisible="{Binding IsLoading}"
                            HorizontalOptions="Center" />
-        <VerticalStackLayout Spacing="{StaticResource SpacingS}"
-                               IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
-          <Label Text="{x:Static s:AppResources.Entry_Section_Declaration}"
-                 FontAttributes="Bold"
-                 TextColor="{StaticResource ColorPrimary}" />
-          <VerticalStackLayout Spacing="{StaticResource SpacingS}"
-                               IsEnabled="{Binding IsAddChildMode, Converter={StaticResource InvertedBoolConverter}}">
-            <Label Text="{x:Static s:AppResources.Entry_DeclarationNumberLabel}" />
-            <!-- Cột C: one cell, one number per line — the legacy sheet used Alt+Enter. An Editor
-                 (not an Entry) so a second tờ khai can be typed on the next line. -->
-            <Editor Text="{Binding DeclarationNumber}"
-                    AutoSize="TextChanges"
-                    MinimumHeightRequest="72"
-                    Placeholder="{x:Static s:AppResources.Entry_DeclarationNumberPlaceholder}"
-                    SemanticProperties.Hint="{x:Static s:AppResources.Entry_DeclarationNumberLabel}" />
-            <Label Text="{x:Static s:AppResources.Entry_ProcessorLabel}" />
-            <Picker ItemsSource="{Binding Processors}"
-                    SelectedItem="{Binding SelectedProcessor}"
-                    SemanticProperties.Hint="{x:Static s:AppResources.Entry_ProcessorLabel}">
-              <Picker.ItemDisplayBinding>
-                <Binding Path="FullName" />
-              </Picker.ItemDisplayBinding>
-            </Picker>
-            <Label Text="{x:Static s:AppResources.Entry_CompanyLabel}" />
-            <Entry Text="{Binding CompanyName}"
-                   MaxLength="200"
-                   Placeholder="{x:Static s:AppResources.Entry_CompanyPlaceholder}"
-                   SemanticProperties.Hint="{x:Static s:AppResources.Entry_CompanyLabel}" />
-            <Label Text="{x:Static s:AppResources.Entry_GoodsLabel}" />
-            <Entry Text="{Binding GoodsName}"
-                   MaxLength="200"
-                   Placeholder="{x:Static s:AppResources.Entry_GoodsPlaceholder}"
-                   SemanticProperties.Hint="{x:Static s:AppResources.Entry_GoodsLabel}" />
-            <Label Text="{x:Static s:AppResources.Entry_YardLabel}" />
-            <Picker ItemsSource="{Binding Yards}"
-                    SelectedItem="{Binding SelectedYard}"
-                    SemanticProperties.Hint="{x:Static s:AppResources.Entry_YardLabel}">
-              <Picker.ItemDisplayBinding>
-                <Binding Path="Name" />
-              </Picker.ItemDisplayBinding>
-            </Picker>
-          </VerticalStackLayout>
-          <Label Text="{x:Static s:AppResources.Entry_Section_Vehicle}"
-                 FontAttributes="Bold"
-                 TextColor="{StaticResource ColorPrimary}" />
-          <Label Text="{x:Static s:AppResources.Entry_PlateLabel}" />
-          <Entry Text="{Binding PlateNumber}"
-                 MaxLength="12"
-                 Placeholder="{x:Static s:AppResources.Entry_PlatePlaceholder}"
-                 SemanticProperties.Hint="{x:Static s:AppResources.Entry_PlateLabel}" />
-          <!-- F-17: ghost-text suggestion zone (hidden when no suggestions available) -->
-          <Border Padding="{StaticResource SpacingS}"
-                  BackgroundColor="{StaticResource ColorLedgerDailyHeaderBg}"
-                  IsVisible="{Binding HasSuggestions}"
-                  SemanticProperties.Description="{x:Static s:AppResources.Entry_Suggest_Hint}">
-            <VerticalStackLayout Spacing="2">
-              <Label Text="{x:Static s:AppResources.Entry_Suggest_Hint}"
-                     FontSize="Small"
-                     TextColor="{StaticResource ColorOnSurfaceMuted}" />
-              <Label Text="{Binding SuggestedTrailer}"
-                     FontAttributes="Italic"
-                     TextColor="{StaticResource ColorOnSurfaceMuted}"
-                     IsVisible="{Binding SuggestedTrailer, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
-              <Label Text="{Binding SuggestedCompany}"
-                     FontAttributes="Italic"
-                     TextColor="{StaticResource ColorOnSurfaceMuted}"
-                     IsVisible="{Binding SuggestedCompany, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
-              <Label Text="{Binding SuggestedGoods}"
-                     FontAttributes="Italic"
-                     TextColor="{StaticResource ColorOnSurfaceMuted}"
-                     IsVisible="{Binding SuggestedGoods, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
-              <Button Text="{x:Static s:AppResources.Entry_Suggest_Accept}"
-                      Command="{Binding AcceptSuggestionCommand}"
-                      FontSize="Small"
-                      HeightRequest="32"
-                      SemanticProperties.Hint="{x:Static s:AppResources.Entry_Suggest_Accept}" />
+        <VerticalStackLayout Spacing="{StaticResource SpacingM}"
+                             IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
+          <Border Padding="{StaticResource SpacingM}"
+                  BackgroundColor="{StaticResource ColorSurfaceVariant}"
+                  Stroke="{StaticResource ColorBorder}">
+            <VerticalStackLayout Spacing="{StaticResource SpacingS}">
+              <Label Text="{x:Static s:AppResources.Entry_Section_Declaration}"
+                     FontAttributes="Bold"
+                     TextColor="{StaticResource ColorPrimary}" />
+              <VerticalStackLayout Spacing="{StaticResource SpacingS}"
+                                   IsEnabled="{Binding IsAddChildMode, Converter={StaticResource InvertedBoolConverter}}">
+                <Label Text="{x:Static s:AppResources.Entry_DeclarationNumberLabel}" />
+                <!-- Cột C: one cell, one number per line — the legacy sheet used Alt+Enter. An Editor
+                     (not an Entry) so a second tờ khai can be typed on the next line. -->
+                <Editor x:Name="DeclarationEditor"
+                        Text="{Binding DeclarationNumber}"
+                        AutoSize="TextChanges"
+                        MinimumHeightRequest="{StaticResource SizeBigInputHeight}"
+                        Placeholder="{x:Static s:AppResources.Entry_DeclarationNumberPlaceholder}"
+                        SemanticProperties.Hint="{x:Static s:AppResources.Entry_DeclarationNumberLabel}" />
+                <Label Text="{x:Static s:AppResources.Entry_ProcessorLabel}" />
+                <Picker ItemsSource="{Binding Processors}"
+                        SelectedItem="{Binding SelectedProcessor}"
+                        SemanticProperties.Hint="{x:Static s:AppResources.Entry_ProcessorLabel}">
+                  <Picker.ItemDisplayBinding>
+                    <Binding Path="FullName" />
+                  </Picker.ItemDisplayBinding>
+                </Picker>
+                <Label Text="{x:Static s:AppResources.Entry_CompanyLabel}" />
+                <Entry Text="{Binding CompanyName}"
+                       MaxLength="200"
+                       Placeholder="{x:Static s:AppResources.Entry_CompanyPlaceholder}"
+                       SemanticProperties.Hint="{x:Static s:AppResources.Entry_CompanyLabel}" />
+                <Label Text="{x:Static s:AppResources.Entry_GoodsLabel}" />
+                <Entry Text="{Binding GoodsName}"
+                       MaxLength="200"
+                       Placeholder="{x:Static s:AppResources.Entry_GoodsPlaceholder}"
+                       SemanticProperties.Hint="{x:Static s:AppResources.Entry_GoodsLabel}" />
+                <Label Text="{x:Static s:AppResources.Entry_YardLabel}" />
+                <Picker ItemsSource="{Binding Yards}"
+                        SelectedItem="{Binding SelectedYard}"
+                        SemanticProperties.Hint="{x:Static s:AppResources.Entry_YardLabel}">
+                  <Picker.ItemDisplayBinding>
+                    <Binding Path="Name" />
+                  </Picker.ItemDisplayBinding>
+                </Picker>
+              </VerticalStackLayout>
             </VerticalStackLayout>
           </Border>
-          <Label Text="{x:Static s:AppResources.Entry_TrailerLabel}" />
-          <Entry Text="{Binding TrailerOrContainerNumber}"
-                 MaxLength="20"
-                 Placeholder="{x:Static s:AppResources.Entry_TrailerPlaceholder}"
-                 SemanticProperties.Hint="{x:Static s:AppResources.Entry_TrailerLabel}" />
-          <Label Text="{x:Static s:AppResources.Entry_NoteLabel}" />
-          <Editor Text="{Binding VehicleNote}"
-                  AutoSize="TextChanges"
-                  MaxLength="500"
-                  Placeholder="{x:Static s:AppResources.Entry_NotePlaceholder}"
-                  SemanticProperties.Hint="{x:Static s:AppResources.Entry_NoteLabel}" />
-          <HorizontalStackLayout Spacing="{StaticResource SpacingS}">
+          <Border Padding="{StaticResource SpacingM}"
+                  BackgroundColor="{StaticResource ColorSurfaceVariant}"
+                  Stroke="{StaticResource ColorBorder}">
+            <VerticalStackLayout Spacing="{StaticResource SpacingS}">
+              <Label Text="{x:Static s:AppResources.Entry_Section_Vehicle}"
+                     FontAttributes="Bold"
+                     TextColor="{StaticResource ColorPrimary}" />
+              <Label Text="{x:Static s:AppResources.Entry_PlateLabel}" />
+              <Entry x:Name="PlateEntry"
+                     Text="{Binding PlateNumber}"
+                     MaxLength="12"
+                     Placeholder="{x:Static s:AppResources.Entry_PlatePlaceholder}"
+                     SemanticProperties.Hint="{x:Static s:AppResources.Entry_PlateLabel}" />
+              <Label Text="{x:Static s:AppResources.Entry_TrailerLabel}" />
+              <!-- F-17: the suggestion sits beside the mooc/cont field it fills (wireframe § 6.3),
+                   not as a separate block between the plate and trailer rows (#198). -->
+              <Grid ColumnDefinitions="*,*" ColumnSpacing="{StaticResource SpacingM}">
+                <Entry Grid.Column="0"
+                       Text="{Binding TrailerOrContainerNumber}"
+                       MaxLength="20"
+                       VerticalOptions="Start"
+                       Placeholder="{x:Static s:AppResources.Entry_TrailerPlaceholder}"
+                       SemanticProperties.Hint="{x:Static s:AppResources.Entry_TrailerLabel}" />
+                <Border Grid.Column="1"
+                        Padding="{StaticResource SpacingS}"
+                        BackgroundColor="{StaticResource ColorSurface}"
+                        Stroke="{StaticResource ColorBorder}"
+                        IsVisible="{Binding HasSuggestions}"
+                        SemanticProperties.Description="{x:Static s:AppResources.Entry_Suggest_Hint}">
+                  <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource SpacingS}">
+                    <VerticalStackLayout Grid.Column="0" Spacing="{StaticResource SpacingXS}">
+                      <Label Text="{x:Static s:AppResources.Entry_Suggest_Hint}"
+                             FontSize="{StaticResource FontSizeXS}"
+                             TextColor="{StaticResource ColorOnSurfaceMuted}" />
+                      <Label Text="{Binding SuggestedTrailer}"
+                             FontAttributes="Italic"
+                             TextColor="{StaticResource ColorOnSurfaceMuted}"
+                             IsVisible="{Binding SuggestedTrailer, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+                      <Label Text="{Binding SuggestedCompany}"
+                             FontAttributes="Italic"
+                             TextColor="{StaticResource ColorOnSurfaceMuted}"
+                             IsVisible="{Binding SuggestedCompany, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+                      <Label Text="{Binding SuggestedGoods}"
+                             FontAttributes="Italic"
+                             TextColor="{StaticResource ColorOnSurfaceMuted}"
+                             IsVisible="{Binding SuggestedGoods, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+                    </VerticalStackLayout>
+                    <Button Grid.Column="1"
+                            Text="{x:Static s:AppResources.Entry_Suggest_Accept}"
+                            Command="{Binding AcceptSuggestionCommand}"
+                            FontSize="{StaticResource FontSizeS}"
+                            VerticalOptions="Center"
+                            MinimumHeightRequest="{StaticResource SizeTouchMin}"
+                            SemanticProperties.Hint="{x:Static s:AppResources.Entry_Suggest_Accept}" />
+                  </Grid>
+                </Border>
+              </Grid>
+              <Label Text="{x:Static s:AppResources.Entry_NoteLabel}" />
+              <Editor Text="{Binding VehicleNote}"
+                      AutoSize="TextChanges"
+                      MaxLength="500"
+                      Placeholder="{x:Static s:AppResources.Entry_NotePlaceholder}"
+                      SemanticProperties.Hint="{x:Static s:AppResources.Entry_NoteLabel}" />
+            </VerticalStackLayout>
+          </Border>
+          <HorizontalStackLayout Spacing="{StaticResource SpacingS}" HorizontalOptions="End">
             <Button Text="{x:Static s:AppResources.Entry_Cancel}"
                     Command="{Binding CancelCommand}"
                     SemanticProperties.Hint="{x:Static s:AppResources.Entry_Cancel}" />
@@ -127,7 +156,7 @@
             <Button Text="{x:Static s:AppResources.Entry_Save}"
                     Command="{Binding SaveCommand}"
                     BackgroundColor="{StaticResource ColorPrimary}"
-                    TextColor="White"
+                    TextColor="{StaticResource ColorPrimaryOnDark}"
                     SemanticProperties.Hint="{x:Static s:AppResources.Entry_Save}" />
           </HorizontalStackLayout>
         </VerticalStackLayout>

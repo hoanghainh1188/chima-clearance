@@ -11,8 +11,8 @@ namespace B2.Desktop;
 
 /// <summary>
 /// Post-login shell. ContentPage + Grid layout per wireframe § 5: top bar
-/// (title + tri-state badge + user menu), vertical sidebar (220 px) on the
-/// left, content host on the right, status bar across the bottom.
+/// (title + tri-state badge + user menu), vertical sidebar (220 px, or a 56 px
+/// icon-only rail when collapsed) on the left, content host on the right, status bar across the bottom.
 ///
 /// Identity and role come from <see cref="ISessionContext"/>; the
 /// connectivity badge tracks <see cref="ConnectivityService.Mode"/>; the
@@ -55,6 +55,9 @@ public sealed class MainShellPage : ContentPage, IToastPresenter
     private readonly Border _connectivityBadge;
     private readonly Label _connectivityLabel;
     private TabEntry? _active;
+    private readonly ColumnDefinition _sidebarColumn = new() { Width = new GridLength(ResourceDouble("LayoutSidebarExpanded")) };
+    private Button? _sidebarToggle;
+    private bool _sidebarCollapsed;
 
     public MainShellPage(IServiceProvider services)
     {
@@ -98,7 +101,7 @@ public sealed class MainShellPage : ContentPage, IToastPresenter
             },
             ColumnDefinitions =
             {
-                new ColumnDefinition { Width = new GridLength(220) },
+                _sidebarColumn,
                 new ColumnDefinition { Width = GridLength.Star },
             },
         };
@@ -358,6 +361,7 @@ public sealed class MainShellPage : ContentPage, IToastPresenter
             BackgroundColor = (Color)Application.Current!.Resources["ColorSidebarBg"],
             RowDefinitions =
             {
+                new RowDefinition { Height = GridLength.Star },
                 new RowDefinition { Height = GridLength.Auto },
             },
             Padding = new Thickness(0, 8),
@@ -426,8 +430,64 @@ public sealed class MainShellPage : ContentPage, IToastPresenter
         }
 
         container.Children.Add(stack);
+
+        // Wireframe § 5: "Collapse toggle at bottom" — 220 px ↔ 56 px icon-only rail, so a
+        // 1366 px laptop gives the Sổ B2 grid more room (#200).
+        _sidebarToggle = new Button
+        {
+            BackgroundColor = Colors.Transparent,
+            TextColor = (Color)Application.Current!.Resources["ColorPrimary"],
+            MinimumHeightRequest = ResourceDouble("SizeTouchMin"),
+            HorizontalOptions = LayoutOptions.Fill,
+        };
+        _sidebarToggle.Clicked += (_, _) => SetSidebarCollapsed(!_sidebarCollapsed);
+        Grid.SetRow(_sidebarToggle, 1);
+        container.Children.Add(_sidebarToggle);
+        SetSidebarCollapsed(false);
+
         return container;
     }
+
+    private void SetSidebarCollapsed(bool collapsed)
+    {
+        _sidebarCollapsed = collapsed;
+        _sidebarColumn.Width = new GridLength(
+            ResourceDouble(collapsed ? "LayoutSidebarCollapsed" : "LayoutSidebarExpanded"));
+
+        foreach (var entry in _tabs)
+        {
+            entry.TitleLabel.Text = collapsed ? IconOf(entry.Label) : entry.Label;
+            entry.TitleLabel.HorizontalTextAlignment = collapsed ? TextAlignment.Center : TextAlignment.Start;
+            entry.TitleLabel.Padding = collapsed ? Thickness.Zero : new Thickness(12, 0, 12, 0);
+            // Icon-only: the full label stays reachable as a tooltip and for screen readers.
+            // SetText's value is non-nullable, so the expanded state clears the property instead.
+            if (collapsed)
+            {
+                ToolTipProperties.SetText(entry.Container, entry.Label);
+            }
+            else
+            {
+                entry.Container.ClearValue(ToolTipProperties.TextProperty);
+            }
+        }
+
+        if (_sidebarToggle is not null)
+        {
+            _sidebarToggle.Text = collapsed ? AppResources.Sidebar_Expand : AppResources.Sidebar_Collapse;
+            SemanticProperties.SetHint(
+                _sidebarToggle,
+                collapsed ? AppResources.Sidebar_Expand_Hint : AppResources.Sidebar_Collapse_Hint);
+        }
+    }
+
+    /// <summary>The leading emoji of a sidebar label ("📋 Sổ B2" → "📋"), shown on the rail.</summary>
+    private static string IconOf(string label)
+    {
+        var space = label.IndexOf(' ', StringComparison.Ordinal);
+        return space > 0 ? label[..space] : label;
+    }
+
+    private static double ResourceDouble(string key) => (double)Application.Current!.Resources[key];
 
     private void AddSidebarItem(VerticalStackLayout host, string label, ContentView view)
     {
@@ -457,10 +517,11 @@ public sealed class MainShellPage : ContentPage, IToastPresenter
             Padding = new Thickness(12, 0, 12, 0),
             TextColor = (Color)Application.Current.Resources["ColorOnSurface"],
         };
+        SemanticProperties.SetDescription(titleLabel, label);
         Grid.SetColumn(titleLabel, 1);
         item.Children.Add(titleLabel);
 
-        var entry = new TabEntry(item, leftBar, titleLabel, view);
+        var entry = new TabEntry(item, leftBar, titleLabel, view, label);
         var tap = new TapGestureRecognizer();
         tap.Tapped += (_, _) => ActivateTab(entry);
         item.GestureRecognizers.Add(tap);
@@ -854,5 +915,5 @@ public sealed class MainShellPage : ContentPage, IToastPresenter
         }
     }
 
-    private sealed record TabEntry(Grid Container, BoxView LeftBar, Label TitleLabel, ContentView View);
+    private sealed record TabEntry(Grid Container, BoxView LeftBar, Label TitleLabel, ContentView View, string Label);
 }

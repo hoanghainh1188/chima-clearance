@@ -343,9 +343,6 @@ Ghi lại và giao cho người dùng. Người dùng phải đổi mật khẩu
   <data name="Ledger_PageSummary_Format" xml:space="preserve">
     <value>Trang {0}/{1}</value>
   </data>
-  <data name="Ledger_PlateTrailer_Format" xml:space="preserve">
-    <value>{0} / {1}</value>
-  </data>
   <data name="Ledger_PageTitle" xml:space="preserve">
     <value>Sổ B2</value>
   </data>
@@ -487,8 +484,11 @@ Ghi lại và giao cho người dùng. Người dùng phải đổi mật khẩu
   <data name="Ledger_Col_Processor" xml:space="preserve">
     <value>Người làm</value>
   </data>
-  <data name="Ledger_Col_Vehicle" xml:space="preserve">
-    <value>Biển số / Mooc</value>
+  <data name="Ledger_Col_Plate" xml:space="preserve">
+    <value>Biển số</value>
+  </data>
+  <data name="Ledger_Col_Trailer" xml:space="preserve">
+    <value>Mooc/Cont</value>
   </data>
   <data name="Ledger_Col_Yard" xml:space="preserve">
     <value>Bãi</value>
@@ -804,6 +804,18 @@ Ghi lại và giao cho người dùng. Người dùng phải đổi mật khẩu
   </data>
   <data name="Sidebar_Item_Users" xml:space="preserve">
     <value>👥 Người dùng</value>
+  </data>
+  <data name="Sidebar_Collapse" xml:space="preserve">
+    <value>« Thu gọn</value>
+  </data>
+  <data name="Sidebar_Collapse_Hint" xml:space="preserve">
+    <value>Thu gọn thanh bên, chỉ hiện biểu tượng</value>
+  </data>
+  <data name="Sidebar_Expand" xml:space="preserve">
+    <value>»</value>
+  </data>
+  <data name="Sidebar_Expand_Hint" xml:space="preserve">
+    <value>Mở rộng thanh bên</value>
   </data>
   <data name="Connectivity_Detail_Title" xml:space="preserve">
     <value>Trạng thái kết nối</value>
@@ -1225,6 +1237,12 @@ Alt+1 … Alt+8 — Chuyển nhanh giữa các tab
   </data>
   <data name="Reports_Export_SaveFailed_Format" xml:space="preserve">
     <value>Không lưu được file Excel vào {0}. Thư mục có thể bị chặn ghi (phần mềm diệt virus, quyền người dùng) hoặc file đang mở — đóng file hoặc nhờ quản trị cấp quyền rồi thử lại.</value>
+  </data>
+  <data name="Reports_Sort_Ascending" xml:space="preserve">
+    <value>▲</value>
+  </data>
+  <data name="Reports_Sort_Descending" xml:space="preserve">
+    <value>▼</value>
   </data>
   <data name="Login_SessionExpired_Title" xml:space="preserve">
     <value>Phiên đăng nhập đã hết hạn</value>

@@ -237,7 +237,6 @@ public static class AppResources
     public static string Ledger_NextPage => ResourceManager.GetString(nameof(Ledger_NextPage), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_PageSummary_Format => ResourceManager.GetString(nameof(Ledger_PageSummary_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_PageTitle => ResourceManager.GetString(nameof(Ledger_PageTitle), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
-    public static string Ledger_PlateTrailer_Format => ResourceManager.GetString(nameof(Ledger_PlateTrailer_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_PrevPage => ResourceManager.GetString(nameof(Ledger_PrevPage), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_ResetFilters => ResourceManager.GetString(nameof(Ledger_ResetFilters), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_Search_Button => ResourceManager.GetString(nameof(Ledger_Search_Button), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
@@ -247,7 +246,8 @@ public static class AppResources
     public static string Ledger_Col_Declaration => ResourceManager.GetString(nameof(Ledger_Col_Declaration), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_Col_Company => ResourceManager.GetString(nameof(Ledger_Col_Company), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_Col_Processor => ResourceManager.GetString(nameof(Ledger_Col_Processor), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
-    public static string Ledger_Col_Vehicle => ResourceManager.GetString(nameof(Ledger_Col_Vehicle), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Ledger_Col_Plate => ResourceManager.GetString(nameof(Ledger_Col_Plate), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Ledger_Col_Trailer => ResourceManager.GetString(nameof(Ledger_Col_Trailer), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_Col_Yard => ResourceManager.GetString(nameof(Ledger_Col_Yard), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_Col_Time => ResourceManager.GetString(nameof(Ledger_Col_Time), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Ledger_Status_AllExited => ResourceManager.GetString(nameof(Ledger_Status_AllExited), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
@@ -306,6 +306,10 @@ public static class AppResources
     public static string Sidebar_Item_Ledger => ResourceManager.GetString(nameof(Sidebar_Item_Ledger), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Sidebar_Item_MasterData => ResourceManager.GetString(nameof(Sidebar_Item_MasterData), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Sidebar_Item_Users => ResourceManager.GetString(nameof(Sidebar_Item_Users), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Sidebar_Collapse => ResourceManager.GetString(nameof(Sidebar_Collapse), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Sidebar_Collapse_Hint => ResourceManager.GetString(nameof(Sidebar_Collapse_Hint), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Sidebar_Expand => ResourceManager.GetString(nameof(Sidebar_Expand), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Sidebar_Expand_Hint => ResourceManager.GetString(nameof(Sidebar_Expand_Hint), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string UserMenu_ChangePassword => ResourceManager.GetString(nameof(UserMenu_ChangePassword), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string UserMenu_Suffix => ResourceManager.GetString(nameof(UserMenu_Suffix), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Sidebar_Item_Reports => ResourceManager.GetString(nameof(Sidebar_Item_Reports), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
@@ -326,6 +330,8 @@ public static class AppResources
     public static string Reports_Copy_Success => ResourceManager.GetString(nameof(Reports_Copy_Success), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Reports_Export_Success => ResourceManager.GetString(nameof(Reports_Export_Success), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Reports_Export_SaveFailed_Format => ResourceManager.GetString(nameof(Reports_Export_SaveFailed_Format), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Reports_Sort_Ascending => ResourceManager.GetString(nameof(Reports_Sort_Ascending), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Reports_Sort_Descending => ResourceManager.GetString(nameof(Reports_Sort_Descending), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Reports_Column_Processor => ResourceManager.GetString(nameof(Reports_Column_Processor), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Reports_Column_Yard => ResourceManager.GetString(nameof(Reports_Column_Yard), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Reports_Column_HourBucket => ResourceManager.GetString(nameof(Reports_Column_HourBucket), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;

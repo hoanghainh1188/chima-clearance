@@ -9,7 +9,6 @@ namespace B2.Desktop.ViewModels;
 public sealed partial class LedgerRowViewModel : ObservableObject
 {
     private static readonly CompositeFormat YardCodeFormat = CompositeFormat.Parse(AppResources.Ledger_YardCode_Format);
-    private static readonly CompositeFormat PlateTrailerFormat = CompositeFormat.Parse(AppResources.Ledger_PlateTrailer_Format);
     private static readonly CompositeFormat MoreNumbersFormat = CompositeFormat.Parse(AppResources.Ledger_MoreNumbers_Format);
 
     /// <summary>
@@ -64,11 +63,6 @@ public sealed partial class LedgerRowViewModel : ObservableObject
         string.IsNullOrWhiteSpace(Dto.PrimaryTrailerOrContainer)
             ? AppResources.Common_EmDash
             : Dto.PrimaryTrailerOrContainer!;
-
-    public string PlateAndTrailerLine =>
-        string.IsNullOrWhiteSpace(Dto.PrimaryTrailerOrContainer)
-            ? PrimaryPlateDisplay
-            : string.Format(CultureInfo.CurrentCulture, PlateTrailerFormat, PrimaryPlateDisplay, Dto.PrimaryTrailerOrContainer);
 
     public static LedgerRowViewModel FromDto(DeclarationSummaryDto dto, int rowOrdinal)
     {

@@ -8,6 +8,27 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ### Fixed
 
+#### Desktop layout batch — #196, #197, #198, #199, #200, #201
+
+- **Đăng nhập / Đổi mật khẩu** (#196): the form is a centred 420 px card instead of inputs
+  stretched across a 1080p+ screen; show/hide sits beside the password field; the first field is
+  focused on load and Enter submits.
+- **Xác nhận xe ra** (#197): the suffix input is the wireframe's BIG INPUT (56 px, font 24),
+  focused on load and after every exit; "Đánh dấu xe đã ra" is a primary (navy) button.
+- **Nhập xe** (#198): the form is capped at 900 px in two section cards (Tờ khai / Xe); the F-17
+  suggestion sits beside the mooc/cont field; the declaration number (or the plate, while adding
+  vehicles to the same declaration) is focused on load and after each save.
+- **Sổ B2** (#199): fixed widths for the short columns and weighted widths for company /
+  processor, so a long company name no longer squeezes them; Biển số and Mooc/Cont are separate
+  columns like Sổ B2 cột E/F.
+- **Thanh bên** (#200): a "« Thu gọn" toggle at the bottom switches the sidebar between 220 px
+  and a 56 px icon-only rail (labels as tooltips).
+- **Báo cáo** (#201): the sorted column shows ▲ / ▼; the filter row's stray empty column is now
+  the spacer that right-aligns the actions.
+- New design tokens from wireframe § 2–3 (`ColorSurfaceVariant`, `ColorPrimaryOnDark`,
+  `SpacingXS`, `SpacingXL`, `SizeTouchMin`) plus layout widths; the touched pages no longer
+  hard-code `White` or ad-hoc sizes.
+
 #### Desktop P2 batch — #160, #166, #171, #186, #190, #191, #192
 
 - **Xác nhận xe ra** (#192): typing five digits or a whole plate (`29H-123.45`) no longer does

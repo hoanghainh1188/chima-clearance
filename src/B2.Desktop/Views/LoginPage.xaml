@@ -8,41 +8,60 @@
              Title="{x:Static s:AppResources.Login_AppTitle}"
              BackgroundColor="{StaticResource ColorSurface}">
   <ScrollView>
-    <VerticalStackLayout Padding="{StaticResource SpacingL}" Spacing="{StaticResource SpacingM}">
-      <Label Text="{x:Static s:AppResources.Login_AppTitle}"
-             FontSize="{StaticResource FontSizeXL}"
-             TextColor="{StaticResource ColorPrimary}"
-             HorizontalOptions="Center" />
-      <Label Text="{x:Static s:AppResources.Login_AppSubtitle}"
-             HorizontalOptions="Center"
-             TextColor="{StaticResource ColorOnSurface}" />
-      <Label Text="{x:Static s:AppResources.Login_UsernameLabel}" />
-      <Entry x:Name="UsernameEntry"
-             Text="{Binding Username}"
-             SemanticProperties.Hint="{x:Static s:AppResources.Login_UsernameLabel}" />
-      <Label Text="{x:Static s:AppResources.Login_PasswordLabel}" />
-      <Entry x:Name="PasswordEntry"
-             Text="{Binding Password}"
-             IsPassword="True"
-             SemanticProperties.Hint="{x:Static s:AppResources.Login_PasswordLabel}" />
-      <Button x:Name="ShowPasswordToggleButton"
-              Text="{x:Static s:AppResources.Login_ShowPasswordToggle}"
-              Clicked="OnTogglePasswordClicked"
-              SemanticProperties.Hint="{x:Static s:AppResources.Login_ShowPasswordToggle}" />
-      <!-- Wireframe § 6.1 calls for an a11y "polite" live region on error.
-           .NET MAUI 8 has no IsLiveSetting equivalent on Label; the bound
-           SemanticProperties.Description gives screen readers the message. -->
-      <Label Text="{Binding ErrorMessage}"
-             TextColor="{StaticResource ColorError}"
-             SemanticProperties.Description="{Binding ErrorMessage}"
-             IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
-      <Button x:Name="LoginSubmitButton"
-              Text="{x:Static s:AppResources.Login_Submit}"
-              Command="{Binding LoginCommand}"
-              BackgroundColor="{StaticResource ColorPrimary}"
-              TextColor="White"
-              SemanticProperties.Hint="{x:Static s:AppResources.Login_Submit}" />
-      <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
-    </VerticalStackLayout>
+    <!-- Wireframe § 6.1: a centred card, not inputs stretched across a 1080p+ screen (#196). -->
+    <Border Margin="{StaticResource SpacingL}"
+            Padding="{StaticResource SpacingL}"
+            WidthRequest="{StaticResource LayoutAuthCardWidth}"
+            HorizontalOptions="Center"
+            VerticalOptions="Center"
+            BackgroundColor="{StaticResource ColorSurfaceVariant}"
+            Stroke="{StaticResource ColorBorder}">
+      <VerticalStackLayout Spacing="{StaticResource SpacingM}">
+        <Label Text="{x:Static s:AppResources.Login_AppTitle}"
+               FontSize="{StaticResource FontSizeXL}"
+               TextColor="{StaticResource ColorPrimary}"
+               HorizontalOptions="Center" />
+        <Label Text="{x:Static s:AppResources.Login_AppSubtitle}"
+               HorizontalOptions="Center"
+               TextColor="{StaticResource ColorOnSurface}" />
+        <Label Text="{x:Static s:AppResources.Login_UsernameLabel}" />
+        <Entry x:Name="UsernameEntry"
+               Text="{Binding Username}"
+               ReturnCommand="{Binding LoginCommand}"
+               SemanticProperties.Hint="{x:Static s:AppResources.Login_UsernameLabel}" />
+        <Label Text="{x:Static s:AppResources.Login_PasswordLabel}" />
+        <!-- Show/hide sits beside the password field (wireframe § 6.1), not as a full-width row. -->
+        <Grid ColumnDefinitions="*,Auto" ColumnSpacing="{StaticResource SpacingS}">
+          <Entry x:Name="PasswordEntry"
+                 Grid.Column="0"
+                 Text="{Binding Password}"
+                 IsPassword="True"
+                 ReturnCommand="{Binding LoginCommand}"
+                 SemanticProperties.Hint="{x:Static s:AppResources.Login_PasswordLabel}" />
+          <Button x:Name="ShowPasswordToggleButton"
+                  Grid.Column="1"
+                  Text="{x:Static s:AppResources.Login_ShowPasswordToggle}"
+                  Clicked="OnTogglePasswordClicked"
+                  MinimumWidthRequest="{StaticResource SizeTouchMin}"
+                  BackgroundColor="Transparent"
+                  TextColor="{StaticResource ColorPrimary}"
+                  SemanticProperties.Hint="{x:Static s:AppResources.Login_ShowPasswordToggle}" />
+        </Grid>
+        <!-- Wireframe § 6.1 calls for an a11y "polite" live region on error.
+             .NET MAUI 8 has no IsLiveSetting equivalent on Label; the bound
+             SemanticProperties.Description gives screen readers the message. -->
+        <Label Text="{Binding ErrorMessage}"
+               TextColor="{StaticResource ColorError}"
+               SemanticProperties.Description="{Binding ErrorMessage}"
+               IsVisible="{Binding ErrorMessage, Converter={StaticResource IsStringNotNullOrEmptyConverter}}" />
+        <Button x:Name="LoginSubmitButton"
+                Text="{x:Static s:AppResources.Login_Submit}"
+                Command="{Binding LoginCommand}"
+                BackgroundColor="{StaticResource ColorPrimary}"
+                TextColor="{StaticResource ColorPrimaryOnDark}"
+                SemanticProperties.Hint="{x:Static s:AppResources.Login_Submit}" />
+        <ActivityIndicator IsRunning="{Binding IsBusy}" IsVisible="{Binding IsBusy}" />
+      </VerticalStackLayout>
+    </Border>
   </ScrollView>
 </ContentPage>

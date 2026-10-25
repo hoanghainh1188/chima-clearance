@@ -4,7 +4,9 @@
                     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml">
   <!-- Wireframe § 2 — Government Navy / status (verbatim hex). -->
   <Color x:Key="ColorPrimary">#1A3A6E</Color>
+  <Color x:Key="ColorPrimaryOnDark">#FFFFFF</Color>
   <Color x:Key="ColorSurface">#FFFBFE</Color>
+  <Color x:Key="ColorSurfaceVariant">#F4F4F7</Color>
   <Color x:Key="ColorOnSurface">#1B1B1F</Color>
   <Color x:Key="ColorOnSurfaceMuted">#5A5A66</Color>
   <Color x:Key="ColorError">#B3261E</Color>
