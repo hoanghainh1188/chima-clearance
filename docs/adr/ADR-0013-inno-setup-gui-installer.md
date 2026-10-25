@@ -1,6 +1,6 @@
 # ADR-0013: GUI setup.exe built with Inno Setup as a thin wrapper over install.ps1
 
-**Status**: **Proposed** — awaiting owner ratification with the PR that implements it.
+**Status**: **Accepted** — ratified by the owner on 2026-10-25 with PR #215.
 **Date**: 2026-10-25
 **Relates to**: #214 (simplify the installer), ADR-0007 (self-contained xcopy deployment, no
 update framework), ADR-0009 (initial Admin password shown once at install), ADR-0010 (LAN TLS
