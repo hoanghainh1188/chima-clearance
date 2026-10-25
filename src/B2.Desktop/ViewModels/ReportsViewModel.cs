@@ -62,6 +62,17 @@ public sealed partial class ReportsViewModel : ObservableObject
 
     public ObservableCollection<PendingReportItemDto> Pending { get; } = new();
 
+    // #201: one sort state per table drives its ▲ / ▼ header glyph.
+    public ReportTableSort ProcessorSort { get; } = NewSort();
+
+    public ReportTableSort YardSort { get; } = NewSort();
+
+    public ReportTableSort HourSort { get; } = NewSort();
+
+    public ReportTableSort OfficerSort { get; } = NewSort();
+
+    public ReportTableSort PendingSort { get; } = NewSort();
+
     public bool HasNoData =>
         !IsLoading
         && string.IsNullOrEmpty(ErrorMessage)
@@ -104,6 +115,12 @@ public sealed partial class ReportsViewModel : ObservableObject
             var hour = await hourTask.ConfigureAwait(true);
             var officer = await officerTask.ConfigureAwait(true);
             var pending = await pendingTask.ConfigureAwait(true);
+
+            // Fresh rows arrive in server order, so no header is "sorted" any more.
+            foreach (var sort in new[] { ProcessorSort, YardSort, HourSort, OfficerSort, PendingSort })
+            {
+                sort.Reset();
+            }
 
             Processors.Clear();
             foreach (var r in processor)
@@ -151,19 +168,19 @@ public sealed partial class ReportsViewModel : ObservableObject
     }
 
     [RelayCommand]
-    private void SortProcessor(string? column) => SortInPlace(Processors, column, ProcessorKey);
+    private void SortProcessor(string? column) => SortInPlace(Processors, ProcessorSort, column, ProcessorKey);
 
     [RelayCommand]
-    private void SortYard(string? column) => SortInPlace(Yards, column, YardKey);
+    private void SortYard(string? column) => SortInPlace(Yards, YardSort, column, YardKey);
 
     [RelayCommand]
-    private void SortHour(string? column) => SortInPlace(Hours, column, HourKey);
+    private void SortHour(string? column) => SortInPlace(Hours, HourSort, column, HourKey);
 
     [RelayCommand]
-    private void SortOfficer(string? column) => SortInPlace(Officers, column, OfficerKey);
+    private void SortOfficer(string? column) => SortInPlace(Officers, OfficerSort, column, OfficerKey);
 
     [RelayCommand]
-    private void SortPending(string? column) => SortInPlace(Pending, column, PendingKey);
+    private void SortPending(string? column) => SortInPlace(Pending, PendingSort, column, PendingKey);
 
     private static IComparable? ProcessorKey(ProcessorReportItemDto x, string? c) => c switch
     {
@@ -199,20 +216,24 @@ public sealed partial class ReportsViewModel : ObservableObject
         _ => x.HoursInside,
     };
 
-    private readonly Dictionary<string, bool> _ascending = new();
+    private static ReportTableSort NewSort() =>
+        new(AppResources.Reports_Sort_Ascending, AppResources.Reports_Sort_Descending);
 
-    private void SortInPlace<T>(ObservableCollection<T> source, string? column, Func<T, string?, IComparable?> keyFn)
+    private static void SortInPlace<T>(
+        ObservableCollection<T> source,
+        ReportTableSort sort,
+        string? column,
+        Func<T, string?, IComparable?> keyFn)
     {
-        if (source.Count == 0)
+        if (source.Count == 0 || column is null)
         {
             return;
         }
 
-        var asc = _ascending.GetValueOrDefault(typeof(T).FullName + ":" + (column ?? string.Empty));
-        var ordered = (asc
-            ? source.OrderByDescending(x => keyFn(x, column))
-            : source.OrderBy(x => keyFn(x, column))).ToList();
-        _ascending[typeof(T).FullName + ":" + (column ?? string.Empty)] = !asc;
+        var ascending = sort.Toggle(column);
+        var ordered = (ascending
+            ? source.OrderBy(x => keyFn(x, column))
+            : source.OrderByDescending(x => keyFn(x, column))).ToList();
         source.Clear();
         foreach (var item in ordered)
         {

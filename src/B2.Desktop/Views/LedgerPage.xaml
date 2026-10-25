@@ -131,20 +131,24 @@
             IsVisible="{Binding IsLoading, Converter={StaticResource InvertedBoolConverter}}">
         <!-- Sticky column header (wireframe § 6.2). Same column template as the
              data rows below so the titles line up. -->
+        <!-- #199: fixed widths for the short columns, weighted stars for company / processor, and
+             plate and mooc/cont in their own columns like Sổ B2 cột E/F. Keep in step with the
+             row template below. -->
         <Grid Grid.Row="0"
               IsVisible="{Binding ShowDataGrid}"
               Padding="{StaticResource SpacingS}"
               BackgroundColor="{StaticResource ColorLedgerDailyHeaderBg}"
-              ColumnDefinitions="32,100,*,*,*,*,*,64"
+              ColumnDefinitions="32,100,140,2*,*,110,110,80,64"
               ColumnSpacing="6">
           <Label Grid.Column="0" Text="{x:Static s:AppResources.Ledger_Col_No}" FontAttributes="Bold" FontSize="{StaticResource FontSizeS}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
           <Label Grid.Column="1" Text="{x:Static s:AppResources.Ledger_Col_Status}" FontAttributes="Bold" FontSize="{StaticResource FontSizeS}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
           <Label Grid.Column="2" Text="{x:Static s:AppResources.Ledger_Col_Declaration}" FontAttributes="Bold" FontSize="{StaticResource FontSizeS}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
           <Label Grid.Column="3" Text="{x:Static s:AppResources.Ledger_Col_Company}" FontAttributes="Bold" FontSize="{StaticResource FontSizeS}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
           <Label Grid.Column="4" Text="{x:Static s:AppResources.Ledger_Col_Processor}" FontAttributes="Bold" FontSize="{StaticResource FontSizeS}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
-          <Label Grid.Column="5" Text="{x:Static s:AppResources.Ledger_Col_Vehicle}" FontAttributes="Bold" FontSize="{StaticResource FontSizeS}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
-          <Label Grid.Column="6" Text="{x:Static s:AppResources.Ledger_Col_Yard}" FontAttributes="Bold" FontSize="{StaticResource FontSizeS}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
-          <Label Grid.Column="7" Text="{x:Static s:AppResources.Ledger_Col_Time}" FontAttributes="Bold" FontSize="{StaticResource FontSizeS}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
+          <Label Grid.Column="5" Text="{x:Static s:AppResources.Ledger_Col_Plate}" FontAttributes="Bold" FontSize="{StaticResource FontSizeS}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
+          <Label Grid.Column="6" Text="{x:Static s:AppResources.Ledger_Col_Trailer}" FontAttributes="Bold" FontSize="{StaticResource FontSizeS}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
+          <Label Grid.Column="7" Text="{x:Static s:AppResources.Ledger_Col_Yard}" FontAttributes="Bold" FontSize="{StaticResource FontSizeS}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
+          <Label Grid.Column="8" Text="{x:Static s:AppResources.Ledger_Col_Time}" FontAttributes="Bold" FontSize="{StaticResource FontSizeS}" TextColor="{StaticResource ColorOnSurfaceMuted}" />
         </Grid>
         <CollectionView Grid.Row="1"
                         ItemsSource="{Binding DisplayItems}"
@@ -178,7 +182,7 @@
                 </Border>
                 <Grid IsVisible="{Binding IsDataRow}"
                       Padding="{StaticResource SpacingS}"
-                      ColumnDefinitions="32,100,*,*,*,*,*,64"
+                      ColumnDefinitions="32,100,140,2*,*,110,110,80,64"
                       ColumnSpacing="6">
                   <Grid.GestureRecognizers>
                     <TapGestureRecognizer NumberOfTapsRequired="2"
@@ -249,7 +253,7 @@
                          TextColor="{StaticResource ColorOnSurfaceMuted}"
                          FontSize="{StaticResource FontSizeS}" />
                   <Label Grid.Column="5"
-                         Text="{Binding Row.PlateAndTrailerLine}"
+                         Text="{Binding Row.PrimaryPlateDisplay}"
                          VerticalOptions="Center"
                          LineBreakMode="TailTruncation"
                          TextColor="{StaticResource ColorOnSurface}">
@@ -260,11 +264,22 @@
                     </Label.Triggers>
                   </Label>
                   <Label Grid.Column="6"
+                         Text="{Binding Row.TrailerDisplay}"
+                         VerticalOptions="Center"
+                         LineBreakMode="TailTruncation"
+                         TextColor="{StaticResource ColorOnSurface}">
+                    <Label.Triggers>
+                      <DataTrigger TargetType="Label" Binding="{Binding Row.IsCancelled}" Value="True">
+                        <Setter Property="TextDecorations" Value="Strikethrough" />
+                      </DataTrigger>
+                    </Label.Triggers>
+                  </Label>
+                  <Label Grid.Column="7"
                          Text="{Binding Row.YardLabel}"
                          VerticalOptions="Center"
                          TextColor="{StaticResource ColorOnSurfaceMuted}"
                          FontSize="{StaticResource FontSizeS}" />
-                  <Label Grid.Column="7"
+                  <Label Grid.Column="8"
                          Text="{Binding Row.TimeLocal}"
                          VerticalOptions="Center"
                          TextColor="{StaticResource ColorOnSurface}" />

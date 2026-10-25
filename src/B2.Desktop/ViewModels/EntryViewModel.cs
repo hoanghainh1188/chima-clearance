@@ -68,6 +68,9 @@ public partial class EntryViewModel : ObservableObject, IDisposable
     private readonly SuggestionLatencyGuard _suggestionGuard = new(TimeProvider.System);
     private CancellationTokenSource? _suggestCts;
 
+    /// <summary>Raised after a save / cancel clears the form, so the view can refocus the first field.</summary>
+    public event EventHandler? FormCleared;
+
     [ObservableProperty]
     private bool _isLoading;
 
@@ -443,6 +446,7 @@ public partial class EntryViewModel : ObservableObject, IDisposable
         TrailerOrContainerNumber = null;
         VehicleNote = null;
         ClearSuggestions();
+        FormCleared?.Invoke(this, EventArgs.Empty);
     }
 
     private void ResetEntireForm()

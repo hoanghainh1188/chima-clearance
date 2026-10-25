@@ -14,15 +14,18 @@
            Text="{x:Static s:AppResources.Exit_SearchLabel}"
            TextColor="{StaticResource ColorOnSurface}" />
     <HorizontalStackLayout Grid.Row="1" Spacing="{StaticResource SpacingS}">
-      <Entry Text="{Binding Suffix}"
-             FontSize="{StaticResource FontSizeL}"
-             HeightRequest="44"
-             MinimumWidthRequest="200"
+      <!-- Wireframe § 6.4 BIG INPUT: height 56, font 24, autofocused (#197). -->
+      <Entry x:Name="SuffixEntry"
+             Text="{Binding Suffix}"
+             FontSize="{StaticResource FontSizeSearchInput}"
+             HeightRequest="{StaticResource SizeBigInputHeight}"
+             MinimumWidthRequest="{StaticResource LayoutSearchInputMinWidth}"
              VerticalOptions="Center"
+             ReturnCommand="{Binding SearchCommand}"
              SemanticProperties.Hint="{x:Static s:AppResources.Exit_SearchLabel}" />
       <Button Text="{x:Static s:AppResources.Exit_SearchButton}"
               Command="{Binding SearchCommand}"
-              HeightRequest="44"
+              HeightRequest="{StaticResource SizeBigInputHeight}"
               VerticalOptions="Center"
               SemanticProperties.Hint="{x:Static s:AppResources.Exit_SearchButton}" />
     </HorizontalStackLayout>
@@ -68,6 +71,10 @@
             <Button Text="{x:Static s:AppResources.Exit_MarkExit}"
                     Command="{Binding Source={x:Reference PageRoot}, Path=BindingContext.MarkExitCommand}"
                     CommandParameter="{Binding .}"
+                    HorizontalOptions="Start"
+                    MinimumHeightRequest="{StaticResource SizeTouchMin}"
+                    BackgroundColor="{StaticResource ColorPrimary}"
+                    TextColor="{StaticResource ColorPrimaryOnDark}"
                     SemanticProperties.Hint="{x:Static s:AppResources.Exit_MarkExit}" />
           </VerticalStackLayout>
         </DataTemplate>
