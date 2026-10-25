@@ -390,7 +390,15 @@ public sealed class MainShellPage : ContentPage, IToastPresenter
             entry.TitleLabel.HorizontalTextAlignment = collapsed ? TextAlignment.Center : TextAlignment.Start;
             entry.TitleLabel.Padding = collapsed ? Thickness.Zero : new Thickness(12, 0, 12, 0);
             // Icon-only: the full label stays reachable as a tooltip and for screen readers.
-            ToolTipProperties.SetText(entry.Container, collapsed ? entry.Label : null);
+            // SetText's value is non-nullable, so the expanded state clears the property instead.
+            if (collapsed)
+            {
+                ToolTipProperties.SetText(entry.Container, entry.Label);
+            }
+            else
+            {
+                entry.Container.ClearValue(ToolTipProperties.TextProperty);
+            }
         }
 
         if (_sidebarToggle is not null)
