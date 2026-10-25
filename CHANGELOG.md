@@ -36,6 +36,17 @@ uses [Conventional Commits](https://www.conventionalcommits.org/).
 
 ### Security
 
+#### Release security checklist (`04-implementation-plan.md` § 10)
+
+- **Idle logout (FR-018)**: the desktop now ends the session after 30 minutes with no keyboard or
+  pointer input — it hides the screen, revokes the refresh tokens, says why, and returns to the
+  login page. Before, the 8 h access token plus a rolling 7-day refresh token kept an unattended
+  gate PC signed in indefinitely.
+- **Logout is audited (FR-003)**: `POST /api/auth/logout` revokes every refresh token but wrote no
+  AuditLog row; it now records one like login does.
+- Test: `ServiceRestartTests` waited 10 s for a 1 s thread-pool delay and flaked on the Windows
+  runner under parallel load (main run 40198035879); the bound is 60 s.
+
 #### HTTPS on the LAN — #147, #176, ADR-0010
 
 - The service listened on **plain HTTP** `0.0.0.0:5000`: passwords, JWTs and every clearance

@@ -47,6 +47,9 @@ public sealed class MainShellPage : ContentPage, IToastPresenter
     private readonly UserRoleDto _role;
     private readonly ContentView _contentHost = new();
     private static readonly TimeSpan LogoutRevokeTimeout = TimeSpan.FromSeconds(3);
+    private readonly IdleSessionPolicy _idle = new(TimeProvider.System);
+    private IDispatcherTimer? _idleTimer;
+    private (Microsoft.UI.Xaml.UIElement Root, Microsoft.UI.Xaml.Input.KeyEventHandler Key, Microsoft.UI.Xaml.Input.PointerEventHandler Pointer)? _idleInput;
 
     private readonly List<TabEntry> _tabs = new();
     private readonly Border _connectivityBadge;
@@ -147,6 +150,73 @@ public sealed class MainShellPage : ContentPage, IToastPresenter
     {
         Loaded -= OnLoaded;
         RegisterWindowsAccelerators();
+        StartIdleWatch();
+    }
+
+    /// <summary>
+    /// FR-018: any key or pointer input anywhere in the window resets the idle clock; a timer
+    /// ends the session once <see cref="IdleSessionPolicy.Timeout"/> passes without input.
+    /// Handlers listen with <c>handledEventsToo</c> so input a control consumes still counts.
+    /// </summary>
+    private void StartIdleWatch()
+    {
+        if (Handler?.PlatformView is Microsoft.UI.Xaml.UIElement element
+            && element.XamlRoot?.Content is Microsoft.UI.Xaml.UIElement root)
+        {
+            // The window root outlives this shell (it is reused after the next login), so the
+            // handlers are kept and removed in StopIdleWatch rather than left to pile up.
+            Microsoft.UI.Xaml.Input.KeyEventHandler key = (_, _) => _idle.RecordActivity();
+            Microsoft.UI.Xaml.Input.PointerEventHandler pointer = (_, _) => _idle.RecordActivity();
+            root.AddHandler(Microsoft.UI.Xaml.UIElement.KeyDownEvent, key, handledEventsToo: true);
+            root.AddHandler(Microsoft.UI.Xaml.UIElement.PointerPressedEvent, pointer, handledEventsToo: true);
+            root.AddHandler(Microsoft.UI.Xaml.UIElement.PointerMovedEvent, pointer, handledEventsToo: true);
+            root.AddHandler(Microsoft.UI.Xaml.UIElement.PointerWheelChangedEvent, pointer, handledEventsToo: true);
+            _idleInput = (root, key, pointer);
+        }
+
+        _idle.RecordActivity();
+        _idleTimer = Dispatcher.CreateTimer();
+        _idleTimer.Interval = IdleSessionPolicy.CheckInterval;
+        _idleTimer.Tick += OnIdleTick;
+        _idleTimer.Start();
+    }
+
+    private async void OnIdleTick(object? sender, EventArgs e)
+    {
+        if (!_idle.IsExpired() || Interlocked.Exchange(ref _sessionExpiryHandled, 1) == 1)
+        {
+            return;
+        }
+
+        StopIdleWatch();
+        // Hide the ledger and revoke the tokens before the notice: the operator is away, so the
+        // alert may sit on screen for hours and must not leave the session usable behind it.
+        _contentHost.Content = null;
+        await RevokeServerSessionAsync().ConfigureAwait(true);
+        await DisplayAlert(
+            AppResources.Login_IdleTimeout_Title,
+            AppResources.Login_IdleTimeout_Message,
+            AppResources.Common_Close).ConfigureAwait(true);
+        await LogoutAsync(revokeOnServer: false).ConfigureAwait(true);
+    }
+
+    private void StopIdleWatch()
+    {
+        if (_idleTimer is not null)
+        {
+            _idleTimer.Stop();
+            _idleTimer.Tick -= OnIdleTick;
+            _idleTimer = null;
+        }
+
+        if (_idleInput is { } input)
+        {
+            input.Root.RemoveHandler(Microsoft.UI.Xaml.UIElement.KeyDownEvent, input.Key);
+            input.Root.RemoveHandler(Microsoft.UI.Xaml.UIElement.PointerPressedEvent, input.Pointer);
+            input.Root.RemoveHandler(Microsoft.UI.Xaml.UIElement.PointerMovedEvent, input.Pointer);
+            input.Root.RemoveHandler(Microsoft.UI.Xaml.UIElement.PointerWheelChangedEvent, input.Pointer);
+            _idleInput = null;
+        }
     }
 
     /// <summary>
@@ -656,6 +726,7 @@ public sealed class MainShellPage : ContentPage, IToastPresenter
 
     private async Task LogoutAsync(bool revokeOnServer = true)
     {
+        StopIdleWatch();
         _auth.SessionExpired -= OnSessionExpired;
         _connectivity.ModeChanged -= OnConnectivityModeChanged;
 

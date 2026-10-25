@@ -1232,4 +1232,10 @@ Alt+1 … Alt+8 — Chuyển nhanh giữa các tab
   <data name="Login_SessionExpired_Message" xml:space="preserve">
     <value>Vui lòng đăng nhập lại để tiếp tục làm việc.</value>
   </data>
+  <data name="Login_IdleTimeout_Title" xml:space="preserve">
+    <value>Đã đăng xuất do không thao tác</value>
+  </data>
+  <data name="Login_IdleTimeout_Message" xml:space="preserve">
+    <value>Phiên làm việc đã kết thúc vì không có thao tác nào trong 30 phút. Vui lòng đăng nhập lại để tiếp tục.</value>
+  </data>
 </root>

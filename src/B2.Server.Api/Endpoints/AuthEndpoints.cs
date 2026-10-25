@@ -1,5 +1,7 @@
 using B2.Application.Abstractions;
 using B2.Application.Auth;
+using B2.Domain.Audit;
+using B2.Domain.Users;
 using B2.Server.Api.Auth;
 using B2.Shared.Contracts.Auth;
 using FluentValidation;
@@ -8,6 +10,8 @@ namespace B2.Server.Api.Endpoints;
 
 public static class AuthEndpoints
 {
+    private const string LogoutAuditJson = "{\"refreshTokensRevoked\":true}";
+
     public static void MapAuthEndpoints(this IEndpointRouteBuilder app)
     {
         var g = app.MapGroup("/api/auth");
@@ -42,7 +46,7 @@ public static class AuthEndpoints
 
         g.MapPost(
                 "/logout",
-                async (HttpContext http, IRefreshTokenRepository refreshTokens, CancellationToken ct) =>
+                async (HttpContext http, IRefreshTokenRepository refreshTokens, IAuditContext audit, CancellationToken ct) =>
                 {
                     var uid = http.User.GetB2UserId();
                     if (uid is null)
@@ -51,6 +55,15 @@ public static class AuthEndpoints
                     }
 
                     await refreshTokens.RevokeAllForUserAsync(uid.Value, ct);
+                    // FR-003: revoking every refresh token is a write, so it is audited like login.
+                    audit.Set(new AuditEnvelope(
+                        uid.Value,
+                        AuditAction.Update,
+                        nameof(User),
+                        uid.Value,
+                        null,
+                        LogoutAuditJson,
+                        null));
                     return Results.NoContent();
                 })
             .RequireAuthorization();

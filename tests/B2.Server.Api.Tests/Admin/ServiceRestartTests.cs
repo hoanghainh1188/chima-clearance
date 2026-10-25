@@ -78,7 +78,10 @@ public sealed class ServiceRestartTests
         new HostShutdownRestarter(lifetime).RequestRestart();
 
         lifetime.Stopped.IsCompleted.Should().BeFalse("the HTTP 200 must be flushed before stopping");
-        var finished = await Task.WhenAny(lifetime.Stopped, Task.Delay(TimeSpan.FromSeconds(10)));
+        // The restarter's 1 s delay runs on the thread pool, which the Windows runner starves while
+        // dozens of WebApplicationFactory hosts run in parallel — 10 s flaked on main (run 40198035879).
+        // The bound only catches "never stops"; the pass case still finishes in ~1 s.
+        var finished = await Task.WhenAny(lifetime.Stopped, Task.Delay(TimeSpan.FromSeconds(60)));
         finished.Should().BeSameAs(lifetime.Stopped);
     }
 

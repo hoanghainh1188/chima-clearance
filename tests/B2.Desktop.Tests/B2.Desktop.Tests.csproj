@@ -37,6 +37,7 @@
     <Compile Include="../../src/B2.Desktop/Services/Api/ExitConflictDetails.cs" Link="Linked/ExitConflictDetails.cs" />
     <Compile Include="../../src/B2.Desktop/Services/ExitSearchQuery.cs" Link="Linked/ExitSearchQuery.cs" />
     <Compile Include="../../src/B2.Desktop/Services/SuggestionLatencyGuard.cs" Link="Linked/SuggestionLatencyGuard.cs" />
+    <Compile Include="../../src/B2.Desktop/Services/IdleSessionPolicy.cs" Link="Linked/IdleSessionPolicy.cs" />
     <Compile Include="../../src/B2.Desktop/Services/Logging/LogWriteBackoff.cs" Link="Linked/LogWriteBackoff.cs" />
     <Compile Include="../../src/B2.Desktop/Services/Api/AuthTokenHandler.cs" Link="Linked/AuthTokenHandler.cs" />
     <Compile Include="../../src/B2.Desktop/Services/LedgerDeltaPolicy.cs" Link="Linked/LedgerDeltaPolicy.cs" />
