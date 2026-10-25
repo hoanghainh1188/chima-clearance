@@ -60,7 +60,7 @@ public sealed class LoginEndpointTests
         sixth.StatusCode.Should().Be((HttpStatusCode)423);
     }
 
-    [Fact(Skip = "UI / desktop idle timer (wireframe F-01) — server has no idle session endpoint.")]
+    [Fact(Skip = "Desktop concern: the 30-min idle logout is IdleSessionPolicy (B2.Desktop.Tests/Services/IdleSessionPolicyTests); the server has no idle session endpoint.")]
     [Trait("Feature", "F-01")]
     public Task Auto_logout_on_idle_is_desktop_concern() => Task.CompletedTask;
 }

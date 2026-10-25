@@ -983,7 +983,11 @@ depends on.
   command; UI hiding is not sufficient (Constitution Principle VII; F-02, F-08, F-09).
 - **FR-003**: System MUST write exactly one AuditLog row for every successful write
   (POST/PUT/DELETE) on the API surface, capturing actor, action, entity, before, and
-  after states (Cross-Feature; F-16).
+  after states (Cross-Feature; F-16). **Exception**: `POST /api/auth/refresh` is not
+  audited — it only rotates the caller's own refresh token, changes no business data,
+  and every open Desktop client calls it on a timer, so auditing it would bury the log
+  in session noise. Login, logout and password changes, which start, end or alter a
+  session's credentials, stay audited.
 - **FR-004**: System MUST stamp every entry/exit/KVGS event with the server clock, never
   the client clock (F-05, F-08, F-09).
 - **FR-005**: System MUST validate every declaration number to be exactly 12 digits and

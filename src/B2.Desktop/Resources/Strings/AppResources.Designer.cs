@@ -19,6 +19,8 @@ public static class AppResources
     public static string Login_PasswordLabel => ResourceManager.GetString(nameof(Login_PasswordLabel), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Login_SessionExpired_Title => ResourceManager.GetString(nameof(Login_SessionExpired_Title), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Login_SessionExpired_Message => ResourceManager.GetString(nameof(Login_SessionExpired_Message), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Login_IdleTimeout_Title => ResourceManager.GetString(nameof(Login_IdleTimeout_Title), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
+    public static string Login_IdleTimeout_Message => ResourceManager.GetString(nameof(Login_IdleTimeout_Message), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Login_Submit => ResourceManager.GetString(nameof(Login_Submit), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Login_ShowPasswordToggle => ResourceManager.GetString(nameof(Login_ShowPasswordToggle), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
     public static string Login_Error_Generic => ResourceManager.GetString(nameof(Login_Error_Generic), System.Globalization.CultureInfo.GetCultureInfo("vi"))!;
